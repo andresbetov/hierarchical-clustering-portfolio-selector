@@ -1,0 +1,151 @@
+"""Core numerical utilities used by selection and allocation modules."""
+
+from typing import Any
+
+import numpy as np
+from numba import jit
+from numpy import floating
+
+
+@jit(nopython=True, cache=True)
+def compute_logarithmic_returns(price_series: np.ndarray) -> np.ndarray:
+    """Compute log returns r_t = ln(P_t / P_{t-1}) for a 1D price series."""
+
+    number_of_prices = len(price_series)
+    log_returns = np.empty(number_of_prices - 1, dtype=np.float64)
+    for i in range(1, number_of_prices):
+        log_returns[i - 1] = np.log(price_series[i] / price_series[i - 1])
+    return log_returns
+
+
+@jit(nopython=True, cache=True)
+def calculate_annualized_return(daily_log_returns: np.ndarray) -> floating[Any]:
+    daily_mean_return = np.mean(daily_log_returns)
+    return daily_mean_return * 252
+
+
+@jit(nopython=True, cache=True)
+def calculate_annualized_volatility(daily_log_returns: np.ndarray) -> float:
+    daily_standard_deviation = np.std(daily_log_returns)
+    return daily_standard_deviation * np.sqrt(252.0)
+
+
+@jit(nopython=True, cache=True)
+def calculate_sharpe_ratio(annual_return: float, annual_volatility: float, risk_free_rate: float) -> float:
+    return (annual_return - risk_free_rate) / annual_volatility
+
+
+@jit(nopython=True, cache=True)
+def calculate_correlation_matrix(returns_matrix: np.ndarray) -> np.ndarray:
+    """Compute Pearson correlation matrix from a returns matrix [days, assets].
+
+    Assets with zero variance produce NaN correlations against other assets.
+    """
+
+    number_of_days, number_of_assets = returns_matrix.shape
+
+    if number_of_days <= 1:
+        return np.full((number_of_assets, number_of_assets), np.nan, dtype=np.float64)
+
+    centered_returns = np.empty_like(returns_matrix)
+    for asset_index in range(number_of_assets):
+        asset_mean = np.mean(returns_matrix[:, asset_index])
+        for day_index in range(number_of_days):
+            centered_returns[day_index, asset_index] = returns_matrix[day_index, asset_index] - asset_mean
+
+    asset_standard_deviations = np.empty(number_of_assets, dtype=np.float64)
+    for asset_index in range(number_of_assets):
+        sum_of_squares = 0.0
+        for day_index in range(number_of_days):
+            sum_of_squares += centered_returns[day_index, asset_index] ** 2
+
+        if sum_of_squares == 0.0:
+            asset_standard_deviations[asset_index] = 0.0
+        else:
+            asset_standard_deviations[asset_index] = np.sqrt(sum_of_squares / (number_of_days - 1))
+
+    correlation_matrix = np.empty((number_of_assets, number_of_assets), dtype=np.float64)
+
+    for asset_i in range(number_of_assets):
+        for asset_j in range(asset_i, number_of_assets):
+            if asset_i == asset_j:
+                correlation_matrix[asset_i, asset_j] = 1.0
+            else:
+                if asset_standard_deviations[asset_i] == 0.0 or asset_standard_deviations[asset_j] == 0.0:
+                    correlation_coefficient = np.nan
+                else:
+                    cross_product = 0.0
+                    for day_index in range(number_of_days):
+                        cross_product += centered_returns[day_index, asset_i] * centered_returns[day_index, asset_j]
+
+                    correlation_coefficient = cross_product / (
+                        (number_of_days - 1)
+                        * asset_standard_deviations[asset_i]
+                        * asset_standard_deviations[asset_j]
+                    )
+
+                correlation_matrix[asset_i, asset_j] = correlation_coefficient
+                correlation_matrix[asset_j, asset_i] = correlation_coefficient
+
+    return correlation_matrix
+
+
+@jit(nopython=True, cache=True)
+def calculate_covariance_matrix(returns_matrix: np.ndarray) -> np.ndarray:
+    number_of_days, number_of_assets = returns_matrix.shape
+
+    if number_of_days <= 1:
+        return np.full((number_of_assets, number_of_assets), np.nan, dtype=np.float64)
+
+    centered_returns = np.empty_like(returns_matrix)
+    for asset_index in range(number_of_assets):
+        asset_mean = np.mean(returns_matrix[:, asset_index])
+        for day_index in range(number_of_days):
+            centered_returns[day_index, asset_index] = returns_matrix[day_index, asset_index] - asset_mean
+
+    covariance_matrix = np.empty((number_of_assets, number_of_assets), dtype=np.float64)
+
+    for asset_i in range(number_of_assets):
+        for asset_j in range(asset_i, number_of_assets):
+            cross_product = 0.0
+            for day_index in range(number_of_days):
+                cross_product += centered_returns[day_index, asset_i] * centered_returns[day_index, asset_j]
+
+            covariance_value = cross_product / (number_of_days - 1)
+            covariance_matrix[asset_i, asset_j] = covariance_value
+            covariance_matrix[asset_j, asset_i] = covariance_value
+
+    return covariance_matrix
+
+
+def construct_returns_matrix(prices_dictionary: dict) -> np.ndarray:
+    """Build matrix [days, assets] preserving insertion order from input dict.
+
+    This ordering must stay consistent with the metrics dict used downstream.
+    """
+
+    asset_names = list(prices_dictionary.keys())
+    returns_list = []
+
+    for asset_name in asset_names:
+        price_array = np.asarray(prices_dictionary[asset_name], dtype=np.float64)
+        daily_returns = compute_logarithmic_returns(price_array)
+        returns_list.append(daily_returns)
+
+    return np.array(returns_list).T
+
+
+@jit(nopython=True, cache=True)
+def compute_correlation_distance_matrix(correlation_matrix: np.ndarray) -> np.ndarray:
+    """Transform correlation to clustering distance: d(i,j) = 1 - |corr(i,j)|."""
+
+    matrix_size = correlation_matrix.shape[0]
+    distance_matrix = np.empty((matrix_size, matrix_size), dtype=np.float64)
+    for i in range(matrix_size):
+        for j in range(matrix_size):
+            if i == j:
+                distance_matrix[i, j] = 0.0
+            else:
+                distance_matrix[i, j] = 1.0 - abs(correlation_matrix[i, j])
+    return distance_matrix
+
