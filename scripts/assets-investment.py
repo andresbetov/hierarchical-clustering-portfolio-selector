@@ -17,19 +17,20 @@ if __name__ == "__main__":
 
     portfolio_config = PortfolioConfig()
 
+    # Warning: This project only supports tickers listed on Yahoo Finance.
     stock_symbols = [
-        "JNJ",
-        "JPM",
-        "V",
-        "PG",
-        "HD",
-        "MA",
-        "CVX",
-        "PFE",
-        "ABBV",
-        "TMO",
-        "MRK",
-        "WMT",
+        "JNJ",  # Johnson & Johnson
+        "JPM",  # JPMorgan Chase & Co.
+        "V",  # Visa
+        "PG",  # Procter & Gamble
+        "HD",  # The Home Depot
+        "MA",  # Mastercard
+        "CVX",  # Chevron
+        "PFE",  # Pfizer
+        "ABBV",  # AbbVie
+        "TMO",  # Thermo Fisher Scientific
+        "MRK",  # Merck & Co.
+        "WMT",  # Walmart
     ]
 
     all_metrics, filtered_metrics, optimal_portfolio, portfolio_weights = generate_complete_analysis_report(
