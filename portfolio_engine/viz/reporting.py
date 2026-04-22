@@ -331,6 +331,8 @@ def plot_optimal_portfolio_analysis(
     table.scale(1, 2)
     axes[1, 1].set_title("Portfolio Summary Statistics", fontweight="bold", pad=20)
 
+    # This Sharpe estimate is a quick diagnostic for the summary panel, not a full
+    # optimization objective or a covariance-aware portfolio performance model.
     plt.tight_layout()
 
     _finalize_plot(save_path, show_plot)

@@ -130,6 +130,8 @@ def construct_returns_matrix(prices_dictionary: dict) -> np.ndarray:
     for asset_name in asset_names:
         price_array = np.asarray(prices_dictionary[asset_name], dtype=np.float64)
         daily_returns = compute_logarithmic_returns(price_array)
+        # Preserve dict insertion order so downstream correlation, covariance, and
+        # allocation steps all refer to the same asset positions.
         returns_list.append(daily_returns)
 
     return np.array(returns_list).T

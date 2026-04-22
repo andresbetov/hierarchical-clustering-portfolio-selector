@@ -152,6 +152,8 @@ def generate_complete_analysis_report(
 
     logger.info("Rendering chart: correlation and covariance matrices")
     all_tickers = list(all_metrics.keys())
+    # Rebuild the full-universe matrices here so the report can compare the original asset set,
+    # not only the filtered subset used for selection.
     all_prices_dict = {ticker: historical_prices[ticker] for ticker in all_tickers if ticker in historical_prices}
     all_returns_matrix = construct_returns_matrix(all_prices_dict)
     all_corr_matrix = calculate_correlation_matrix(all_returns_matrix)

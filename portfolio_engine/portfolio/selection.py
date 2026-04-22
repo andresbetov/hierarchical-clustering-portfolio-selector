@@ -100,6 +100,8 @@ def select_optimal_diversified_portfolio(
     if number_of_assets <= 1:
         return asset_metrics
 
+    # Use 1 - |corr| so strongly correlated or anti-correlated assets are treated as close
+    # and the clustering step avoids selecting redundant exposures.
     correlation_distance_threshold = 1.0 - config.maximum_correlation_threshold
     distance_matrix = compute_correlation_distance_matrix(correlation_matrix)
     cluster_labels = perform_hierarchical_clustering(distance_matrix, correlation_distance_threshold)
@@ -127,6 +129,8 @@ def select_optimal_diversified_portfolio(
                 config.max_volatility_penalty_multiplier,
             ) * config.volatility_penalty_weight
 
+            # Reward assets that stay less correlated with the rest of the portfolio,
+            # so each cluster contributes a representative with broader diversification.
             cross_cluster_correlation_sum = 0.0
             other_assets_count = 0
             for other_cluster_id, other_cluster_assets in asset_clusters.items():
