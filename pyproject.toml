@@ -1,0 +1,13 @@
+[project]
+name = "xai-financial-predictor-engine"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy",
+    "numba",
+    "matplotlib",
+    "seaborn",
+    "yfinance",
+    "scipy",
+    "pytest>=9.0.3",
+]
