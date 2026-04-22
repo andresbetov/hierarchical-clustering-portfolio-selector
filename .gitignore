@@ -10,7 +10,7 @@ build/
 .pytest_cache/
 .coverage
 htmlcov/
-charts/
+#charts/
 *.nbc
 *.nbi
 uv.lock
