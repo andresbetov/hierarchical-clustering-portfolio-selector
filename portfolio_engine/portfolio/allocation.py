@@ -1,10 +1,8 @@
 """Portfolio weight construction from selected assets and covariance inputs."""
 import logging
-from typing import Any
 
 import numpy as np
 from numba import jit
-from numpy import complex128, complexfloating, dtype, float64, floating, inexact, ndarray, number, timedelta64
 
 from ..core.config import PortfolioConfig
 
@@ -22,6 +20,8 @@ def create_portfolio_covariance_matrix(
     all_tickers = list(all_filtered_metrics.keys())
     portfolio_tickers = list(optimal_portfolio.keys())
 
+    # Keep the covariance matrix aligned to the filtered ticker order because the
+    # weighting methods assume the same asset sequence end-to-end.
     portfolio_indices = [all_tickers.index(ticker) for ticker in portfolio_tickers]
 
     portfolio_cov_matrix = np.zeros((len(portfolio_tickers), len(portfolio_tickers)))
@@ -42,11 +42,11 @@ def calculate_portfolio_return(weights: np.ndarray, expected_returns: np.ndarray
 
 
 def calculate_equal_weights(number_of_assets: int) -> np.ndarray:
-    return np.ones(number_of_assets) / number_of_assets
+    return np.asarray(np.ones(number_of_assets) / number_of_assets, dtype=np.float64)
 
 
 def calculate_inverse_volatility_weights(asset_volatilities: np.ndarray) -> np.ndarray:
-    inverse_volatilities = 1.0 / asset_volatilities
+    inverse_volatilities = np.asarray(1.0 / asset_volatilities, dtype=np.float64)
     return inverse_volatilities / np.sum(inverse_volatilities)
 
 
@@ -61,7 +61,7 @@ def calculate_risk_parity_weights(
     weights = np.ones(n_assets) / n_assets
 
     for _ in range(max_iterations):
-        portfolio_variance = calculate_portfolio_variance(weights, covariance_matrix)
+        portfolio_variance = float(calculate_portfolio_variance(weights, covariance_matrix))
         marginal_risk = np.dot(covariance_matrix, weights)
         risk_contributions = weights * marginal_risk / portfolio_variance
 
@@ -70,7 +70,7 @@ def calculate_risk_parity_weights(
         new_weights = weights * scaling_factors
         new_weights = new_weights / np.sum(new_weights)
 
-        weight_change = np.max(np.abs(new_weights - weights))
+        weight_change = float(np.max(np.abs(new_weights - weights)))
         if weight_change < tolerance:
             break
 
@@ -85,9 +85,9 @@ def calculate_maximum_sharpe_weights(
     risk_free_rate: float,
 ) -> np.ndarray:
     try:
-        excess_returns = expected_returns - risk_free_rate
+        excess_returns = np.asarray(expected_returns - risk_free_rate, dtype=np.float64)
         inv_cov_matrix = np.linalg.inv(covariance_matrix)
-        optimal_weights = np.dot(inv_cov_matrix, excess_returns)
+        optimal_weights = np.asarray(np.dot(inv_cov_matrix, excess_returns), dtype=np.float64)
         optimal_weights = optimal_weights / np.sum(optimal_weights)
         return optimal_weights
     except np.linalg.LinAlgError:
@@ -114,6 +114,7 @@ def calculate_minimum_variance_weights(covariance_matrix: np.ndarray) -> np.ndar
 def apply_weight_constraints(weights: np.ndarray, min_weight: float, max_weight: float) -> np.ndarray:
     """Clip by min/max bounds, then renormalize to preserve total weight = 1."""
 
+    # Clipping changes the total allocation, so normalize again after enforcing bounds.
     weights = np.maximum(weights, min_weight)
     weights = np.minimum(weights, max_weight)
     weights = weights / np.sum(weights)
