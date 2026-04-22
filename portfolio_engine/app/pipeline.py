@@ -24,6 +24,17 @@ from ..portfolio.selection import apply_asset_filters, select_optimal_diversifie
 logger = logging.getLogger(__name__)
 
 
+CHART_FILENAMES = {
+    "historical_prices": "historical_price_trends_normalized.png",
+    "risk_return_scatter": "asset_risk_return_profile.png",
+    "asset_metrics_comparison": "asset_metrics_comparison_dashboard.png",
+    "correlation_covariance_matrices": "asset_relationship_matrices.png",
+    "filtering_analysis": "asset_filtering_effects.png",
+    "filtered_correlation_heatmap": "filtered_assets_correlation_heatmap.png",
+    "optimal_portfolio_analysis": "optimal_portfolio_allocation_summary.png",
+}
+
+
 def main(ticker_symbols: list, config: PortfolioConfig = None):
     """Run the core pipeline: download -> filter -> stats -> select -> allocate.
 
@@ -120,7 +131,7 @@ def generate_complete_analysis_report(
     plot_historical_prices(
         historical_prices,
         price_dates,
-        "charts/historical_prices.png" if save_plots else None,
+        f"charts/{CHART_FILENAMES['historical_prices']}" if save_plots else None,
         show_plot=show_plots,
     )
 
@@ -128,14 +139,14 @@ def generate_complete_analysis_report(
     plot_risk_return_scatter(
         all_metrics,
         config,
-        "charts/risk_return_analysis.png" if save_plots else None,
+        f"charts/{CHART_FILENAMES['risk_return_scatter']}" if save_plots else None,
         show_plot=show_plots,
     )
 
     logger.info("Rendering chart: asset metrics comparison")
     plot_asset_metrics_comparison(
         all_metrics,
-        "charts/asset_metrics_comparison.png" if save_plots else None,
+        f"charts/{CHART_FILENAMES['asset_metrics_comparison']}" if save_plots else None,
         show_plot=show_plots,
     )
 
@@ -150,7 +161,7 @@ def generate_complete_analysis_report(
         all_corr_matrix,
         all_cov_matrix,
         all_tickers,
-        "charts/correlation_covariance_matrices.png" if save_plots else None,
+        f"charts/{CHART_FILENAMES['correlation_covariance_matrices']}" if save_plots else None,
         show_plot=show_plots,
     )
 
@@ -159,7 +170,7 @@ def generate_complete_analysis_report(
         all_metrics,
         filtered_metrics,
         config,
-        "charts/filtering_analysis.png" if save_plots else None,
+        f"charts/{CHART_FILENAMES['filtering_analysis']}" if save_plots else None,
         show_plot=show_plots,
     )
 
@@ -169,7 +180,7 @@ def generate_complete_analysis_report(
         plot_correlation_heatmap(
             corr_matrix,
             filtered_tickers,
-            "charts/filtered_correlation_heatmap.png" if save_plots else None,
+            f"charts/{CHART_FILENAMES['filtered_correlation_heatmap']}" if save_plots else None,
             show_plot=show_plots,
         )
 
@@ -179,7 +190,7 @@ def generate_complete_analysis_report(
             optimal_portfolio,
             portfolio_weights,
             config,
-            "charts/optimal_portfolio_analysis.png" if save_plots else None,
+            f"charts/{CHART_FILENAMES['optimal_portfolio_analysis']}" if save_plots else None,
             show_plot=show_plots,
         )
     else:
