@@ -252,8 +252,8 @@
       "dependencies": [
         "feat-023"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-025: docs/adr/README.md indice (4 ADRs con estado y convencion no-retroactiva); README metodologia HRP+distance_metric fila+enlace ADRs; CONTRIBUTING seccion decisiones. Flujo OpenSpec completo (skip_specs legitimo decision documental)."
     },
     {
       "id": "feat-026",
