@@ -1,6 +1,7 @@
 """Asset filtering and diversified candidate selection."""
 
 import logging
+import math
 
 import numpy as np
 from numba import jit
@@ -17,7 +18,12 @@ def apply_asset_filters(
     minimum_sharpe: float | None = None,
     maximum_volatility: float | None = None,
 ):
-    """Apply basic Sharpe/volatility screening before correlation clustering."""
+    """Apply Sharpe/volatility screening before correlation clustering.
+
+    Non-finite decision metrics (NaN/inf Sharpe or volatility) are excluded
+    here with a per-ticker reason, so corrupt inputs never silently leak into
+    composite scoring or weight allocation.
+    """
 
     if minimum_sharpe is None and maximum_volatility is None:
         logger.info("Asset filters skipped: no thresholds provided")
@@ -32,16 +38,35 @@ def apply_asset_filters(
 
     filtered_metrics = {}
     filtered_prices = {}
+    rejected_reasons = []
 
     for ticker, metrics in asset_metrics.items():
-        if minimum_sharpe is not None and metrics["sharpe_ratio"] < minimum_sharpe:
-            continue
+        sharpe_ratio = metrics.get("sharpe_ratio")
+        annual_volatility = metrics.get("annual_volatility")
 
-        if maximum_volatility is not None and metrics["annual_volatility"] > maximum_volatility:
+        # C3: undefined metrics must never reach scoring/allocation.
+        if not isinstance(sharpe_ratio, (int, float)) or not math.isfinite(sharpe_ratio):
+            rejected_reasons.append(f"{ticker}:sharpe_non_finite({sharpe_ratio})")
+            continue
+        if not isinstance(annual_volatility, (int, float)) or not math.isfinite(annual_volatility):
+            rejected_reasons.append(f"{ticker}:vol_non_finite({annual_volatility})")
+            continue
+        if minimum_sharpe is not None and sharpe_ratio < minimum_sharpe:
+            rejected_reasons.append(f"{ticker}:below_min_sharpe")
+            continue
+        if maximum_volatility is not None and annual_volatility > maximum_volatility:
+            rejected_reasons.append(f"{ticker}:above_max_vol")
             continue
 
         filtered_metrics[ticker] = metrics
         filtered_prices[ticker] = closing_prices[ticker]
+
+    if rejected_reasons:
+        logger.warning(
+            "Asset filters rejected assets: count=%d reasons=%s",
+            len(rejected_reasons),
+            rejected_reasons,
+        )
 
     logger.info(
         "Asset filters complete: kept=%d rejected=%d",

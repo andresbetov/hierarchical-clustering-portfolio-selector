@@ -6,6 +6,10 @@ import numpy as np
 from numba import jit
 from numpy import floating
 
+# Floor for variance/std-like magnitudes: anything <= EPS is "no information"
+# and maps to NaN semantics rather than infinities (C3 contract).
+VOL_FLOOR_EPS = 1e-12
+
 
 @jit(nopython=True, cache=True)
 def compute_logarithmic_returns(price_series: np.ndarray) -> np.ndarray:
@@ -26,12 +30,27 @@ def calculate_annualized_return(daily_log_returns: np.ndarray) -> floating[Any]:
 
 @jit(nopython=True, cache=True)
 def calculate_annualized_volatility(daily_log_returns: np.ndarray) -> float:
-    daily_standard_deviation = np.std(daily_log_returns)
-    return daily_standard_deviation * np.sqrt(252.0)
+    """Annualized SAMPLE volatility: std(ddof=1) * sqrt(252).
+
+    Manual computation because numba does not support np.std(..., ddof=);
+    keeps the estimator consistent with the covariance kernel below.
+    """
+    n = len(daily_log_returns)
+    if n < 2:
+        return float("nan")
+    mean_value = np.mean(daily_log_returns)
+    sum_sq = 0.0
+    for i in range(n):
+        diff = daily_log_returns[i] - mean_value
+        sum_sq += diff * diff
+    sample_std = np.sqrt(sum_sq / (n - 1))
+    return sample_std * np.sqrt(252.0)
 
 
-@jit(nopython=True, cache=True)
 def calculate_sharpe_ratio(annual_return: float, annual_volatility: float, risk_free_rate: float) -> float:
+    """Risk-adjusted excess return; NaN (never inf) when vol is degenerate."""
+    if not np.isfinite(annual_volatility) or annual_volatility <= VOL_FLOOR_EPS:
+        return float("nan")
     return (annual_return - risk_free_rate) / annual_volatility
 
 
@@ -69,9 +88,16 @@ def calculate_correlation_matrix(returns_matrix: np.ndarray) -> np.ndarray:
     for asset_i in range(number_of_assets):
         for asset_j in range(asset_i, number_of_assets):
             if asset_i == asset_j:
-                correlation_matrix[asset_i, asset_j] = 1.0
+                # Honest diagonal: 1.0 only when there IS information (var>0).
+                if asset_standard_deviations[asset_i] > VOL_FLOOR_EPS:
+                    correlation_matrix[asset_i, asset_j] = 1.0
+                else:
+                    correlation_matrix[asset_i, asset_j] = np.nan
             else:
-                if asset_standard_deviations[asset_i] == 0.0 or asset_standard_deviations[asset_j] == 0.0:
+                if (
+                    asset_standard_deviations[asset_i] <= VOL_FLOOR_EPS
+                    or asset_standard_deviations[asset_j] <= VOL_FLOOR_EPS
+                ):
                     correlation_coefficient = np.nan
                 else:
                     cross_product = 0.0
