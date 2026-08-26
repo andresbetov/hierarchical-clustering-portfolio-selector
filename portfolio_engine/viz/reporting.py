@@ -7,6 +7,7 @@ import sys
 import matplotlib
 
 from ..core.config import PortfolioConfig
+from ..core.metrics import VOL_FLOOR_EPS
 
 logger = logging.getLogger(__name__)
 
@@ -344,12 +345,55 @@ def plot_filtering_analysis(
     _finalize_plot(save_path, show_plot)
 
 
+def _portfolio_summary_metrics(
+    weights: list[float],
+    expected_returns: list[float],
+    covariance_matrix: np.ndarray | None,
+    risk_free_rate: float,
+    per_asset_volatilities: list[float] | None = None,
+) -> dict:
+    """Honest portfolio summary (A5): Sharpe from real wᵀΣw variance.
+
+    With a covariance matrix, portfolio volatility is sqrt(wᵀΣw). If absent
+    (defensive route only), falls back to the diagonal approximation from
+    per-asset volatilities with a warning — correlations then ignored.
+    """
+    weight_vector = np.asarray(weights, dtype=np.float64)
+    return_vector = np.asarray(expected_returns, dtype=np.float64)
+    portfolio_return = float(weight_vector @ return_vector)
+
+    if covariance_matrix is not None:
+        cov = np.asarray(covariance_matrix, dtype=np.float64)
+        portfolio_variance = float(weight_vector @ cov @ weight_vector)
+        portfolio_volatility = float(np.sqrt(max(portfolio_variance, 0.0)))
+    else:
+        logger.warning(
+            "Portfolio summary without covariance matrix: falling back to "
+            "diagonal risk approximation (correlations ignored)"
+        )
+        diagonal_risk = np.sqrt(sum((w * v) ** 2 for w, v in zip(weights, per_asset_volatilities or [])))
+        portfolio_volatility = float(diagonal_risk)
+
+    excess_return = portfolio_return - risk_free_rate
+    sharpe_ratio = (
+        float("nan")
+        if portfolio_volatility <= VOL_FLOOR_EPS
+        else excess_return / portfolio_volatility
+    )
+    return {
+        "return": portfolio_return,
+        "volatility": portfolio_volatility,
+        "sharpe": float(sharpe_ratio),
+    }
+
+
 def plot_optimal_portfolio_analysis(
     optimal_portfolio: dict,
     portfolio_weights: dict,
     config: PortfolioConfig,
     save_path: str | None = None,
     show_plot: bool = True,
+    covariance_matrix: np.ndarray | None = None,
 ):
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
 
@@ -393,14 +437,20 @@ def plot_optimal_portfolio_analysis(
     axes[1, 0].grid(True, alpha=0.3)
     plt.colorbar(scatter, ax=axes[1, 0], label="Sharpe Ratio")
 
-    portfolio_return = sum(w * r for w, r in zip(weights, returns))
-    portfolio_sharpe = portfolio_return / np.sqrt(sum((w * v) ** 2 for w, v in zip(weights, volatilities)))
+    summary = _portfolio_summary_metrics(
+        weights,
+        returns,
+        covariance_matrix,
+        config.risk_free_rate,
+        per_asset_volatilities=volatilities,
+    )
 
     metrics_data = {
-        "Portfolio Return": f"{portfolio_return:.2%}",
+        "Portfolio Return": f"{summary['return']:.2%}",
+        "Portfolio Volatility": f"{summary['volatility']:.2%}",
         "Risk-free Rate": f"{config.risk_free_rate:.2%}",
-        "Excess Return": f"{portfolio_return - config.risk_free_rate:.2%}",
-        "Portfolio Sharpe": f"{portfolio_sharpe:.2f}",
+        "Excess Return": f"{summary['return'] - config.risk_free_rate:.2%}",
+        "Portfolio Sharpe": f"{summary['sharpe']:.2f}",
         "Number of Assets": str(len(tickers)),
         "Allocation Method": config.weight_allocation_method.replace("_", " ").title(),
     }

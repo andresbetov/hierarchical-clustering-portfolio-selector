@@ -158,7 +158,7 @@ def generate_complete_analysis_report(
         optimal_portfolio,
         portfolio_weights,
         corr_matrix,
-        _,
+        covariance_matrix,
         historical_prices,
         price_dates,
     ) = main(ticker_symbols, config)
@@ -232,6 +232,7 @@ def generate_complete_analysis_report(
             config,
             f"charts/{CHART_FILENAMES['optimal_portfolio_analysis']}" if save_plots else None,
             show_plot=show_plots,
+            covariance_matrix=covariance_matrix,
         )
     else:
         logger.warning("Skipping optimal portfolio chart: no selected assets")
