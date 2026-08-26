@@ -1,32 +1,93 @@
-class PortfolioConfig:
-    """Central configuration used across filtering, selection and weighting.
+"""Central, immutable and validated configuration for the engine (M1).
 
-    Values are tuned as defaults for a medium-risk equity portfolio and can be
-    overridden from scripts/tests without changing engine code.
+Contract-first: field names preserve the historical attribute API so all
+consumers keep working; construction is the single validated entry point
+and mutation afterwards is structurally impossible.
+"""
+
+from dataclasses import dataclass
+
+# Executable documentation of the supported allocation strategies.
+WEIGHT_ALLOCATION_METHODS = (
+    "equal",
+    "inverse_volatility",
+    "risk_parity",
+    "max_sharpe",
+    "min_variance",
+)
+
+_WEIGHT_SUM_TOLERANCE = 1e-9
+
+
+def _require_range(name: str, value: float, low: float, high: float) -> None:
+    if not (low <= value <= high):
+        raise ValueError(f"{name} must be within [{low}, {high}], got {value}")
+
+
+@dataclass(frozen=True)
+class PortfolioConfig:
+    """Immutable profile governing filtering, selection and weighting.
+
+    Medium-risk equity defaults; construct with keyword overrides instead of
+    mutating (mutation raises FrozenInstanceError by design).
     """
 
-    def __init__(self):
-        # Asset filtering parameters
-        self.minimum_sharpe_threshold = 0.5
-        self.maximum_volatility_threshold = 0.25
-        self.maximum_correlation_threshold = 0.65
+    # Asset filtering parameters
+    minimum_sharpe_threshold: float = 0.5
+    maximum_volatility_threshold: float = 0.25
+    maximum_correlation_threshold: float = 0.65
 
-        # Portfolio selection scoring weights (must sum to 1.0)
-        self.sharpe_weight = 0.45
-        self.diversification_weight = 0.35
-        self.volatility_penalty_weight = 0.20
+    # Portfolio selection scoring weights (must sum to 1.0)
+    sharpe_weight: float = 0.45
+    diversification_weight: float = 0.35
+    volatility_penalty_weight: float = 0.20
 
-        # Risk parameters
-        self.risk_free_rate = 0.045
-        self.volatility_penalty_scale = 0.20
-        self.max_volatility_penalty_multiplier = 3.0
+    # Risk parameters
+    risk_free_rate: float = 0.045
+    volatility_penalty_scale: float = 0.20
+    max_volatility_penalty_multiplier: float = 3.0
 
-        # Data window (calendar years of adjusted prices to download)
-        self.lookback_years = 5
+    # Weight allocation parameters
+    weight_allocation_method: str = "risk_parity"
+    target_portfolio_volatility: float = 0.15
+    maximum_single_asset_weight: float = 0.30
+    minimum_single_asset_weight: float = 0.05
 
-        # Weight allocation parameters
-        self.weight_allocation_method = "risk_parity"
-        self.target_portfolio_volatility = 0.15
-        self.maximum_single_asset_weight = 0.30
-        self.minimum_single_asset_weight = 0.05
+    # Data window
+    lookback_years: int = 5
 
+    def __post_init__(self) -> None:
+        weight_sum = self.sharpe_weight + self.diversification_weight + self.volatility_penalty_weight
+        if abs(weight_sum - 1.0) > _WEIGHT_SUM_TOLERANCE:
+            raise ValueError(
+                "Scoring weights must sum to 1.0 "
+                f"(got {weight_sum:.12f}: sharpe={self.sharpe_weight}, "
+                f"diversification={self.diversification_weight}, "
+                f"volatility_penalty={self.volatility_penalty_weight})"
+            )
+
+        for weight_name in ("sharpe_weight", "diversification_weight", "volatility_penalty_weight"):
+            _require_range(weight_name, getattr(self, weight_name), 0.0, 1.0)
+
+        _require_range("risk_free_rate", self.risk_free_rate, 0.0, 1.0)
+        _require_range("target_portfolio_volatility", self.target_portfolio_volatility, 0.0, 1.0)
+
+        if self.maximum_volatility_threshold <= 0:
+            raise ValueError(
+                f"maximum_volatility_threshold must be strictly positive, got {self.maximum_volatility_threshold}"
+            )
+
+        if self.minimum_single_asset_weight > self.maximum_single_asset_weight:
+            raise ValueError(
+                f"minimum_single_asset_weight ({self.minimum_single_asset_weight}) "
+                f"cannot exceed maximum_single_asset_weight ({self.maximum_single_asset_weight})"
+            )
+
+        if self.lookback_years < 1:
+            raise ValueError(f"lookback_years must be >= 1, got {self.lookback_years}")
+
+        if self.weight_allocation_method not in WEIGHT_ALLOCATION_METHODS:
+            raise ValueError(
+                f"weight_allocation_method '{self.weight_allocation_method}' is invalid; "
+                f"allowed values: {list(WEIGHT_ALLOCATION_METHODS)}"
+            )

@@ -15,12 +15,12 @@ from portfolio_engine import (
 
 @pytest.fixture
 def sample_config():
-    """Minimal config for testing."""
-    config = PortfolioConfig()
-    config.minimum_sharpe_threshold = -10
-    config.maximum_volatility_threshold = 10
-    config.maximum_correlation_threshold = 0.8
-    return config
+    """Loose thresholds via constructor kwargs (config is frozen by contract)."""
+    return PortfolioConfig(
+        minimum_sharpe_threshold=-10.0,
+        maximum_volatility_threshold=10.0,
+        maximum_correlation_threshold=0.8,
+    )
 
 
 @pytest.fixture

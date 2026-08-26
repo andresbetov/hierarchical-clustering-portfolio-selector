@@ -195,11 +195,11 @@ def calculate_optimal_portfolio_weights(
     elif config.weight_allocation_method == "min_variance":
         weights = calculate_minimum_variance_weights(portfolio_cov_matrix)
     else:
-        logger.warning(
-            "Unknown weight method '%s': using risk_parity",
-            config.weight_allocation_method,
+        # Unreachable by construction contract: PortfolioConfig validates the
+        # method against WEIGHT_ALLOCATION_METHODS at construction time.
+        raise ValueError(
+            f"Unvalidated allocation method reached dispatch: '{config.weight_allocation_method}'"
         )
-        weights = calculate_risk_parity_weights(portfolio_cov_matrix)
 
     weights = apply_weight_constraints(
         weights,
