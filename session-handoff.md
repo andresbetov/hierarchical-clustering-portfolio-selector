@@ -2,48 +2,46 @@
 
 ## Current Objective
 
-- Goal: feat-002 verification-entrypoint-fix → COMPLETADO (suite real verde por primera vez)
-- Current status: rama lista para PR; siguiente feature feat-003
-- Branch / commit: `fix/verification-entrypoint` sobre `develop@e1f21c7`
+- Goal: feat-003 project-manifests-lockfile → COMPLETADO (entorno determinista versionado)
+- Current status: rama lista para PR; siguiente feature feat-004 (CI)
+- Branch / commit: `chore/project-manifests-lockfile` sobre `develop@d524c93`
 
 ## Completed This Session
 
-- [x] Paso previo: PR #5 (feat-001) squash-mergeado a develop, rama borrada
-- [x] Entorno: uv 0.12.6 instalado; uv sync funcional
-- [x] Change openspec `feat-002-verification-entrypoint-fix` (proposal + specs/verification-harness + tasks; design omitido condicionalmente) — valid ✓
-- [x] Fix A7 completo: Makefile test real, pytest config (testpaths/-q/pythonpath), init.sh vía uv, CONTRIBUTING alineado
-- [x] Suite REAL por primera vez en la historia del repo: **16 passed**
+- [x] PR #6 (feat-002) squash-mergeada a develop, rama borrada
+- [x] Change openspec `feat-003-project-manifests-lockfile` (proposal + specs/project-packaging + design + tasks) — valid ✓
+- [x] B1+A6: uv.lock 587KB versionado; paquete renombrado; requires-python >=3.10; re-lock universal 52 packages
+- [x] Gates: make test 16 passed · ./init.sh exit 0 · uv sync --frozen reproduce · numba jit OK
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| suite directa | `uv run pytest` | ✓ 16 passed | reveló y corrigió ModuleNotFoundError portfolio_engine |
-| make test | `make test` | ✓ 16 passed, exit 0 | primera vez que el target funciona |
-| harness completo | `./init.sh` | exit 0 con pytest visible | ya no saltea tests con uv presente |
-| change validation | `openspec validate` | valid | — |
+| lock reproducible | `uv sync --frozen` | ✓ Checked sin re-resolver | contrato determinista |
+| suite nueva resolución | `make test` | ✓ 16 passed | numpy 2.5.2, scipy 1.18.1 |
+| harness completo | `./init.sh` | ✓ exit 0 con pytest visible | — |
+| smoke kernels | numba jit inline | ✓ 0.67.0 funciona | riesgo feat-022 acotado |
+| change validation | `openspec validate` | valid | design incluido esta vez |
 
 ## Files Changed
 
-- `Makefile`, `pyproject.toml`, `init.sh`, `CONTRIBUTING.md`
-- `feature_list.json` (feat-002 done), `progress.md`, `session-handoff.md`
-- `openspec/changes/feat-002-verification-entrypoint-fix/`
+- `.gitignore`, `pyproject.toml`, `uv.lock` (nuevo), tracker/progress/handoff, openspec change feat-003
 
 ## Decisions Made
 
-- pythonpath=["."] como fix in-scope de la capability verification-harness (packaging integral → feat-003)
-- Documentos históricos de auditoría no se reescriben retroactivamente
+- scipy = única excepción documentada de deps fantasma hasta feat-018 (spec project-packaging)
+- Lock universal para >=3.10; matriz CI real en feat-004
 
 ## Blockers / Risks
 
-- Numba bajo Python 3.14 no ejercitado a fondo por la suite (kernels pesados) — vigilar feat-022
+- Numba pesados aún sin ejercicio profundo (feat-022)
 
 ## Next Session Startup
 
-1. AGENTS.md → ./init.sh (debe pasar inmediatamente, ahora con tests reales)
-2. PR de esta rama → develop si aún no se integró
-3. feat-003 project-manifests-lockfile: flujo openspec completo
+1. AGENTS.md → ./init.sh
+2. PR de esta rama si pendiente
+3. feat-004 quality-gates-ci: flujo openspec completo
 
 ## Recommended Next Step
 
-- feat-003 (B1+A6): versionar uv.lock, renombrar paquete xai-financial-predictor-engine → nombre real, requires-python>=3.10, limpiar deps fantasma — ahora sin riesgo gracias a la suite
+- feat-004 (M9): [tool.ruff]+[tool.pyright], pre-commit, GitHub Actions corriendo sync-frozen+ruff+pyright+pytest+compileall en push/PR a develop
