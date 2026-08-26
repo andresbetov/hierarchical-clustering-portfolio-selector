@@ -37,12 +37,16 @@ Fase Higiene posiciones 1-6 completas. CI verde en primera corrida (matriz 3.11/
 
 ## What's Next
 
+### What's Done (esta racha feat-019..020)
+
+- [x] **feat-019** B5: solvers cuadráticos via np.linalg.solve sin inv explícita; _ensure_positive_definite cholesky+jitter determinista loggeado; zero-trace irreparable por contrato (+7 tests) — PR #23
+- [x] **feat-020** A5: Sharpe reporte con wTΣw real; fallback diagonal solo defensivo con warning (+6 tests: ρ=0 equivalencia legacy, ρ=1 identidad analítica) — PR #24
+
 ## What's Next
 
-1. `feat-019` stable-covariance-solvers (B5 pos 20): solve/pinv + shrinkage LedoitWolf compartiendo plumbing cov_estimator
-2. `feat-020` portfolio-sharpe-covariance (A5 pos 21) — cierra la cadena metodológica
-3. Luego red de tests profunda (feat-021) antes de tocar arquitectura (M3/M6)
-4. Node20→24 actions bump cosmico pendiente
+1. `feat-021` deep-characterization-suite (M8, posición 22): tests caracterización del estado final + hypothesis + fixtures HRP — red para M6/M3
+2. `feat-022` numba-pruning y `feat-023` layered-architecture — ambos tras la red de feat-021
+3. Node20→24 actions bump cosmico pendiente
 4. Regla vigente: features complejos leen docs/decision-log-feat001.md
 4. Regla vigente: features complejos (016/018/021/023) leen docs/decision-log-feat001.md
 

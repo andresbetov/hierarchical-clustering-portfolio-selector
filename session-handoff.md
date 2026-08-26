@@ -2,10 +2,8 @@
 
 ## Current Objective
 
-- Goal: racha feat-015..018 COMPLETA — **todos los hallazgos críticos (C1-C4) resueltos**
-- Current status: develop @245b6fd · suite 116 passed · CI verde x7 consecutivas · HRP es el método default del motor
-- Branch: consolidado vía PRs #19..#22 (squash merges)
-
+- Goal: racha feat-019..020 COMPLETA — cadena metodológica cerrada (B5+A5)
+- Current status: develop @65ed826 · suite **129 passed** · next feat-021 characterization suite
 ## Completed This Session
 
 - feat-004: ruff+pyright+CI matrix+pre-commit (PR #8) — 39 hallazgos mecánicos resueltos
@@ -51,7 +49,7 @@
 
 ## Recommended Next Step
 
-- feat-019 (B5): estabilizar solvers covarianza (solve/pinv + LedoitWolf) reutilizando plumbing hrp/cov_estimator; luego A5 Sharpe covarianza (feat-020)
+- feat-021 (M8): tests de caracterizacion del estado FINAL — hypothesis property-based, fixtures jerarquia HRP, mock del contrato batch ya estable; luego M6/M3 tras esa red
 
 ## Lecciones acumuladas de la racha (replicables)
 
