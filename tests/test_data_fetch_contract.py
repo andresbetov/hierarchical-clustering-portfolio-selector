@@ -100,7 +100,7 @@ class TestBatchIngestion:
         })
         self._patch_fetch(monkeypatch, [both])
 
-        metrics, prices, dates = download_and_calculate_metrics(["AAA", "BBB"], 0.045, 5)
+        metrics, prices, dates = download_and_calculate_metrics(["AAA", "BBB"], 0.045, 5, 252)
 
         assert set(metrics) == {"AAA", "BBB"}
         assert metrics["AAA"]["annual_volatility"] > 0
@@ -112,7 +112,7 @@ class TestBatchIngestion:
         self._patch_fetch(monkeypatch, [only_close])
 
         with caplog.at_level(logging.WARNING):
-            metrics, prices, _ = download_and_calculate_metrics(["CCC"], 0.045, 5)
+            metrics, prices, _ = download_and_calculate_metrics(["CCC"], 0.045, 5, 252)
 
         assert set(metrics) == {"CCC"}
         assert float(prices["CCC"].sum()) == pytest.approx(33.0)
@@ -124,7 +124,7 @@ class TestBatchIngestion:
         self._patch_fetch(monkeypatch, [pd.concat([broken, good], axis=1)])
 
         with caplog.at_level(logging.WARNING):
-            metrics, _, _ = download_and_calculate_metrics(["JUNK", "GOOD"], 0.045, 5)
+            metrics, _, _ = download_and_calculate_metrics(["JUNK", "GOOD"], 0.045, 5, 252)
 
         assert set(metrics) == {"GOOD"}
         flat = " ".join(caplog.messages)
@@ -134,7 +134,7 @@ class TestBatchIngestion:
         self._patch_fetch(monkeypatch, [pd.DataFrame()])
 
         with caplog.at_level(logging.WARNING):
-            metrics, prices, dates = download_and_calculate_metrics(["AAA"], 0.045, 5)
+            metrics, prices, dates = download_and_calculate_metrics(["AAA"], 0.045, 5, 252)
 
         assert metrics == {} and prices == {} and dates == {}
         assert any("batch_failed_or_empty" in m for m in caplog.messages)
@@ -148,7 +148,7 @@ class TestBatchIngestion:
             monkeypatch, [ConnectionError("boom"), ConnectionError("boom"), good]
         )
 
-        metrics, _, _ = download_and_calculate_metrics(["AAA"], 0.045, 5)
+        metrics, _, _ = download_and_calculate_metrics(["AAA"], 0.045, 5, 252)
 
         assert set(metrics) == {"AAA"}
         assert calls["n"] == 3
@@ -157,7 +157,7 @@ class TestBatchIngestion:
         calls = self._patch_fetch(monkeypatch, [RuntimeError("down")])
 
         with caplog.at_level(logging.WARNING):
-            metrics, _, _ = download_and_calculate_metrics(["AAA"], 0.045, 5)
+            metrics, _, _ = download_and_calculate_metrics(["AAA"], 0.045, 5, 252)
 
         assert calls["n"] == 3  # MAX_DOWNLOAD_ATTEMPTS exhausted
         assert metrics == {}
@@ -168,7 +168,7 @@ class TestBatchIngestion:
         self._patch_fetch(monkeypatch, [trimmed])
 
         with caplog.at_level(logging.INFO):
-            _, prices, _ = download_and_calculate_metrics(["DDD"], 0.045, 5)
+            _, prices, _ = download_and_calculate_metrics(["DDD"], 0.045, 5, 252)
 
         assert len(prices["DDD"]) == 2
         assert any("trimmed" in m for m in caplog.messages)
