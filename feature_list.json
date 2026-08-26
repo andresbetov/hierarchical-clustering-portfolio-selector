@@ -179,8 +179,8 @@
         "feat-013",
         "feat-016"
       ],
-      "status": "in-progress",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-018: HRP canónico implementado (linkage single sobre distancia firmada ADR002, quasi-diag recursivo, bisección inverse-variance SIN inversion de covarianza); default flip a hrp (ADR 003); ruta end-to-end pipeline sin pruning; analítico diag(0.01,0.04)->[0.80,0.20]; invarianza-permutación multiset; bloques contiguos quasi-diag; suite 105->116 passed — PR #22 mergeada con CI verde matriz."
     },
     {
       "id": "feat-019",

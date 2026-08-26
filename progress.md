@@ -3,6 +3,12 @@
 ## Current State
 
 **Last Updated:** 2026-08-26
+**Branch:** `develop` (@4544171+ — DAG COMPLETO, PRs #22-#30)
+**Active Feature:** ninguna — **27/27 features done**, auditoría inicial completamente ejecutada
+
+Suite: 16→154 passed total. CI verde en cada merge. Racha final: feat-019 (B5 solvers), feat-020 (A5 Sharpe cov), feat-021 (M8 red caracterización + 3 bugs reales descubiertos), feat-022 (M6 numba out), feat-023 (M3 provider seam), feat-024 (B2 universe yaml), feat-025 (B3 ADRs docs), feat-026 (B6 walk-forward anti-fuga), feat-027 (B7 exports sync).
+
+**Last Updated:** 2026-08-26
 **Branch:** `feat/logging-headless-viz` (desde `develop@382a482`, post PR #8)
 **Active Feature:** feat-005 logging-and-headless-viz → **done**
 
@@ -42,11 +48,11 @@ Fase Higiene posiciones 1-6 completas. CI verde en primera corrida (matriz 3.11/
 - [x] **feat-019** B5: solvers cuadráticos via np.linalg.solve sin inv explícita; _ensure_positive_definite cholesky+jitter determinista loggeado; zero-trace irreparable por contrato (+7 tests) — PR #23
 - [x] **feat-020** A5: Sharpe reporte con wTΣw real; fallback diagonal solo defensivo con warning (+6 tests: ρ=0 equivalencia legacy, ρ=1 identidad analítica) — PR #24
 
-## What's Next
+## What's Next (post-DAG)
 
-1. `feat-021` deep-characterization-suite (M8, posición 22): tests caracterización del estado final + hypothesis + fixtures HRP — red para M6/M3
-2. `feat-022` numba-pruning y `feat-023` layered-architecture — ambos tras la red de feat-021
-3. Node20→24 actions bump cosmico pendiente
+1. Monitorear CI del último PR mergeado (#30)
+2. Oportunidades post-auditoría (no bloqueantes): bump actions Node24, LedoitWolf transversal formal, HERC/linkage paramétrico, turnover costs sobre walk-forward
+3. Posible tag v0.1.0 sobre develop si se quiere sellar hito
 4. Regla vigente: features complejos leen docs/decision-log-feat001.md
 4. Regla vigente: features complejos (016/018/021/023) leen docs/decision-log-feat001.md
 

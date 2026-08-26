@@ -2,8 +2,8 @@
 
 ## Current Objective
 
-- Goal: racha feat-019..020 COMPLETA — cadena metodológica cerrada (B5+A5)
-- Current status: develop @65ed826 · suite **129 passed** · next feat-021 characterization suite
+- Goal: **DAG DE AUDITORÍA COMPLETO — 27/27 features done** (feat-002..027 ejecutados y mergeados)
+- Current status: develop @post#30 · suite 154 passed +1 skip condicional · todos los hallazgos C/A/M/B resueltos o formalmente cerrados
 ## Completed This Session
 
 - feat-004: ruff+pyright+CI matrix+pre-commit (PR #8) — 39 hallazgos mecánicos resueltos
@@ -49,10 +49,12 @@
 
 ## Recommended Next Step
 
-- feat-021 (M8): tests de caracterizacion del estado FINAL — hypothesis property-based, fixtures jerarquia HRP, mock del contrato batch ya estable; luego M6/M3 tras esa red
+- PR #30 CI watch; opcionalmente tag v0.1.0 sobre develop para sellar el hito
+- Post-auditoría abierto (no bloqueante): actions Node24 bump, LedoitWolf transversal, HERC/linkage paramétrico, turnover costs en walk-forward
 
-## Lecciones acumuladas de la racha (replicables)
+## Lecciones consolidadas del proyecto
 
-- Tests exponen defectos del implementador (no solo ajenos): getLevelName(int), TOML swallow, water-filling, fixture i.i.d. vacua, delta MODIFIED sin match — el gate SIEMPRE tuvo razón
-- OpenSpec validate es pre-commit del diseño: deltas deben matchear specs main EXACTOS o usar ADDED/skip_specs correctos
-- Cada feature end-to-end: propose→validate→apply→gates→archive→PR→CI-watch toma ~15min con la disciplina ya calibrada
+1. Los heredocs fuzzy python son no-op silenciosos — SOLO Edit/Write tools para código fuente
+2. TDD de caracterización atrapó 6 defectos reales durante la ejecución (incl. 3 en la racha final)
+3. Severidad ≠ orden: las dependencias técnicas mandan; el flip HRP único demostró el valor del DAG
+4. OpenSpec validate es pre-commit del diseño: deltas deben matchear specs main exactos
