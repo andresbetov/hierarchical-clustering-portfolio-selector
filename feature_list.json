@@ -55,8 +55,8 @@
       "dependencies": [
         "feat-003"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-006: hatchling build OK (primera vez que uv sync instala el proyecto); entrypoint portfolio-run -> portfolio_engine.cli:main resuelto via importlib.metadata; import funciona desde cwd externo; sys.path hacks = 0 en scripts/+paquete; bug de edicion TOML detectado al vuelo (dependencies dentro de project.scripts) corregido; suite 30->33 passed (test_cli.py x3); make lint/types/test + ./init.sh exit 0; yfinance drift 1.6.0->1.7.0 en re-lock documentado."
     },
     {
       "id": "feat-007",
