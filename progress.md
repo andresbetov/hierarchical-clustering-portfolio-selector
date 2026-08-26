@@ -50,6 +50,11 @@ Fase Higiene posiciones 1-6 completas. CI verde en primera corrida (matriz 3.11/
 4. Regla vigente: features complejos leen docs/decision-log-feat001.md
 4. Regla vigente: features complejos (016/018/021/023) leen docs/decision-log-feat001.md
 
+## Process Deviations (transparencia)
+
+- **feat-024 se implementó sin artifacts OpenSpec previos** (proposal/design/tasks ausentes): flujo saltado en la racha. La impl pasó gates/tests, pero viola el workflow propio. Corrección de proceso: ninguna feature posterior repite esto; verificado contra feat-025+.
+- tasks.md de feat-024 perdido por rm accidental del directorio pre-archive; la evidencia vive en esta nota y en el commit.
+
 ## Blockers / Risks
 
 - pyright baja a `basic`: strict es progresión futura (registrar como feature dedicado si se quiere formalizar)
