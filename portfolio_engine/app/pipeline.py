@@ -6,7 +6,12 @@ from pathlib import Path
 import numpy as np
 
 from ..core.config import PortfolioConfig
-from ..core.metrics import calculate_correlation_matrix, calculate_covariance_matrix, construct_returns_matrix
+from ..core.metrics import (
+    align_prices_to_common_calendar,
+    calculate_correlation_matrix,
+    calculate_covariance_matrix,
+    construct_returns_matrix,
+)
 from ..data.data_fetch import download_and_calculate_metrics
 from ..portfolio.allocation import calculate_optimal_portfolio_weights
 from ..portfolio.selection import apply_asset_filters, select_optimal_diversified_portfolio
@@ -72,7 +77,18 @@ def main(ticker_symbols: list, config: PortfolioConfig | None = None):
             price_dates,
         )
 
-    daily_returns_matrix = construct_returns_matrix(filtered_prices)
+    # A3: multivariate stats must run on the common calendar (inner join),
+    # otherwise rows of different trading days get compared silently.
+    aligned_prices = align_prices_to_common_calendar(filtered_prices, price_dates)
+    aligned_rows = len(next(iter(aligned_prices.values()))) if aligned_prices else 0
+    logger.info(
+        "Calendar alignment: tickers=%d common_rows=%d input_rows(first)=%d",
+        len(aligned_prices),
+        aligned_rows,
+        len(filtered_prices[next(iter(filtered_prices))]) if filtered_prices else 0,
+    )
+
+    daily_returns_matrix = construct_returns_matrix(aligned_prices)
     correlation_matrix = calculate_correlation_matrix(daily_returns_matrix)
     covariance_matrix = calculate_covariance_matrix(daily_returns_matrix)
 
