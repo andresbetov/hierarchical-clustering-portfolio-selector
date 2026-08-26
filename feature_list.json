@@ -242,8 +242,8 @@
       "dependencies": [
         "feat-023"
       ],
-      "status": "in-progress",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-024: pyyaml>=6 declarada; config/universe.yaml (12 tickers + comentarios sector); load_universe schema validado con ValueError nombrados; cli.main(universe_path=None); lista hardcodeada muerta; 7 tests universo + fix contrato test_cli. Suite 140->147 passed. (tasks.md del change no trackeado por rm accidental previo al archive — gates y delta specs si quedaron archivados)"
     },
     {
       "id": "feat-025",
