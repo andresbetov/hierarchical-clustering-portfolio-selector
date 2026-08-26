@@ -37,9 +37,12 @@ Fase Higiene posiciones 1-6 completas. CI verde en primera corrida (matriz 3.11/
 
 ## What's Next
 
-1. `feat-015` volatility-target-or-removal (A1): ADR implementar scaling w*=target/vol alrededor del punto único Dykstra O eliminar param muerto
-2. Luego M2 distancia ADR (feat-016) y B4 (feat-017) — ambos sobre config frozen ya estable
-3. feat-018 HRP real consume 008+009+012+013+016
+## What's Next
+
+1. `feat-019` stable-covariance-solvers (B5 pos 20): solve/pinv + shrinkage LedoitWolf compartiendo plumbing cov_estimator
+2. `feat-020` portfolio-sharpe-covariance (A5 pos 21) — cierra la cadena metodológica
+3. Luego red de tests profunda (feat-021) antes de tocar arquitectura (M3/M6)
+4. Node20→24 actions bump cosmico pendiente
 4. Regla vigente: features complejos leen docs/decision-log-feat001.md
 4. Regla vigente: features complejos (016/018/021/023) leen docs/decision-log-feat001.md
 

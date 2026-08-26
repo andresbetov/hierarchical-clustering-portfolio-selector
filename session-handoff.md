@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: racha de ejecución feat-011..014 COMPLETA — bloque Datos + numérico-asignación cerrados
-- Current status: develop @b48298a · suite **88 passed** · próximo feat-015 (A1)
-- Branch: work consolidado en develop vía PRs #13..#18 (squash)
+- Goal: racha feat-015..018 COMPLETA — **todos los hallazgos críticos (C1-C4) resueltos**
+- Current status: develop @245b6fd · suite 116 passed · CI verde x7 consecutivas · HRP es el método default del motor
+- Branch: consolidado vía PRs #19..#22 (squash merges)
 
 ## Completed This Session
 
@@ -51,10 +51,10 @@
 
 ## Recommended Next Step
 
-- feat-015 (A1): decidir via ADR implementar vol-target scaling sobre el punto único Dykstra (feat-014) O eliminar target_portfolio_volatility muerto — luego M2/B4 y hacia HRP real feat-018
+- feat-019 (B5): estabilizar solvers covarianza (solve/pinv + LedoitWolf) reutilizando plumbing hrp/cov_estimator; luego A5 Sharpe covarianza (feat-020)
 
-## Lições de la racha (para replicar)
+## Lecciones acumuladas de la racha (replicables)
 
-- TDD expuso 3 defectos míos en vivo: getLevelName(int)→str, TOML section-swallow, water-filling inconsistente → los tests SON el diseño
-- Cambios multi-sección TOML: validar build inmediatamente
-- Fixtures autouse restauran estado global (propagate) para aislamiento ante orden de sesión
+- Tests exponen defectos del implementador (no solo ajenos): getLevelName(int), TOML swallow, water-filling, fixture i.i.d. vacua, delta MODIFIED sin match — el gate SIEMPRE tuvo razón
+- OpenSpec validate es pre-commit del diseño: deltas deben matchear specs main EXACTOS o usar ADDED/skip_specs correctos
+- Cada feature end-to-end: propose→validate→apply→gates→archive→PR→CI-watch toma ~15min con la disciplina ya calibrada
