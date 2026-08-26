@@ -125,8 +125,8 @@
       "dependencies": [
         "feat-002"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-013: @dataclass(frozen=True) API-preservante (nombres de campo identicos); __post_init__ valida suma pesos +-1e-9, rangos [0,1] rf/vol-target, min<=max, lookback>=1, metodo enum cerrado WEIGHT_ALLOCATION_METHODS; max_volatility_threshold solo >0 (refinamiento: fixture loose=10 demostro que cap 1.0 era sobre-cenido); dispatch sin fallback muerto (raise inalcanzable documentado); fixture integracion migrada a kwargs; test replace-pattern legal; mis 3 defectos en vivo cazados por gates (newline, test frozen con replace mal disenado, rango sobre-cenido). Suite 70->80 passed."
     },
     {
       "id": "feat-014",
