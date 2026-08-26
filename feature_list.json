@@ -1,3 +1,280 @@
 {
-  "features": []
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Analisis de orden de resolucion del roadmap",
+      "description": "Define el orden en que se resolveran los 28 hallazgos de docs/auditoria-tecnica.md (§3): C1-C4, A1-A7, M1-M10, B1-B7. Construye el DAG de dependencias tecnicas verificadas con evidencia file:line, determina la causalidad causa-efecto entre hallazgos, ejecuta el ordenamiento topologico del grafo y desempata casos sin dependencia mutua con el criterio de trascendencia (validez de resultados > reproducibilidad > mantenibilidad > higiene). Entrega docs/orden-de-resolucion.md (grafo mermaid + secuencia justificada) y registra la secuencia aprobada como feat-002..feat-027 con dependencies explicitas. Metodo completo, deliverables y acceptance criteria: openspec/changes/feat-001-analisis-orden-resolucion/",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "./init.sh exit 0 (2026-08-26, sesion feat-001): compileall OK; uv/pytest saltados por entorno sin uv (limitacion registrada en progress.md). OpenSpec validate: valid. Tracker machine-check: cobertura 28/28 hallazgos exacta, deps solo hacia anteriores, schema canonico 27 features."
+    },
+    {
+      "id": "feat-002",
+      "name": "Verification entrypoint fix",
+      "description": "Resuelve A7: Makefile:17 apunta a tests/smoke_test.py inexistente; cambiar a 'uv run pytest -q' + pytest.ini con testpaths. Puerta de entrada: sin verificacion funcional nada mas es verificable.",
+      "dependencies": [
+        "feat-001"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-003",
+      "name": "Project manifests lockfile",
+      "description": "Resuelve B1+A6: quitar uv.lock de .gitignore:16 y versionarlo; renombrar pyproject.toml:2 al nombre real del repo; requires-python>=3.10; declarar deps reales (scipy pasa de fantasma a usado en feat-018 o se retira).",
+      "dependencies": [
+        "feat-002"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-004",
+      "name": "Quality gates CI",
+      "description": "Resuelve M9: [tool.ruff]+[tool.pyright]+[tool.pytest] en pyproject, .pre-commit-config.yaml y .github/workflows/ci.yml (uv sync, ruff, pyright, pytest). Protege todo el trabajo posterior.",
+      "dependencies": [
+        "feat-003"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-005",
+      "name": "Logging and headless viz",
+      "description": "Resuelve M4+M5: logger por paquete con StreamHandler explicito respetando LOG_LEVEL (logging_utils.py:7-19); backend Agg cuando no hay display y eliminar show bloqueante en modo save (reporting.py:22-23, pipeline.py:203).",
+      "dependencies": [
+        "feat-004"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-006",
+      "name": "Package console entrypoint",
+      "description": "Resuelve M7: eliminar sys.path.insert de scripts/assets-investment.py:5 y declarar [project.scripts] portfolio=... sobre identidad de paquete de feat-003.",
+      "dependencies": [
+        "feat-003"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-007",
+      "name": "Risk free single source",
+      "description": "Resuelve A2: eliminar default 0.03 de data_fetch.py:15; risk_free_rate vive solo en PortfolioConfig (0.045). Corrige Sharpe 150bps antes de validar metricas downstream.",
+      "dependencies": [
+        "feat-002"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-008",
+      "name": "Returns date alignment",
+      "description": "Resuelve A3: construct_returns_matrix (metrics.py:121-138) asume longitudes iguales sin usar price_dates; unir por indice de fechas (intersection) antes de retornos. Fundacion de toda matriz posterior (corr/cov/clustering).",
+      "dependencies": [
+        "feat-002"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-009",
+      "name": "Numeric guards metrics",
+      "description": "Resuelve C3: guard vol<eps en sharpe (metrics.py:34), ddof=1 consistente (:28), corr NaN si varianza cero manteniendo PSD-ish (:74), helpers epsilon-floor compartidos. Requiere series alineadas de feat-008 para tests significativos.",
+      "dependencies": [
+        "feat-008"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-010",
+      "name": "Inverse vol epsilon guard",
+      "description": "Resuelve M10: allocation.py:48-50 divide por vol sin guard; reutiliza helper epsilon-floor de feat-009.",
+      "dependencies": [
+        "feat-009"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-011",
+      "name": "Lookback param calendar",
+      "description": "Resuelve A4: parametrizar lookback_years y calendario bursatil en data_fetch.py:28-29 y PortfolioConfig; acoplado temporalmente con feat-008 (mismas lineas) — orden fijo por eso.",
+      "dependencies": [
+        "feat-008"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-012",
+      "name": "Yfinance batch cache hardening",
+      "description": "Resuelve C2: yf.download batch auto_adjust=False con fallback Close si columna ausente (issues #2255/#2197), retry tenacity, validacion empty-frame, cache parquet. Fija contrato de datos para tests (M8) y benchmarks (C1).",
+      "dependencies": [
+        "feat-011"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-013",
+      "name": "Frozen validated config",
+      "description": "Resuelve M1: @dataclass(frozen=True) con validacion (pesos de scoring suman 1.0). Preserva accesos por atributo (contract-first): evita doble migracion de consumidores C4/M2/B4/C1.",
+      "dependencies": [
+        "feat-002"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-014",
+      "name": "Iterative weight bounds",
+      "description": "Resuelve C4: apply_weight_constraints (allocation.py:114-121) clip->renorm una pasada viola max=0.30; hacer lazo iterativo mientras violacion>eps. Requiere pesos finitos de feat-009.",
+      "dependencies": [
+        "feat-009"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-015",
+      "name": "Volatility target or removal",
+      "description": "Resuelve A1: decidir via ADR e implementar scaling w*=target_vol/vol_ around bounds de feat-014, o eliminar target_portfolio_volatility muerto (config.py:26, README.md:43 discrepancia D1).",
+      "dependencies": [
+        "feat-014"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-016",
+      "name": "Correlation distance ADR",
+      "description": "Resuelve M2: ADR signed-vs-abs para distancia de clustering (metrics.py:141-152 usa 1-abs(corr)); expone distance_metric en config frozen; decision PREVIA obligatoria porque linkage la consume. Contexto y decisiones previas obligatorias antes de proponer: docs/decision-log-feat001.md + archive openspec feat-001.",
+      "dependencies": [
+        "feat-013"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-017",
+      "name": "Trading days parameterization",
+      "description": "Resuelve B4: trading_days_per_year en config (metrics.py:24,30 hardcodean 252); coherente con modelo de calendario de feat-011.",
+      "dependencies": [
+        "feat-013"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-018",
+      "name": "Real HRP linkage recbipart",
+      "description": "Resuelve C1 (CRITICO keystone): scipy.cluster.hierarchy.linkage + quasi-diagonalization + recursive bisection (De Prado 2016/Palomar 12.3), cov_estimator parametrico. Va en posicion 19 NO en la 1: consume A3+C3+M1+M2+C2. Contexto y decisiones previas obligatorias antes de proponer: docs/decision-log-feat001.md + archive openspec feat-001.",
+      "dependencies": [
+        "feat-008",
+        "feat-009",
+        "feat-012",
+        "feat-013",
+        "feat-016"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-019",
+      "name": "Stable covariance solvers",
+      "description": "Resuelve B5: reemplazar np.linalg.inv (allocation.py:89,102) por solve/pinv + shrinkage LedoitWolf compartiendo plumbing cov_estimator introducido con feat-018.",
+      "dependencies": [
+        "feat-018"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-020",
+      "name": "Portfolio sharpe covariance",
+      "description": "Resuelve A5: reporting.py:308-310 calcula Sharpe asumiendo correlacion 0; usar w^T Cov w real (calculate_portfolio_variance allocation.py:34) coherente con motor.",
+      "dependencies": [
+        "feat-019"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-021",
+      "name": "Deep characterization suite",
+      "description": "Resuelve M8: tests de caracterizacion del estado FINAL (contratos C2/C4/C1 ya estables) con hypothesis+pytest-mock y fixtures de jerarquia HRP; backend headless requerido (feat-005). Red de seguridad para M6/M3. Contexto y decisiones previas obligatorias antes de proponer: docs/decision-log-feat001.md + archive openspec feat-001.",
+      "dependencies": [
+        "feat-005",
+        "feat-012",
+        "feat-014",
+        "feat-018"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-022",
+      "name": "Numba pruning with net",
+      "description": "Resuelve M6: benchmarkear y remover wrappers @jit triviales (metrics.py siete kernels) con red de regresion de feat-021.",
+      "dependencies": [
+        "feat-021"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-023",
+      "name": "Layered architecture strangler",
+      "description": "Resuelve M3: extraer DataProvider protocol + separar domain/app/viz bajo patron Strangler Fig, protegido por suite de caracterizacion (fan-in alto de pipeline.py/__init__.py exige red previa). Contexto y decisiones previas obligatorias antes de proponer: docs/decision-log-feat001.md + archive openspec feat-001.",
+      "dependencies": [
+        "feat-021"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-024",
+      "name": "External universe yaml",
+      "description": "Resuelve B2: universo de tickers desde config/universe.yaml cargado por la capa data definitiva de feat-023.",
+      "dependencies": [
+        "feat-023"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-025",
+      "name": "Docs consolidation ADRs",
+      "description": "Resuelve B3: consolidar CHANGELOG + ADRs (distancia M2, vol-target A1, cov estimator) + coherencia es/en; documenta arquitectura ya asentada de feat-023.",
+      "dependencies": [
+        "feat-023"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-026",
+      "name": "Walk forward validation",
+      "description": "Resuelve B6: backtest walk-forward purged (De Prado CV) sobre universo parametrizable de feat-024; primera validacion out-of-sample real del pipeline.",
+      "dependencies": [
+        "feat-024"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-027",
+      "name": "Package docstring sync",
+      "description": "Resuelve B7: sincronizar docstrings/superficie exportada del paquete con arquitectura final post-M3; cambio trivial terminal.",
+      "dependencies": [
+        "feat-023",
+        "feat-025"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    }
+  ]
 }
