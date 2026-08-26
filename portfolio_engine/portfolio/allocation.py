@@ -6,6 +6,7 @@ from numba import jit
 
 from ..core.config import PortfolioConfig
 from ..core.metrics import VOL_FLOOR_EPS
+from .hrp import calculate_hrp_weights
 
 logger = logging.getLogger(__name__)
 
@@ -277,6 +278,12 @@ def calculate_optimal_portfolio_weights(
         weights = calculate_maximum_sharpe_weights(expected_returns, portfolio_cov_matrix, config.risk_free_rate)
     elif config.weight_allocation_method == "min_variance":
         weights = calculate_minimum_variance_weights(portfolio_cov_matrix)
+    elif config.weight_allocation_method == "hrp":
+        raise ValueError(
+            "weight_allocation_method='hrp' allocates over the ENTIRE filtered "
+            "universe and bypasses representative scoring; drive it end-to-end "
+            "via the pipeline or calculate_optimal_portfolio_weights_hrp()."
+        )
     else:
         # Unreachable by construction contract: PortfolioConfig validates the
         # method against WEIGHT_ALLOCATION_METHODS at construction time.
@@ -295,3 +302,42 @@ def calculate_optimal_portfolio_weights(
     return portfolio_weights
 
 
+
+
+def calculate_optimal_portfolio_weights_hrp(
+    filtered_metrics: dict,
+    covariance_matrix: np.ndarray,
+    config: PortfolioConfig,
+) -> dict:
+    """End-to-end HRP over the full filtered universe, then bound constraints.
+
+    Assets are ordered by filtered_metrics key order — the same order used to
+    build the covariance matrix in the pipeline. Constraints (feat-014
+    Dykstra solver) apply exactly as to every other allocation method.
+    """
+    tickers = list(filtered_metrics.keys())
+    logger.info(
+        "HRP allocation started: assets=%d max_weight=%s min_weight=%s",
+        len(tickers),
+        config.maximum_single_asset_weight,
+        config.minimum_single_asset_weight,
+    )
+
+    if not tickers:
+        logger.warning("HRP allocation skipped: no filtered assets")
+        return {}
+    if len(tickers) == 1:
+        logger.info("Single asset selected: assigning full weight to %s", tickers[0])
+        return {tickers[0]: 1.0}
+
+    raw_weights = calculate_hrp_weights(covariance_matrix)
+
+    constrained = apply_weight_constraints(
+        raw_weights,
+        config.minimum_single_asset_weight,
+        config.maximum_single_asset_weight,
+    )
+
+    weights_by_ticker = {ticker: float(weight) for ticker, weight in zip(tickers, constrained)}
+    logger.info("HRP allocation complete: assets=%d", len(weights_by_ticker))
+    return weights_by_ticker

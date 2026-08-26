@@ -11,10 +11,11 @@ Las citas `file:line` de los documentos anteriores se basan en el árbol de `dev
 
 ## Opciones evaluadas que NO están en disco
 
-### Para feat-018 (Real HRP) — decisión NO final hasta su ADR
-- **scipy vs riskfolio-lib**: se evaluó internamente usar `riskfolio-lib`. Se descartó *para empezar* porque: añade dependencia pesada, `scipy` ya está declarado en pyproject (pasaría de fantasma a usado), y el control fino de los 3 pasos (linkage→quasiDiag→recBipart) sirve como aprendizaje verificable contra la literatura. **Opción válida a re-abrir** si scipy da problemas de dendrograma/linkage custom.
-- **Formas de quasi-diagonalization**: variante bisection-split vs dendrogram-split del split factor (Palomar 12.3 documenta ambas). Sin decisión aún — resolver en design de feat-018, bias inicial hacia bisection-split (De Prado clásico).
-- **Linkage default**: single (De Prado original). Ward/completa quedan como parámetro comparativo, no como primera implementación.
+### Para feat-018 (Real HRP) — ✅ RESUELTO en ADR 003 (2026-08-26)
+- **scipy implementación propia** elegida (riskfolio-lib sigue descartado; puerta abierta si n>400 exige perf).
+- Quasi-diag por expansión recursiva del árbol; bisección-split clásico.
+- Linkage 'single' hardcodeado — Ward/completa diferidas como parámetros comparativos futuros.
+- Ver también docs/adr/003-hrp-adoption.md.
 
 ### Racional para feat-016 (distancia de correlación) — argumento a conservar
 `d = sqrt(0.5*(1-corr))` firmada probablemente CORRECTA: correlación negativa es diversificadora y debe *separar* activos en el dendrograma. La actual `1-abs(corr)` (metrics.py `compute_correlation_distance_matrix`) trata -0.9 como cercano, lo cual contradice la tesis de diversificación del README. El ADR debe partir de este análisis, no desde cero.
@@ -23,7 +24,7 @@ Las citas `file:line` de los documentos anteriores se basan en el árbol de `dev
 
 | Feature | Decisión pendiente | Alternativas |
 |---|---|---|
-| feat-015 | vol-target implementar o eliminar | eliminar = config honesta mínima; escalar = más representable; decidir por complejidad marginal |
+| feat-015 | vol-target implementar o eliminar | ✅ ELIMINAR (ADR 001): incompatible con mandato long-only fully-invested |
 | feat-016 | distancia firmada vs abs | ver racional arriba; exponer parametrizada |
 | feat-018 | biblioteca / variante quasiDiag | ver opciones arriba |
 | feat-019 | solve/pinv/LedoitWolf | shrinkage primero (cov ruidosa es raíz de sensibilidad HRP según Trucíos 2026) |

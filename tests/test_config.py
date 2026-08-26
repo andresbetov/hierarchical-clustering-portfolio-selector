@@ -10,7 +10,7 @@ from portfolio_engine.core.config import WEIGHT_ALLOCATION_METHODS, PortfolioCon
 class TestDefaultsValid:
     def test_default_construction_passes_validation(self):
         config = PortfolioConfig()
-        assert config.weight_allocation_method == "risk_parity"
+        assert config.weight_allocation_method == "hrp"
         assert config.lookback_years == 5
 
 
@@ -60,6 +60,7 @@ class TestValidationRules:
             "risk_parity",
             "max_sharpe",
             "min_variance",
+            "hrp",
         }
 
     def test_dead_vol_target_parameter_removed_by_adr_001(self):

@@ -14,6 +14,7 @@ WEIGHT_ALLOCATION_METHODS = (
     "risk_parity",
     "max_sharpe",
     "min_variance",
+    "hrp",
 )
 
 # Clustering distance modes (ADR 002): signed is the methodologically
@@ -55,7 +56,7 @@ class PortfolioConfig:
     max_volatility_penalty_multiplier: float = 3.0
 
     # Weight allocation parameters
-    weight_allocation_method: str = "risk_parity"
+    weight_allocation_method: str = "hrp"
     maximum_single_asset_weight: float = 0.30
     minimum_single_asset_weight: float = 0.05
 

@@ -13,7 +13,7 @@ from ..core.metrics import (
     construct_returns_matrix,
 )
 from ..data.data_fetch import download_and_calculate_metrics
-from ..portfolio.allocation import calculate_optimal_portfolio_weights
+from ..portfolio.allocation import calculate_optimal_portfolio_weights, calculate_optimal_portfolio_weights_hrp
 from ..portfolio.selection import apply_asset_filters, select_optimal_diversified_portfolio
 from ..viz.reporting import (
     finalize_report_show,
@@ -97,15 +97,26 @@ def main(ticker_symbols: list, config: PortfolioConfig | None = None):
     correlation_matrix = calculate_correlation_matrix(daily_returns_matrix)
     covariance_matrix = calculate_covariance_matrix(daily_returns_matrix)
 
-    optimal_portfolio = select_optimal_diversified_portfolio(correlation_matrix, filtered_metrics, config)
+    if config.weight_allocation_method == "hrp":
+        # End-to-end hierarchical path (ADR 003): every filtered asset is
+        # allocated via linkage -> quasi-diag -> recursive bisection. The
+        # legacy two-stage scoring/pruning flow is bypassed entirely.
+        portfolio_weights = calculate_optimal_portfolio_weights_hrp(
+            filtered_metrics,
+            covariance_matrix,
+            config,
+        )
+        optimal_portfolio = dict(filtered_metrics)
+    else:
+        optimal_portfolio = select_optimal_diversified_portfolio(correlation_matrix, filtered_metrics, config)
 
-    portfolio_weights = calculate_optimal_portfolio_weights(
-        optimal_portfolio,
-        correlation_matrix,
-        covariance_matrix,
-        filtered_metrics,
-        config,
-    )
+        portfolio_weights = calculate_optimal_portfolio_weights(
+            optimal_portfolio,
+            correlation_matrix,
+            covariance_matrix,
+            filtered_metrics,
+            config,
+        )
 
     logger.info("Pipeline complete: selected_assets=%d", len(optimal_portfolio))
 
