@@ -3,17 +3,18 @@
 ## Current State
 
 **Last Updated:** 2026-08-26
-**Branch:** `feat/resolution-order-analysis` (desde `develop`)
-**Active Feature:** feat-001 — analisis de orden de resolucion del roadmap → **done**
+**Branch:** `fix/verification-entrypoint` (desde `develop@e1f21c7`, post PR #5)
+**Active Feature:** feat-002 verification-entrypoint-fix → **done**
 
-Secuencia completa derivada y registrada: 28 hallazgos ordenados en 26 features ejecutables (feat-002..feat-027, dos con pares agrupados). Cadena arranca por `feat-002` (verification entrypoint fix).
+feat-001 mergeada a develop (PR #5 squash). feat-002 completa: por primera vez la suite corre de verdad — 16 passed. Entorno: uv instalado, pytest via venv.
 
 ## Status
 
 ### What's Done
 
-- [x] Auditoría técnica integral → `docs/auditoria-tecnica.md` (28 hallazgos C1-C4, A1-A7, M1-M10, B1-B7)
-- [x] **feat-001**: DAG de dependencias con 27 aristas duras aceptadas (evidencia file:line) + 7 rechazadas documentadas; ordenación total 28 posiciones; 5 desempates por trascendencia; verificación anti-ciclos mecánica; features derivados en tracker — see `docs/orden-de-resolucion.md`
+- [x] feat-001 — orden de resolución (PR #5, squash e1f21c7)
+- [x] uv instalado en entorno local
+- [x] **feat-002**: Makefile test → pytest real; [tool.pytest.ini_options] (testpaths, -q, pythonpath=["."]); init.sh usa `uv run python -m pytest`; CONTRIBUTING alineado. Suite verde real: 16 passed.
 
 ### What's In Progress
 
@@ -21,38 +22,34 @@ Secuencia completa derivada y registrada: 28 hallazgos ordenados en 26 features 
 
 ### What's Next
 
-1. `feat-002` verification-entrypoint-fix (A7): Makefile:17 → pytest real + pytest.ini. Deps: solo feat-001 ✓
-2. Después: feat-003 (B1+A6 manifests+lockfile), feat-004 (M9 CI)...
-3. Orden completo y justificaciones: `docs/orden-de-resolucion.md` §4 y §7; tracker: `feature_list.json`
-4. **Regla transversal**: features complejos (016/018/021/023) requieren leer `docs/decision-log-feat001.md` antes de proponer; citar funciones, no números de línea (rot de citas)
-5. Flujo por feature: startup AGENTS.md → openspec-propose → revisión → apply → init.sh fresco
+1. PR de esta rama → develop (squash + delete branch, igual que #5)
+2. `feat-003` project-manifests-lockfile (B1+A6): versionar uv.lock, renombrar paquete, requires-python>=3.10, deps reales — ahora con suite real para validar sin riesgo
+3. Luego feat-004 (M9 CI) y feat-006/007 (paralelizables tras deps satisfechas)
+4. Regla transversal vigente: features complejos (016/018/021/023) leen docs/decision-log-feat001.md antes de proponer
 
 ## Blockers / Risks
 
-- **Ambiental (no bloquea)**: `uv` no instalado en este entorno — `./init.sh` corre compileall pero salta uv sync/pytest hasta instalar uv. Registrar como prereq de feat-002.
 - Si la ejecución revela dependencia oculta: actualizar `docs/orden-de-resolucion.md` + tracker EN el feature afectado, nunca retroactivo silencioso.
-
-## Decisions Made
-
-- **Severidad ≠ orden; dependencias sí** — C1 (crítico) queda posición 19 porque consume A3/M2/etc.
-- **Contract-first rompe micro-ciclo M1↔M8** (design D3, desempate #4)
-- **Agrupación contigua en features** garantiza verificación aislada por feature
-- Método validado contra literatura 2025-26: fan-in topology (JavaCodeGeeks jun 2026), Infra→Data→App (Keyhole jul 2026), hard-vs-soft deps (CoreStory)
-
-## Files Modified This Session
-
-- `docs/orden-de-resolucion.md` — NUEVO, artefacto principal feat-001
-- `feature_list.json` — feat-001 done + secuencia feat-002..feat-027
-- `openspec/changes/feat-001-analisis-orden-resolucion/` — proposal/specs/design/tasks (tasks 9/9)
-- `progress.md`, `session-handoff.md` — este cierre
-- Rama `feat/resolution-order-analysis` (no mergeada aún)
+- Numba aún no probado bajo Python 3.14 venv en ejecución real del pipeline (suite no ejercita kernels pesados); vigilar en feat-022.
 
 ## Evidence of Completion
 
-- [x] `openspec validate` change: valid ✓ (tras fix scenario faltante)
-- [x] Tracker machine-check: 28/28 cobertura exacta, deps solo-hacia-atrás OK, schema canónico 27 features
-- [x] `./init.sh` — ver salida fresca al cierre (task 4.2)
+- [x] feat-002: `make test` → 16 passed · `./init.sh` → 16 passed + exit 0 (2026-08-26, output completo en sesión)
+
+## Decisions Made
+
+- **pythonpath=["."] in-scope de verification-harness**: primera corrida real reveló que el paquete nunca fue importable sin el sys.path hack; fix declarativo mínimo, packaging completo queda para feat-003/M7
+- **Docs históricos no se reescriben**: referencias a smoke_test en auditoría/orden-de-resolucion son snapshots; los corrige la evidencia del tracker
+
+## Files Modified This Session
+
+- `Makefile` — target `test` real + help actualizado
+- `pyproject.toml` — `[tool.pytest.ini_options]` (testpaths/-q/pythonpath)
+- `init.sh` — pytest vía `uv run` cuando uv existe; fallback python3 preservado
+- `CONTRIBUTING.md` — nota de make test roto eliminada
+- `feature_list.json`, `progress.md`, `session-handoff.md`
+- `openspec/changes/feat-002-verification-entrypoint-fix/`
 
 ## Notes for Next Session
 
-- Startup normal AGENTS.md → tomar feat-002 (deps satisfechas). Prereq ambiental: instalar uv si no está (`curl -LsSf https://astral.sh/uv/install.sh | sh`) para que init.sh ejecute sync+pytest reales.
+- PR de esta rama → develop (squash); luego feat-003 con suite real ya operativa

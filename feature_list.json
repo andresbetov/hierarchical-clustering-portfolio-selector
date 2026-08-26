@@ -15,8 +15,8 @@
       "dependencies": [
         "feat-001"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26, sesion feat-002: make test -> 16 passed (primera suite verde real del repo); ./init.sh exit 0 con pytest via uv run python -m pytest (16 passed visible). Fix extra in-scope descubierto al correr suite real: ModuleNotFoundError portfolio_engine -> resuelto con pythonpath=[\".\"] en [tool.pytest.ini_options] (el packaging completo es feat-003/M7)."
     },
     {
       "id": "feat-003",
