@@ -2,27 +2,28 @@
 
 ## Current Objective
 
-- Goal: feat-005 logging-and-headless-viz → COMPLETADO (logging aislado + viz headless-safe)
-- Current status: rama lista para PR; siguiente feat-006 cierra Fase Higiene
-- Branch / commit: `feat/logging-headless-viz` sobre `develop@382a482`
+- Goal: feat-006 package-console-entrypoint → COMPLETADO — **Fase Higiene 1-7 cerrada**
+- Current status: proyecto instalable + entrypoint portfolio-run; abre Fase D
+- Branch / commit: `feat/package-console-entrypoint` sobre `develop@4f4ea69`
 
 ## Completed This Session
 
-- [x] PR #8 (feat-004) mergeada; CI primera corrida VERDE en matriz 3.11+3.13 (run 32996200798)
-- [x] Change openspec `feat-005-logging-headless-viz` (proposal + specs/runtime-diagnostics + design + tasks) — valid ✓
-- [x] M4: logger paquete aislado/idempotente; LOG_LEVEL ahora leído (make run-debug funcional — discrepancia nueva resuelta)
-- [x] M5: guard Agg determinista; pipeline sin pyplot; finalize_report_show único punto de ciclo de vida
-- [x] TDD cazó bug propio real: getLevelName(int)→str — corregido y documentado inline
+- [x] PR #9 (feat-005) mergeada; suite 30 passed con tests runtime-diagnostics
+- [x] Change openspec `feat-006-package-console-entrypoint` — valid ✓
+- [x] hatchling build-system: uv sync ahora instala el PROYECTO (primera vez)
+- [x] entrypoint portfolio-run → cli:main verificado via importlib.metadata
+- [x] script legacy wrapper sin sys.path hacks; TOML corruption al vuelo corregida
+- [x] Suite 30→33 passed (test_cli identidad)
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| suite ampliada | `make test` | **30 passed** | +14 tests contrato runtime-diagnostics |
-| lint/types | make lint/types | ✓ verdes | E402 noqa quirúrgicos justificados |
-| harness | `./init.sh` | exit 0, 4 gates visibles | sync→pytest→ruff→pyright→compileall |
-| smoke runtime | LOG_LEVEL inválido/doble-call | ✓ warning+INFO/1 handler | comportamiento spec confirmado |
-| CI servidor | run 32996200798 | success 3.11+3.13 | primera corrida del repo en runners |
+| build | `uv sync` | ✓ Built ...portfolio-selector | paquete se auto-instala |
+| metadata | importlib.metadata | ✓ 0.1.0 · portfolio-run→cli:main | comportamiento, no texto |
+| import externo | cwd /tmp + venv python | ✓ | sin sys.path hacks |
+| suite | `make test` | 33 passed | +3 identidad |
+| gates | make lint/types + ./init.sh | ✓/✓/exit 0 | — |
 
 ## Files Changed
 
@@ -33,13 +34,14 @@
 
 ## Decisions Made
 
-- Logger propietario por paquete (no root), idempotencia tagged-handler, cascade param>env>INFO
-- Guard Agg: no-DISPLAY && !MPLBACKEND && !darwin; función pura `_resolve_backend` testeable
-- TDD inline: el test exponió bug getLevelName antes de llegar a CI
+- hatchling; wheel packages=[portfolio_engine]; cli.py dentro del paquete; argparse diferido (decision-log)
+- Edición multi-sección de TOML requiere validación estructural inmediata (lección viva)
+- yfinance drift 1.6.0→1.7.0 aceptado en re-lock (lock universal)
 
 ## Blockers / Risks
 
-- Aviso GitHub infra: Node20→24 deprecation en checkout@v4/setup-uv@v6 (cosmético; bump en chore futuro)
+- Node20→24 deprecation aviso cosmético GitHub Actions (bump futuro)
+- NO ejecutar `make run`/`uv run portfolio-run` en CI: descarga red real — solo interacción humana
 
 ## Next Session Startup
 

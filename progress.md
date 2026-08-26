@@ -14,7 +14,8 @@ Fase Higiene posiciones 1-6 completas. CI verde en primera corrida (matriz 3.11/
 
 - [x] feat-001 orden de resolución (PR #5) · feat-002 suite real (PR #6) · feat-003 manifests+lock (PR #7)
 - [x] **feat-004**: dev-deps pinned; ruff(E,F,W/I/l120)+pyright(basic); Makefile lint/types; init.sh 4 gates; ci.yml matriz; pre-commit opt-in — 18+21 hallazgos mecánicos resueltos · PR #8 mergeada
-- [x] **feat-005**: logging de paquete aislado (propagate=False, idempotente, LOG_LEVEL funcional), guard Agg determinista + finalize_report_show, pipeline sin pyplot, 14 tests de contrato nuevos
+- [x] **feat-005**: logging aislado+idempotente, LOG_LEVEL funcional, guard Agg, pipeline sin pyplot, 14 tests contrato — PR #9
+- [x] **feat-006**: hatchling build-system; wheel flat-layout; [project.scripts] portfolio-run; cli.py; script legacy wrapper sin sys.path hacks; 3 tests identidad via importlib.metadata
 
 ### What's In Progress
 
@@ -23,8 +24,8 @@ Fase Higiene posiciones 1-6 completas. CI verde en primera corrida (matriz 3.11/
 ### What's Next
 
 1. PR de esta rama → develop
-2. `feat-006` package-console-entrypoint (M7, posición 7): [project.scripts] sobre identidad feat-003 — cierra Fase Higiene (1-7)
-3. Luego Fase D datos: A2→A3→A4→C3→M10→C2 (feat-007..012)
+2. `feat-007` risk-free-single-source (A2, abre Fase D): eliminar default 0.03 en data_fetch, exigir rf desde PortfolioConfig
+3. Luego feat-008 (A3 alineación) — dep crítica del resto de Fase D y de feat-018
 4. Regla vigente: features complejos leen docs/decision-log-feat001.md
 4. Regla vigente: features complejos (016/018/021/023) leen docs/decision-log-feat001.md
 
@@ -35,8 +36,9 @@ Fase Higiene posiciones 1-6 completas. CI verde en primera corrida (matriz 3.11/
 
 ## Evidence of Completion
 
-- [x] CI primera corrida verde en ambos jobs de matriz (run 32996200798) tras merge feat-004
-- [x] make lint/types/test verdes · ./init.sh exit 0 · suite 30 passed · smoke DEBUG/idempotencia/env-inválido OK
+- [x] uv sync instala el proyecto ("Built hierarchical-clustering-portfolio-selector"); import desde cwd externo OK
+- [x] entrypoint resuelto: portfolio-run -> portfolio_engine.cli:main (importlib.metadata)
+- [x] suite 33 passed · make lint/types/test · ./init.sh exit 0
 
 ## Decisions Made
 
@@ -54,6 +56,12 @@ Fase Higiene posiciones 1-6 completas. CI verde en primera corrida (matriz 3.11/
 - `CONTRIBUTING.md` (gates), `README.md` (badge), fixes menores en portfolio_engine (tiping signatures)
 - tracker/progress/handoff + openspec change feat-004
 
+## Decisions Made
+
+- hatchling vs setuptools/flit: config mínimo, estándar en análisis numérico flat-layout
+- Edición TOML corrupta cazada por build failure en vivo: dependencies quedó dentro de project.scripts — reordenado canónico; lección: validar estructura completa tras inserts multi-sección
+- pythonpath=["."] se conserva belt-and-suspenders pese a instalación real
+
 ## Notes for Next Session
 
-- PR → develop; luego feat-006 y arranca Fase D (datos)
+- PR → develop; luego feat-007 abre Fase D (integridad de datos)
