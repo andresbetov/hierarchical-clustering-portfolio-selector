@@ -26,8 +26,8 @@ Las citas `file:line` de los documentos anteriores se basan en el árbol de `dev
 |---|---|---|
 | feat-015 | vol-target implementar o eliminar | ✅ ELIMINAR (ADR 001): incompatible con mandato long-only fully-invested |
 | feat-016 | distancia firmada vs abs | ✅ SIGNED default (ADR 002, PR #20) |
-| feat-018 | biblioteca / variante quasiDiag | ver opciones arriba |
-| feat-019 | solve/pinv/LedoitWolf | shrinkage primero (cov ruidosa es raíz de sensibilidad HRP según Trucíos 2026) |
+| feat-018 | biblioteca / variante quasiDiag | ✅ scipy propia + bisection-split (ADR 003, PR #22) |
+| feat-019 | solve/pinv/LedoitWolf | ✅ SOLVE sin inv + PD-repair jitter; LedoitWolf sigue diferida hasta Fase 4 (PR #23) |
 | feat-021 | librería prop tests | hypothesis; pytest-mock para fetcher |
 
 ## Bordes de módulos tentativos para feat-023 (Strangler)

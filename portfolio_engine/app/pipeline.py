@@ -12,7 +12,6 @@ from ..core.metrics import (
     calculate_covariance_matrix,
     construct_returns_matrix,
 )
-from ..data.data_fetch import download_and_calculate_metrics
 from ..portfolio.allocation import calculate_optimal_portfolio_weights, calculate_optimal_portfolio_weights_hrp
 from ..portfolio.selection import apply_asset_filters, select_optimal_diversified_portfolio
 from ..viz.reporting import (
@@ -40,19 +39,34 @@ CHART_FILENAMES = {
 }
 
 
-def main(ticker_symbols: list, config: PortfolioConfig | None = None):
-    """Run the core pipeline: download -> filter -> stats -> select -> allocate.
+def main(
+    ticker_symbols: list,
+    config: PortfolioConfig | None = None,
+    provider=None,
+):
+    """Run the core pipeline: fetch -> filter -> align -> cluster -> allocate.
+
+    `provider` is an optional MarketDataProvider (structural protocol); when
+    omitted a YFinanceProvider is constructed. Orchestration never imports
+    transport modules directly (M3 seam).
 
     Returns raw metrics, filtered universe, selected portfolio, weights and matrices
     so callers can build custom reports without rerunning computations.
     """
-
     if config is None:
         config = PortfolioConfig()
+    if provider is None:
+        from ..data.provider import YFinanceProvider
 
-    logger.info("Pipeline started: tickers=%d", len(ticker_symbols))
+        provider = YFinanceProvider()
 
-    asset_metrics, closing_prices, price_dates = download_and_calculate_metrics(
+    logger.info(
+        "Pipeline started: tickers=%d provider=%s",
+        len(ticker_symbols),
+        type(provider).__name__,
+    )
+
+    asset_metrics, closing_prices, price_dates = provider.fetch_metrics(
         ticker_symbols,
         config.risk_free_rate,
         config.lookback_years,

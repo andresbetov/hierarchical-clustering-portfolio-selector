@@ -232,8 +232,8 @@
       "dependencies": [
         "feat-021"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-023: MarketDataProvider Protocol (typing.Protocol estructural) + YFinanceProvider adapter delegante en data/provider.py; main(provider=None) seam con default-construction retrocompatible; app sin refs transporte (grep=0); test_provider_dependency_injection: bundle identity verificado; statico anti-canvas; ADR 004 deuda saldada (fue citado falsamente en commit feat-022); leccion critica registrada: heredocs fuzzy t.replace son no-op silenciosos si no matchean — Edit tool OBLIGATORIO para codigo; suite 140 passed."
     },
     {
       "id": "feat-024",
