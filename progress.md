@@ -24,7 +24,8 @@ Secuencia completa derivada y registrada: 28 hallazgos ordenados en 26 features 
 1. `feat-002` verification-entrypoint-fix (A7): Makefile:17 → pytest real + pytest.ini. Deps: solo feat-001 ✓
 2. Después: feat-003 (B1+A6 manifests+lockfile), feat-004 (M9 CI)...
 3. Orden completo y justificaciones: `docs/orden-de-resolucion.md` §4 y §7; tracker: `feature_list.json`
-4. Flujo por feature: startup AGENTS.md → openspec-propose → revisión → apply → init.sh fresco
+4. **Regla transversal**: features complejos (016/018/021/023) requieren leer `docs/decision-log-feat001.md` antes de proponer; citar funciones, no números de línea (rot de citas)
+5. Flujo por feature: startup AGENTS.md → openspec-propose → revisión → apply → init.sh fresco
 
 ## Blockers / Risks
 

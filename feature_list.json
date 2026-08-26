@@ -151,7 +151,7 @@
     {
       "id": "feat-016",
       "name": "Correlation distance ADR",
-      "description": "Resuelve M2: ADR signed-vs-abs para distancia de clustering (metrics.py:141-152 usa 1-abs(corr)); expone distance_metric en config frozen; decision PREVIA obligatoria porque linkage la consume.",
+      "description": "Resuelve M2: ADR signed-vs-abs para distancia de clustering (metrics.py:141-152 usa 1-abs(corr)); expone distance_metric en config frozen; decision PREVIA obligatoria porque linkage la consume. Contexto y decisiones previas obligatorias antes de proponer: docs/decision-log-feat001.md + archive openspec feat-001.",
       "dependencies": [
         "feat-013"
       ],
@@ -171,7 +171,7 @@
     {
       "id": "feat-018",
       "name": "Real HRP linkage recbipart",
-      "description": "Resuelve C1 (CRITICO keystone): scipy.cluster.hierarchy.linkage + quasi-diagonalization + recursive bisection (De Prado 2016/Palomar 12.3), cov_estimator parametrico. Va en posicion 19 NO en la 1: consume A3+C3+M1+M2+C2.",
+      "description": "Resuelve C1 (CRITICO keystone): scipy.cluster.hierarchy.linkage + quasi-diagonalization + recursive bisection (De Prado 2016/Palomar 12.3), cov_estimator parametrico. Va en posicion 19 NO en la 1: consume A3+C3+M1+M2+C2. Contexto y decisiones previas obligatorias antes de proponer: docs/decision-log-feat001.md + archive openspec feat-001.",
       "dependencies": [
         "feat-008",
         "feat-009",
@@ -205,7 +205,7 @@
     {
       "id": "feat-021",
       "name": "Deep characterization suite",
-      "description": "Resuelve M8: tests de caracterizacion del estado FINAL (contratos C2/C4/C1 ya estables) con hypothesis+pytest-mock y fixtures de jerarquia HRP; backend headless requerido (feat-005). Red de seguridad para M6/M3.",
+      "description": "Resuelve M8: tests de caracterizacion del estado FINAL (contratos C2/C4/C1 ya estables) con hypothesis+pytest-mock y fixtures de jerarquia HRP; backend headless requerido (feat-005). Red de seguridad para M6/M3. Contexto y decisiones previas obligatorias antes de proponer: docs/decision-log-feat001.md + archive openspec feat-001.",
       "dependencies": [
         "feat-005",
         "feat-012",
@@ -228,7 +228,7 @@
     {
       "id": "feat-023",
       "name": "Layered architecture strangler",
-      "description": "Resuelve M3: extraer DataProvider protocol + separar domain/app/viz bajo patron Strangler Fig, protegido por suite de caracterizacion (fan-in alto de pipeline.py/__init__.py exige red previa).",
+      "description": "Resuelve M3: extraer DataProvider protocol + separar domain/app/viz bajo patron Strangler Fig, protegido por suite de caracterizacion (fan-in alto de pipeline.py/__init__.py exige red previa). Contexto y decisiones previas obligatorias antes de proponer: docs/decision-log-feat001.md + archive openspec feat-001.",
       "dependencies": [
         "feat-021"
       ],
