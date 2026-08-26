@@ -48,3 +48,11 @@ El dispatcher de asignación SHALL cubrir exactamente el enum validado y SHALL N
 #### Scenario: valor inválido
 - **WHEN** se construye con trading_days_per_year=0
 - **THEN** ValueError descriptivo
+
+### Requirement: Ruta end-to-end HRP sin pruning intermedio
+
+Con method=hrp, la orquestación SHALL asignar pesos sobre TODO el universo filtrado mediante linkage→quasi-diag→bisección, omitiendo la selección por scoring compuesto; los bounds de feat-014 SHANL aplicarse al vector final igual que en los demás métodos.
+
+#### Scenario: flujo hrp del pipeline
+- **WHEN** main() corre con config default
+- **THEN** los pesos provienen de calculate_hrp_weights y todos los tickers filtrados aparecen en el resultado con peso > 0
