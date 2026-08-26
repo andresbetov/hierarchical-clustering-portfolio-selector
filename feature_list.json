@@ -65,8 +65,8 @@
       "dependencies": [
         "feat-002"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-007: firma sin default (inspect: default empty); TypeError verificable offline (binding pre-red) en test_data_fetch_contract.py; grep 0.03 en fuente = 0 ocurrencias; suite 33->35 passed; lint/harness exit 0."
     },
     {
       "id": "feat-008",

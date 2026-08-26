@@ -13,8 +13,11 @@ from ..core.metrics import (
 logger = logging.getLogger(__name__)
 
 
-def download_and_calculate_metrics(ticker_symbols: list, risk_free_rate: float = 0.03):
+def download_and_calculate_metrics(ticker_symbols: list, risk_free_rate: float):
     """Download 5Y adjusted prices and compute per-asset return/risk metrics.
+
+    `risk_free_rate` is REQUIRED — the single source of truth is
+    PortfolioConfig.risk_free_rate; no local default exists on purpose.
 
     Returns:
         tuple[dict, dict, dict]:
