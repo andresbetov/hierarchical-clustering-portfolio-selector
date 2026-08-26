@@ -45,8 +45,8 @@
       "dependencies": [
         "feat-004"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-005: suite 16->30 passed (test_viz_headless.py 14 tests contrato); make lint/types/test verdes; make run-debug LOG_LEVEL ahora funcional (discrepancia nueva resuelta); guard Agg determinista; pipeline sin pyplot (verificado grep); bug real cazado por TDD: getLevelName(int)->str corregido en _resolve_level; init.sh exit 0 con 4 gates."
     },
     {
       "id": "feat-006",
