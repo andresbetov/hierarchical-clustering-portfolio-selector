@@ -1,4 +1,9 @@
-"""Asset filtering and diversified candidate selection."""
+"""Asset filtering and diversified candidate selection.
+
+Legacy two-stage path (screen → representative scoring). Since ADR 003 the
+default allocation is end-to-end HRP; these functions remain fully operative
+for every non-hrp method and for reproducibility of prior compositions.
+"""
 
 import logging
 import math

@@ -145,8 +145,11 @@ def download_and_calculate_metrics(
     lookback_years: int,
     trading_days_per_year: int,
 ):
-    """Download adjusted prices over an explicit calendar window and compute
-    per-asset return/risk metrics.
+    """Single-batch ingestion + per-asset metrics (legacy entry, ADR 003 flow).
+
+    This function is the YFinanceProvider adapter body. For new code prefer
+    the MarketDataProvider protocol via portfolio_engine.data.provider —
+    orchestration accepts it through pipeline.main(provider=...).
 
     `risk_free_rate`, `lookback_years` and `trading_days_per_year` are all
     REQUIRED — their single sources of truth are PortfolioConfig attributes;
