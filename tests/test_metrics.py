@@ -45,10 +45,11 @@ class TestAnnualizedMetrics:
         assert np.isclose(annual_return, 0.252, atol=0.001)
 
     def test_annualized_volatility(self):
-        # Daily volatility of 1% annualizes to ~15.9% (0.01 * sqrt(252))
+        # Sample estimator (ddof=1) consistent with the covariance kernel (C3).
         daily_returns = np.array([0.01, -0.01] * 126)
+        expected = float(np.std(daily_returns, ddof=1)) * np.sqrt(252)
         annual_vol = calculate_annualized_volatility(daily_returns)
-        assert np.isclose(annual_vol, 0.01 * np.sqrt(252), atol=0.001)
+        assert annual_vol == pytest.approx(expected, rel=1e-12)
 
     def test_sharpe_ratio(self):
         annual_return = 0.10  # 10%
@@ -57,6 +58,38 @@ class TestAnnualizedMetrics:
         sharpe = calculate_sharpe_ratio(annual_return, annual_vol, risk_free)
         expected = (0.10 - 0.02) / 0.15
         assert np.isclose(sharpe, expected)
+
+
+class TestNumericGuards:
+    """C3: degenerate inputs produce NaN semantics and never infinities."""
+
+    def test_sharpe_nan_for_zero_volatility(self):
+        assert np.isnan(calculate_sharpe_ratio(0.10, 0.0, 0.02))
+
+    def test_sharpe_nan_for_tiny_below_eps(self):
+        assert np.isnan(calculate_sharpe_ratio(0.10, 1e-15, 0.02))
+
+    def test_sharpe_finite_for_small_positive_vol(self):
+        assert np.isfinite(calculate_sharpe_ratio(0.10, 1e-6, 0.02))
+
+    def test_volatility_single_point_is_nan_not_crash(self):
+        assert np.isnan(calculate_annualized_volatility(np.array([0.01])))
+
+    def test_correlation_diagonal_honest_for_flat_asset(self):
+        flat = np.full((30,), 0.001)  # zero variance daily series
+        varying = np.linspace(-0.02, 0.02, 30)
+        matrix = calculate_correlation_matrix(np.column_stack([varying, flat]))
+
+        assert np.isnan(matrix[1, 1])  # no fake 1.0 for a flat asset
+        assert np.isnan(matrix[0, 1])
+        assert np.isnan(matrix[1, 0])
+        assert matrix[0, 0] == 1.0  # informative asset keeps honest diagonal
+
+    def test_covariance_singular_dup_columns_still_finite(self):
+        col = np.linspace(-0.01, 0.01, 40)
+        matrix = calculate_covariance_matrix(np.column_stack([col, col]))
+        assert np.all(np.isfinite(matrix))
+        assert np.allclose(matrix, matrix.T)
 
 
 class TestCorrelationMatrix:

@@ -5,6 +5,7 @@ import numpy as np
 from numba import jit
 
 from ..core.config import PortfolioConfig
+from ..core.metrics import VOL_FLOOR_EPS
 
 logger = logging.getLogger(__name__)
 
@@ -54,26 +55,48 @@ def calculate_risk_parity_weights(
     max_iterations: int = 1000,
     tolerance: float = 1e-8,
 ) -> np.ndarray:
-    """Iteratively rebalance to equalize risk contribution per asset."""
+    """Iteratively rebalance to equalize risk contribution per asset.
+
+    Numerically guarded (C3): risk contributions are floored at
+    VOL_FLOOR_EPS and per-iteration scaling factors are capped to [0.1, 10]
+    so singular/near-singular covariance matrices cannot explode the update.
+    Emits a warning when the iteration budget is exhausted without reaching
+    `tolerance` (previously silent).
+    """
 
     n_assets = covariance_matrix.shape[0]
     weights = np.ones(n_assets) / n_assets
 
+    converged = False
     for _ in range(max_iterations):
         portfolio_variance = float(calculate_portfolio_variance(weights, covariance_matrix))
+        if not np.isfinite(portfolio_variance) or portfolio_variance <= VOL_FLOOR_EPS:
+            logger.warning(
+                "Risk parity: degenerate portfolio variance (%s); returning current weights",
+                portfolio_variance,
+            )
+            return weights
+
         marginal_risk = np.dot(covariance_matrix, weights)
         risk_contributions = weights * marginal_risk / portfolio_variance
 
         target_risk = 1.0 / n_assets
-        scaling_factors = target_risk / risk_contributions
+        scaling_factors = np.clip(target_risk / np.maximum(risk_contributions, VOL_FLOOR_EPS), 0.1, 10.0)
         new_weights = weights * scaling_factors
         new_weights = new_weights / np.sum(new_weights)
 
         weight_change = float(np.max(np.abs(new_weights - weights)))
+        weights = new_weights
         if weight_change < tolerance:
+            converged = True
             break
 
-        weights = new_weights
+    if not converged:
+        logger.warning(
+            "Risk parity did not converge within %d iterations "
+            "(last max weight change kept for reference); returning normalized weights",
+            max_iterations,
+        )
 
     return weights
 

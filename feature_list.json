@@ -85,8 +85,8 @@
       "dependencies": [
         "feat-008"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-009: VOL_FLOOR_EPS; sharpe NaN si vol<=eps (nunca inf); vol anual ddof=1 manual numba-compatible + expectativa test exacta actualizada; corr diagonal honesta (1.0 solo var>0); apply_asset_filters excluye non-finitos nombrando ticker+motivo (fixture propagate para caplog robusto ante orden de sesion); risk_parity piso+caps[0.1,10]+warnings degenerate/no-convergencia, cov singular devuelve pesos finitos suma=1 y sana iguala contribuciones 0.25 atol 1e-6. Suite 49->62 passed (+13). Gates: lint/types/test verdes, init.sh exit 0."
     },
     {
       "id": "feat-010",
