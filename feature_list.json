@@ -1,0 +1,44 @@
+{
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Harness bootstrap y verificación base",
+      "description": "Instalar harness mínimo (AGENTS.md, init.sh, progress.md, session-handoff.md, feature_list.json) alineado a CONTRIBUTING (develop) y OpenSpec spec-driven; dejar ./init.sh en verde como gate único antes de marcar done",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "./init.sh 2026-08-26: Verification Complete (uv skipped, pytest skipped — no venv, compileall OK) | validate-harness 100/100 (bottleneck: none)"
+    },
+    {
+      "id": "feat-002",
+      "name": "Reparar gates de verificación e identidad del proyecto",
+      "description": "Corregir make test (apunta a smoke_test.py inexistente), unificar nombre pyproject/Make/README y eliminar dependencia scipy no usada; asegurar que init.sh y make test convergen en uv run pytest",
+      "dependencies": ["feat-001"],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-003",
+      "name": "Coherencia de configuración operativa",
+      "description": "Eliminar divergencia risk_free_rate (0.045 vs 0.03), reemplazar hardcoded 0.5 en viz/reporting por config.minimum_sharpe_threshold y decidir destino de target_portfolio_volatility (aplicar o remover)",
+      "dependencies": ["feat-002"],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-004",
+      "name": "Limpieza de código muerto y parámetros fantasma",
+      "description": "Remover o justificar calculate_portfolio_return, print_correlation_matrix/covariance y el parámetro correlation_matrix descartado en allocation dispatcher; eliminar fallbacks duplicados",
+      "dependencies": ["feat-003"],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-005",
+      "name": "Reproducibilidad y paridad docs/código",
+      "description": "Añadir [build-system], decidir sobre uv.lock, corregir contador hardcoded de plots y fórmula Sharpe en reporting para que README, config y código no diverjan",
+      "dependencies": ["feat-004"],
+      "status": "not-started",
+      "evidence": ""
+    }
+  ]
+}
