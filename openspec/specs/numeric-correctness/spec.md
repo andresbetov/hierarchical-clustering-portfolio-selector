@@ -132,3 +132,11 @@ El Sharpe de cartera mostrado en el resumen SHALL calcularse como (w·μ − rf)
 #### Scenario: correlación positiva reduce el Sharpe
 - **WHEN** dos activos con ρ=0.9 y pesos iguales comparan contra su versión ρ=0
 - **THEN** la volatilidad de cartera con ρ=0.9 es mayor y el Sharpe resultante menor
+
+### Requirement: Paridad semántica tras de-jit
+
+La reescritura vectorizada de los kernels SHALL preservar bit-a-bit el contrato vigente: Sharpe NaN bajo piso épsilon, volatilidad muestral ddof=1, diagonal condicionada a varianza>0, propagación NaN en distancias y firmas públicas intactas — verificado por la suite de caracterización existente sin modificaciones a asserts salvo drift real.
+
+#### Scenario: red de regresión verde
+- **WHEN** los kernels reescritos corren bajo la suite completa (unitarios + propiedades + E2E)
+- **THEN** no se modifica ningún assert y toda la verificación pasa
