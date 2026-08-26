@@ -2,8 +2,9 @@
 
 ## Current Objective
 
-- Goal: **DAG DE AUDITORÍA COMPLETO — 27/27 features done** (feat-002..027 ejecutados y mergeados)
-- Current status: develop @post#30 · suite 154 passed +1 skip condicional · todos los hallazgos C/A/M/B resueltos o formalmente cerrados
+- Goal: DOCUMENTACIÓN COMPLETAMENTE SINCRONIZADA post-DAG (cierre del proyecto)
+- Current status: develop @post-#30 · README/AGENTS/CONTRIBUTING/decision-log/READMEs-ADR todos reflejan el estado real · suite 154 passed
+
 ## Completed This Session
 
 - feat-004: ruff+pyright+CI matrix+pre-commit (PR #8) — 39 hallazgos mecánicos resueltos
@@ -49,8 +50,8 @@
 
 ## Recommended Next Step
 
-- PR #30 CI watch; opcionalmente tag v0.1.0 sobre develop para sellar el hito
-- Post-auditoría abierto (no bloqueante): actions Node24 bump, LedoitWolf transversal, HERC/linkage paramétrico, turnover costs en walk-forward
+- Tag v0.1.0 sobre develop si se quiere sellar el hito de auditoría completa
+- Extensiones diferidas explícitamente: LedoitWolf transversal, HERC/linkage paramétrico, turnover costs, Reporter interface
 
 ## Lecciones consolidadas del proyecto
 

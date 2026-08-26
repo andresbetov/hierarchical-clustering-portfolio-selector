@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Harness para desarrollo asistido por agentes en `hierarchical-clustering-portfolio-selector` — pipeline cuantitativo Python (clustering jerárquico + risk parity).
+Harness para desarrollo asistido por agentes en `hierarchical-clustering-portfolio-selector` — pipeline cuantitativo Python (clustering jerárquico con distancia firmada + asignación Hierarchical Risk Parity por defecto).
 
 ## Startup Workflow
 
@@ -37,7 +37,7 @@ Antes de escribir código:
 Un feature está done solo cuando todo esto es cierto:
 
 - [ ] Comportamiento objetivo implementado y acotado al scope del feature
-- [ ] Verificación ejecutada **en esta sesión** y en verde: `./init.sh` (pytest + compileall) — output registrado en `feature_list.json:evidence` o `progress.md`
+- [ ] Verificación ejecutada **en esta sesión** y en verde: `./init.sh` (lint + types + pytest + compileall) — output registrado en `feature_list.json:evidence` o `progress.md`
 - [ ] `feature_list.json` actualizado a `done` con evidencia y sin dependencias pendientes
 - [ ] `progress.md` y `session-handoff.md` al día
 - [ ] Repo reiniciable: `git status` limpio salvo artefactos intencionales y `./init.sh` pasa de nuevo
@@ -59,13 +59,17 @@ Antes de cerrar:
 ./init.sh
 ```
 
-Checks que ejecuta `init.sh`:
+Checks que ejecuta `init.sh` (en este orden, fail-fast):
 
-- `uv sync` si `uv` está disponible (sincroniza deps)
-- `python3 -m pytest || [ $? -eq 5 ]` — suite offline (exit 5 = sin tests, no es fallo)
-- `python3 -m compileall -q -x '(^|/)(\.?venv|env|node_modules|build|dist|__pycache__)(/|$)' .` — chequeo de sintaxis
+- `uv sync` — sincroniza deps desde lock versionado
+- `uv run python -m pytest || [ $? -eq 5 ]` — suite offline (exit 5 = sin tests, no es fallo)
+- `uv run ruff check .` — lint estático
+- `uv run pyright` — type-check básico
+- `python3 -m compileall -q ...` — chequeo de sintaxis
 
-Alternativa directa (sin `init.sh`): `uv run pytest` + `python3 -m compileall ...`
+Sin `uv` disponible degrada a fallbacks documentados dentro del propio script.
+
+Alternativa directa: `make lint && make types && make test`.
 
 ## Escalation
 

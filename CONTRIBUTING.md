@@ -9,7 +9,7 @@ Dos reglas gobiernan todo: **`main` es siempre deployable** y **`develop` es la 
 
 1. Create a short-lived branch from the latest `develop`
 2. Do the work — one logical change per branch
-3. Verify locally: `uv run pytest` (and `make test` once fixed) must pass completely
+3. Verify locally: `./init.sh` (lint + types + pytest + compileall) must pass completely
 4. Open a pull request targeting `develop`, then delete the branch after merge
 
 `develop` acumula los cambios. Solo cuando lo decidas se mergea `develop` → `main`
@@ -31,7 +31,7 @@ Commit types):
 | `refactor/` | Restructure, no behavior change| `refactor/extract-metrics` |
 
 If using OpenSpec, branch names should reference the matching change id under
-`openspec/changes/` (e.g., `feat/add-vol-target` → `openspec/changes/add-vol-target/`).
+`openspec/changes/` (e.g., `feat/vol-overlay` → `openspec/changes/feat-vol-overlay/`).
 
 ## Commits: Conventional Commits 1.0.0
 
@@ -60,7 +60,7 @@ fix(metrics): correct annualized volatility scaling
 
 chore!: drop python 3.12 support
 
-BREAKING CHANGE: runtime now requires python >= 3.13
+BREAKING CHANGE: runtime floor lowered to python >= 3.10 (wheel matrix extended)
 ```
 
 SemVer mapping: `feat` → MINOR · `fix` → PATCH · `!` / `BREAKING CHANGE` → MAJOR.
