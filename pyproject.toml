@@ -10,6 +10,7 @@ dependencies = [
     "seaborn",
     "yfinance",
     "scipy",
+    "pyyaml>=6.0",
     "pytest>=9.0.3",
 ]
 

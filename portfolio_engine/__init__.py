@@ -12,6 +12,7 @@ from .core.metrics import (
     construct_returns_matrix,
 )
 from .data.data_fetch import download_and_calculate_metrics
+from .data.universe import load_universe
 from .portfolio.allocation import (
     apply_weight_constraints,
     calculate_equal_weights,
@@ -79,5 +80,6 @@ __all__ = [
     "main",
     "generate_complete_analysis_report",
     "configure_logging",
+    "load_universe",
 ]
 

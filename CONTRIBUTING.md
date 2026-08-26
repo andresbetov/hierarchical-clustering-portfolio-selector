@@ -69,6 +69,12 @@ SemVer mapping: `feat` → MINOR · `fix` → PATCH · `!` / `BREAKING CHANGE` �
 > este repo es Python/uv y aún no tiene hook de commitlint. La convención se
 > respeta manualmente hasta configurar validación automática.
 
+## Decisiones metodológicas
+
+Las decisiones arquitectónicas o metodológicas (fuente de datos, optimizador,
+distancia de clustering, dependencias pesadas) se versionan como ADRs en
+`docs/adr/` — una decisión = un archivo incremental, nunca editado retroactivamente.
+
 ## Setup y verificación
 
 ```bash

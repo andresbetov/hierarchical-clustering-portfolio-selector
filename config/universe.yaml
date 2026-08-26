@@ -1,0 +1,16 @@
+# Tradable universe for the portfolio selector pipeline.
+# One ticker per line; uppercase; Yahoo-Finance compatible symbols.
+
+universe:
+  - JNJ   # Johnson & Johnson
+  - JPM   # JPMorgan Chase & Co.
+  - V     # Visa
+  - PG    # Procter & Gamble
+  - HD    # The Home Depot
+  - MA    # Mastercard
+  - CVX   # Chevron
+  - PFE   # Pfizer
+  - ABBV  # AbbVie
+  - TMO   # Thermo Fisher Scientific
+  - MRK   # Merck & Co.
+  - WMT   # Walmart

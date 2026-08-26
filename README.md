@@ -40,7 +40,10 @@ Con esta secuencia, el motor evita que un solo criterio domine el resultado fina
 | Riesgo | `risk_free_rate` | `0.045` |
 | Asignacion | `weight_allocation_method` | `hrp` |
 | Asignacion | `minimum_single_asset_weight` | `0.05` |
-| Asignacion | `maximum_single_asset_weight` | `0.30` |
+| Asignacion | `weight_allocation_method` | `hrp` |
+| Asignacion | `distance_metric` | `signed` |
+
+La metodologia de asignacion por defecto es Hierarchical Risk Parity (linkage → quasi-diagonalization → recursive bisection), con solvers cuadraticos estables para metodos alternativos. Las decisiones metodologicas estan versionadas como ADRs en [docs/adr/](docs/adr/README.md).
 
 ## Como interpretar los resultados
 
