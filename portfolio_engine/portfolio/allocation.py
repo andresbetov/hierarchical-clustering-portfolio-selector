@@ -46,7 +46,9 @@ def calculate_equal_weights(number_of_assets: int) -> np.ndarray:
 
 
 def calculate_inverse_volatility_weights(asset_volatilities: np.ndarray) -> np.ndarray:
-    inverse_volatilities = np.asarray(1.0 / asset_volatilities, dtype=np.float64)
+    """Inverse-volatility weights; degenerate vols floored at VOL_FLOOR_EPS (M10)."""
+    floored = np.maximum(np.asarray(asset_volatilities, dtype=np.float64), VOL_FLOOR_EPS)
+    inverse_volatilities = np.asarray(1.0 / floored, dtype=np.float64)
     return inverse_volatilities / np.sum(inverse_volatilities)
 
 

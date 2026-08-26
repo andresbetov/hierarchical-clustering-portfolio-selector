@@ -5,7 +5,10 @@ import logging
 import numpy as np
 import pytest
 
-from portfolio_engine.portfolio.allocation import calculate_risk_parity_weights
+from portfolio_engine.portfolio.allocation import (
+    calculate_inverse_volatility_weights,
+    calculate_risk_parity_weights,
+)
 from portfolio_engine.portfolio.selection import apply_asset_filters
 
 
@@ -110,6 +113,15 @@ class TestRiskParityGuards:
         contributions = weights * marginal / float(weights @ marginal)
 
         assert np.allclose(contributions, 0.25, atol=1e-6)  # equalized risk
+        assert weights.sum() == pytest.approx(1.0, abs=1e-12)
+
+
+class TestInverseVolGuard:
+    def test_zero_volatility_yields_finite_positive_normalized_weights(self):
+        weights = calculate_inverse_volatility_weights(np.array([0.0, 0.2]))
+
+        assert np.all(np.isfinite(weights))
+        assert (weights > 0).all()
         assert weights.sum() == pytest.approx(1.0, abs=1e-12)
 
 
