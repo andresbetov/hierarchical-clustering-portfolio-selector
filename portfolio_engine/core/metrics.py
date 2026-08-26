@@ -122,9 +122,19 @@ def construct_returns_matrix(prices_dictionary: dict) -> np.ndarray:
     """Build matrix [days, assets] preserving insertion order from input dict.
 
     This ordering must stay consistent with the metrics dict used downstream.
+    Raises ValueError if lengths differ: position-wise stacking of misaligned
+    series silently compares different trading days (use
+    align_prices_to_common_calendar first).
     """
 
     asset_names = list(prices_dictionary.keys())
+    lengths = {name: len(np.asarray(v)) for name, v in prices_dictionary.items()}
+    if len(set(lengths.values())) > 1:
+        detail = ", ".join(f"{k}={v}" for k, v in lengths.items())
+        raise ValueError(
+            "Misaligned price series passed to construct_returns_matrix "
+            f"(lengths differ: {detail}); align calendars first."
+        )
     returns_list = []
 
     for asset_name in asset_names:
@@ -135,6 +145,50 @@ def construct_returns_matrix(prices_dictionary: dict) -> np.ndarray:
         returns_list.append(daily_returns)
 
     return np.array(returns_list).T
+
+
+MIN_COMMON_ROWS = 2
+
+
+def align_prices_to_common_calendar(prices_dictionary: dict, dates_dictionary: dict) -> dict:
+    """Trim every price series to the common calendar (inner join on dates).
+
+    Returns a dict with the same ticker order as `prices_dictionary`, where
+    each value is the array trimmed to rows present for ALL tickers and sorted
+    ascending. Raises ValueError when fewer than MIN_COMMON_ROWS common dates
+    exist or when any series/index pair has mismatched lengths.
+    """
+    import pandas as pd
+
+    if set(prices_dictionary) != set(dates_dictionary):
+        missing_dates = set(prices_dictionary) - set(dates_dictionary)
+        raise ValueError(f"Missing dates entry for tickers: {sorted(missing_dates)}")
+
+    columns = {}
+    for ticker, prices in prices_dictionary.items():
+        dates_index = pd.DatetimeIndex(dates_dictionary[ticker])
+        values = np.asarray(prices)
+        if len(values) != len(dates_index):
+            raise ValueError(
+                f"Ticker {ticker}: {len(values)} prices vs {len(dates_index)} dates"
+            )
+        columns[ticker] = pd.Series(values.astype(np.float64), index=dates_index)
+
+    frame = pd.DataFrame(columns).sort_index()
+    frame = frame.dropna(how="any")
+
+    if len(frame) < MIN_COMMON_ROWS:
+        tickers = list(prices_dictionary)
+        first, second = tickers[0], tickers[-1]
+        raise ValueError(
+            f"Calendar intersection too small ({len(frame)} rows < {MIN_COMMON_ROWS}) "
+            f"across tickers={tickers}; e.g. span {first}..{second}."
+        )
+
+    return {
+        ticker: frame[ticker].to_numpy(dtype=np.float64)
+        for ticker in prices_dictionary
+    }
 
 
 @jit(nopython=True, cache=True)

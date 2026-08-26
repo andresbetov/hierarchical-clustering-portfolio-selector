@@ -75,8 +75,8 @@
       "dependencies": [
         "feat-002"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-008: pandas>=2.0 declarada (ya transitiva); align_prices_to_common_calendar inner-join + MIN_COMMON_ROWS=2 + ValueError guard en construct_returns_matrix; pipeline consume alineado con log rows antes/despues; tests/test_alignment.py 8 casos deterministas (short ticker/gap middle/disjoint/min rows/mismatch/missing entry/loud guard/legacy intact); suite 35->43 passed; gates verdes."
     },
     {
       "id": "feat-009",
