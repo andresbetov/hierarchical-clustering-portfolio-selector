@@ -222,8 +222,8 @@
       "dependencies": [
         "feat-021"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-022: snapshot pre/post IDENTICO bit-a-bit (logret/annret/annvol/sharpe/corr/cov); kernels vectorizados numpy puro; numba removida de pyproject (Uninstalled 3 pkgs) y de todos los imports residuales allocation/selection; ADR 004 + decision-log M6 resuelta; red feat-021 intacta: 140 tests SIN modificar asserts; gates verdes."
     },
     {
       "id": "feat-023",

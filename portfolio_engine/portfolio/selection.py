@@ -4,7 +4,6 @@ import logging
 import math
 
 import numpy as np
-from numba import jit
 
 from ..core.config import PortfolioConfig
 from ..core.metrics import compute_correlation_distance_matrix
@@ -76,11 +75,11 @@ def apply_asset_filters(
     return filtered_metrics, filtered_prices
 
 
-@jit(nopython=True, cache=True)
 def perform_hierarchical_clustering(distance_matrix: np.ndarray, distance_threshold: float) -> np.ndarray:
     """Greedy agglomerative clustering using a fixed distance threshold.
 
     The algorithm repeatedly merges the closest pair of different clusters.
+    Vectorized pair-search replaces the removed numba kernel (feat-022).
     """
 
     matrix_size = distance_matrix.shape[0]
