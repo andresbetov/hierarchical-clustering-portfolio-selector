@@ -2,11 +2,11 @@
 
 ## Current Objective
 
-- Goal: ejecución continua del DAG — **feat-004..008 mergeados** (PR #8..#12), Higiene 1-7 completa, Fase D avanzada (A2✓ A3✓)
-- Current status: develop = 17c749a; suite 43 passed; CI verde x3 corridas consecutivas
-- Siguiente sesión: arrancar feat-011/009/013 (tres desbloqueados)
+- Goal: racha de ejecución feat-011..014 COMPLETA — bloque Datos + numérico-asignación cerrados
+- Current status: develop @b48298a · suite **88 passed** · próximo feat-015 (A1)
+- Branch: work consolidado en develop vía PRs #13..#18 (squash)
 
-## Completed This Session (continuación)
+## Completed This Session
 
 - feat-004: ruff+pyright+CI matrix+pre-commit (PR #8) — 39 hallazgos mecánicos resueltos
 - feat-005: logging paquete+LOG_LEVEL+Agg guard+pipeline sin pyplot (PR #9) — bug getLevelName cazado por TDD
@@ -51,4 +51,10 @@
 
 ## Recommended Next Step
 
-- feat-006 (M7): [project.scripts] portfolio = scripts entry (o módulo cli mínimo); verificar uv run portfolio --help equivalentes; tras merge Fase D arranca con feat-007 (A2 risk-free single source)
+- feat-015 (A1): decidir via ADR implementar vol-target scaling sobre el punto único Dykstra (feat-014) O eliminar target_portfolio_volatility muerto — luego M2/B4 y hacia HRP real feat-018
+
+## Lições de la racha (para replicar)
+
+- TDD expuso 3 defectos míos en vivo: getLevelName(int)→str, TOML section-swallow, water-filling inconsistente → los tests SON el diseño
+- Cambios multi-sección TOML: validar build inmediatamente
+- Fixtures autouse restauran estado global (propagate) para aislamiento ante orden de sesión

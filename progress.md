@@ -26,8 +26,20 @@ Fase Higiene posiciones 1-6 completas. CI verde en primera corrida (matriz 3.11/
 ### What's Next
 
 1. PR de esta rama → develop
-2. **Siguiente del DAG**: feat-011 lookback-param-calendar (A4, pos 10; deps feat-008 ✓) o feat-009 numeric-guards (C3, pos 11; deps feat-008 ✓) o feat-013 frozen-config (M1, pos 14; dep feat-002 ✓) — tres desbloqueados; elegir uno por sesión
-3. Luego: feat-010→M10, feat-012→C2, feat-014→C4, y así hasta HRP real (feat-018)
+### What's Done (racha feat-011..014)
+
+- [x] **feat-011** A4: ventana calendario exacta `_resolve_window` pura + lookback requerido sin default (+6 tests) — PR #13
+- [x] **feat-009** C3: ε-floor, Sharpe NaN para vol degenerada, ddof=1 consistente, corr diagonal honesta, filtros nombrando excluidos, risk-parity protegida (+13 tests) — PR #14 · capability `numeric-correctness`
+- [x] **feat-010** M10: piso ε en inverse-vol reutilizando helper compartido (+1 test) — PR #15
+- [x] **feat-012** C2: batch único yf.download, fallback Adj→Close nombrado, rechazos agregados, retry stdlib acotado (+7 tests offline vía monkeypatch del boundary) — PR #16
+- [x] **feat-013** M1: config frozen dataclass validada, enum público, dispatch sin fallback muerto (+10 tests; fixture integración migrada a kwargs) — PR #17 · capability `configuration-contract`
+- [x] **feat-014** C4: Dykstra cíclico {≥min}{≤max}{simplex} — bounds simultáneos garantizados; 2 bugs propios cazados por TDD (+8 tests, estrés 100 seeds) — PR #18
+
+## What's Next
+
+1. `feat-015` volatility-target-or-removal (A1): ADR implementar scaling w*=target/vol alrededor del punto único Dykstra O eliminar param muerto
+2. Luego M2 distancia ADR (feat-016) y B4 (feat-017) — ambos sobre config frozen ya estable
+3. feat-018 HRP real consume 008+009+012+013+016
 4. Regla vigente: features complejos leen docs/decision-log-feat001.md
 4. Regla vigente: features complejos (016/018/021/023) leen docs/decision-log-feat001.md
 
