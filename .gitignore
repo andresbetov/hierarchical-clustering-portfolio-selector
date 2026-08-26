@@ -13,4 +13,3 @@ htmlcov/
 #charts/
 *.nbc
 *.nbi
-uv.lock
