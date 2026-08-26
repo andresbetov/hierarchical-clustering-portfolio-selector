@@ -199,8 +199,8 @@
       "dependencies": [
         "feat-019"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-020: _portfolio_summary_metrics pura (vol sqrt(wTΣw), sharpe honesto, NaN si vol degenerada); plot_optimal_portfolio_analysis acepta covariance_matrix (pipeline la pasa; wrapper descarta _ ahora cov); fallback diagonal con warning solo defensivo; 6 tests: rho=0 equivale legacy exacto, rho=0.9 mayor riesgo/menor sharpe, rho=1 == weighted avg vol analitico, manual wTW agreement, warning fallback, NaN degenerado. Suite 123->129 passed."
     },
     {
       "id": "feat-021",
