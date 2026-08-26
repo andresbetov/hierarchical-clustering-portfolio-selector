@@ -2,48 +2,48 @@
 
 ## Current Objective
 
-- Goal: feat-001 — analisis de orden de resolucion de los 28 hallazgos de auditoria → COMPLETADO
-- Current status: secuencia aprobada y registrada; siguiente feature listo (feat-002)
-- Branch / commit: `feat/resolution-order-analysis` sobre `develop`
+- Goal: feat-002 verification-entrypoint-fix → COMPLETADO (suite real verde por primera vez)
+- Current status: rama lista para PR; siguiente feature feat-003
+- Branch / commit: `fix/verification-entrypoint` sobre `develop@e1f21c7`
 
 ## Completed This Session
 
-- [x] Change openspec `feat-001-analisis-orden-resolucion`: proposal + specs(resolution-planning) + design + tasks — 9/9 tasks
-- [x] `docs/orden-de-resolucion.md`: DAG (27 aristas duras, 7 rechazadas documentadas), ordenación total 28 posiciones con justificación "X antes que Y porque Z", 5 desempates, anti-ciclos mecánico
-- [x] `feature_list.json`: feat-001 done + feat-002..feat-027 con dependencies mínimas duras
-- [x] Sesión cerrada: progress/handoff actualizados
+- [x] Paso previo: PR #5 (feat-001) squash-mergeado a develop, rama borrada
+- [x] Entorno: uv 0.12.6 instalado; uv sync funcional
+- [x] Change openspec `feat-002-verification-entrypoint-fix` (proposal + specs/verification-harness + tasks; design omitido condicionalmente) — valid ✓
+- [x] Fix A7 completo: Makefile test real, pytest config (testpaths/-q/pythonpath), init.sh vía uv, CONTRIBUTING alineado
+- [x] Suite REAL por primera vez en la historia del repo: **16 passed**
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| change validation | `openspec validate feat-001-analisis-orden-resolucion` | ✓ valid | tras añadir scenario faltante en spec |
-| tracker invariants | machine-check python | ✓ 28/28 cobertura · deps solo-hacia-atrás · schema canónico | ver consola sesión 2026-08-26 |
-| harness | validate-harness.mjs | 100/100 | state 5/5 |
-| sintaxis | `./init.sh` | exit 0 | ver output fresco en task 4.2 |
+| suite directa | `uv run pytest` | ✓ 16 passed | reveló y corrigió ModuleNotFoundError portfolio_engine |
+| make test | `make test` | ✓ 16 passed, exit 0 | primera vez que el target funciona |
+| harness completo | `./init.sh` | exit 0 con pytest visible | ya no saltea tests con uv presente |
+| change validation | `openspec validate` | valid | — |
 
 ## Files Changed
 
-- `docs/orden-de-resolucion.md` (nuevo) · `feature_list.json` · `openspec/changes/feat-001-analisis-orden-resolucion/*` (nuevo) · `progress.md` · `session-handoff.md`
+- `Makefile`, `pyproject.toml`, `init.sh`, `CONTRIBUTING.md`
+- `feature_list.json` (feat-002 done), `progress.md`, `session-handoff.md`
+- `openspec/changes/feat-002-verification-entrypoint-fix/`
 
 ## Decisions Made
 
-- Severidad ≠ orden: dependencias técnicas con evidencia file:line mandan
-- Micro-ciclo M1↔M8 roto contract-first; desempates con criterio trascendencia documentado
-- Features = tramos contiguos (verificables aislados vía ./init.sh)
+- pythonpath=["."] como fix in-scope de la capability verification-harness (packaging integral → feat-003)
+- Documentos históricos de auditoría no se reescriben retroactivamente
 
 ## Blockers / Risks
 
-- Ambiental: uv ausente en entorno actual (init.sh corre parcial). Prereq para feat-002.
-- Dependencias ocultas pueden emerger al ejecutar feat-002+: actualizar doc+tracker en el feature afectado.
+- Numba bajo Python 3.14 no ejercitado a fondo por la suite (kernels pesados) — vigilar feat-022
 
 ## Next Session Startup
 
-1. Read `AGENTS.md` → run `./init.sh`
-2. Read `docs/orden-de-resolucion.md` §4 (secuencia) y §7 (features)
-3. Tomar ÚNICAMENTE feat-002 (verification entrypoint fix); flujo openspec-propose → apply
-4. Al cerrar: tracker evidence + progress.md
+1. AGENTS.md → ./init.sh (debe pasar inmediatamente, ahora con tests reales)
+2. PR de esta rama → develop si aún no se integró
+3. feat-003 project-manifests-lockfile: flujo openspec completo
 
 ## Recommended Next Step
 
-- feat-002: `Makefile:17` → `uv run pytest -q`, crear `pytest.ini` (testpaths=tests), corregir `make test` documentado como roto en CONTRIBUTING.md:81
+- feat-003 (B1+A6): versionar uv.lock, renombrar paquete xai-financial-predictor-engine → nombre real, requires-python>=3.10, limpiar deps fantasma — ahora sin riesgo gracias a la suite

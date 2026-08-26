@@ -1,10 +1,10 @@
 .PHONY: install test run run-debug clean help
 
 help:
-	@echo "XAI Financial Predictor Engine — Common Tasks"
+	@echo "Hierarchical Clustering Portfolio Selector — Common Tasks"
 	@echo ""
 	@echo "  make install    Install dependencies via uv"
-	@echo "  make test       Run smoke tests (offline)"
+	@echo "  make test       Run the offline test suite (pytest)"
 	@echo "  make run        Run full portfolio analysis (downloads data)"
 	@echo "  make run-debug  Run with DEBUG logging"
 	@echo "  make clean      Remove cache, charts, build artifacts"
@@ -14,7 +14,7 @@ install:
 	uv sync
 
 test:
-	uv run python tests/smoke_test.py
+	uv run python -m pytest
 
 run:
 	uv run scripts/assets-investment.py

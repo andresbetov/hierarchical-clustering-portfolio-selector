@@ -73,10 +73,6 @@ SemVer mapping: `feat` → MINOR · `fix` → PATCH · `!` / `BREAKING CHANGE` �
 
 ```bash
 uv sync
-uv run pytest          # suite completa (offline)
+uv run pytest          # suite completa (offline) — equivalente a make test
 make run               # pipeline completo (requiere red, yfinance)
 ```
-
-`make test` actualmente apunta a un archivo inexistente (`tests/smoke_test.py`);
-usa `uv run pytest` como fuente de verdad hasta corregirlo (ver discrepancias
-auditadas).
