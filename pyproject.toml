@@ -28,6 +28,7 @@ portfolio-run = "portfolio_engine.cli:main"
 dev = [
     "ruff>=0.12",
     "pyright>=1.1.403",
+    "hypothesis>=6.100",
 ]
 
 [tool.ruff]

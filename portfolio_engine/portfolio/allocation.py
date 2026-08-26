@@ -201,6 +201,36 @@ _BOUNDS_MAX_ITERATIONS = 500
 _BOUNDS_TOLERANCE = 1e-9
 
 
+def _resolve_effective_bounds(n_assets: int, config: PortfolioConfig):
+    """Concentration-mandate relaxation for tiny surviving universes.
+
+    With long-only fully-invested mandates, max_weight cannot bind below
+    ceil(1/max) assets. Crashing `main()` over a legitimately small screened
+    universe produces zero value; relaxing WITH a critical named warning
+    preserves transparency. The pure solver (feat-014) stays untouched.
+    """
+    max_weight = config.maximum_single_asset_weight
+    min_weight = config.minimum_single_asset_weight
+    relaxations = []
+
+    if n_assets * max_weight < 1.0:
+        max_weight = 1.0 / n_assets
+        relaxations.append(f"max_weight -> {max_weight:.4f}")
+
+    if n_assets * min_weight > 1.0:
+        min_weight = 0.0
+        relaxations.append("min_weight -> 0.0")
+
+    if relaxations:
+        logger.critical(
+            "Concentration mandate relaxed for small universe: assets=%d "
+            "relaxations=%s (config bounds would be mathematically infeasible)",
+            n_assets,
+            relaxations,
+        )
+    return min_weight, max_weight
+
+
 def _project_onto_simplex(vector: np.ndarray) -> np.ndarray:
     """Exact Euclidean projection onto the probability simplex (sum==1, w>=0)."""
     size = vector.size
@@ -352,10 +382,11 @@ def calculate_optimal_portfolio_weights(
             f"Unvalidated allocation method reached dispatch: '{config.weight_allocation_method}'"
         )
 
+    effective_min, effective_max = _resolve_effective_bounds(len(portfolio_tickers), config)
     weights = apply_weight_constraints(
         weights,
-        config.minimum_single_asset_weight,
-        config.maximum_single_asset_weight,
+        effective_min,
+        effective_max,
     )
 
     portfolio_weights = {ticker: weight for ticker, weight in zip(portfolio_tickers, weights)}
@@ -393,10 +424,11 @@ def calculate_optimal_portfolio_weights_hrp(
 
     raw_weights = calculate_hrp_weights(covariance_matrix)
 
+    effective_min, effective_max = _resolve_effective_bounds(len(tickers), config)
     constrained = apply_weight_constraints(
         raw_weights,
-        config.minimum_single_asset_weight,
-        config.maximum_single_asset_weight,
+        effective_min,
+        effective_max,
     )
 
     weights_by_ticker = {ticker: float(weight) for ticker, weight in zip(tickers, constrained)}
