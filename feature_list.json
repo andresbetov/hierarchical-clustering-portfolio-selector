@@ -273,8 +273,8 @@
         "feat-023",
         "feat-025"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-027: __init__.py docstring de paquete (hrp default/signed/walk-forward/ADRs); exports canonicos añadidos (calculate_hrp_weights, load_universe, walk_forward_evaluate, MarketDataProvider/YFinanceProvider, construct_returns_matrix recuperado); pyright warning __all__ vs imports reales saldado (sharpe/risk_parity faltaban por perdida heredoc); data_fetch/selection docstrings a arquitectura final. Suite 154 passed; gates verdes."
     }
   ]
 }
