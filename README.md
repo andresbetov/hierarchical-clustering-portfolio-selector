@@ -42,8 +42,6 @@ Con esta secuencia, el motor evita que un solo criterio domine el resultado fina
 | Asignacion | `minimum_single_asset_weight` | `0.05` |
 | Asignacion | `maximum_single_asset_weight` | `0.30` |
 
-`target_portfolio_volatility` existe en configuracion, pero hoy no se aplica como restriccion activa en la optimizacion de pesos.
-
 ## Como interpretar los resultados
 
 La lectura profesional del output es secuencial. Si el universo filtrado cae demasiado, el problema no esta en el optimizador sino en la dureza de umbrales para ese conjunto de activos. Si el numero final de seleccionados es bajo, suele indicar alta similitud entre candidatos. Si los pesos quedan cerca de los limites minimo/maximo, la estructura de riesgo del subconjunto obliga al motor a usar restricciones de concentracion.
