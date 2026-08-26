@@ -95,8 +95,8 @@
       "dependencies": [
         "feat-009"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion: np.maximum(vols, VOL_FLOOR_EPS) pre-inversion; test degenerado vol=0 finitos/positivos/suma 1; suite 62->63 passed; gates verdes."
     },
     {
       "id": "feat-011",
