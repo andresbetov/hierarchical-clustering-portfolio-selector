@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 import numpy as np
 
@@ -13,11 +13,35 @@ from ..core.metrics import (
 logger = logging.getLogger(__name__)
 
 
-def download_and_calculate_metrics(ticker_symbols: list, risk_free_rate: float):
-    """Download 5Y adjusted prices and compute per-asset return/risk metrics.
+def _resolve_window(today: date, lookback_years: int) -> tuple[date, date]:
+    """Resolve (start, end) download bounds in exact calendar years.
 
-    `risk_free_rate` is REQUIRED — the single source of truth is
-    PortfolioConfig.risk_free_rate; no local default exists on purpose.
+    end = today - 1 day; start = same month/day `lookback_years` earlier.
+    Feb-29 endpoints clamp to Feb-28 when the target year is not a leap year.
+    Pure function — no network, no global state.
+    """
+    if lookback_years < 1:
+        raise ValueError(f"lookback_years must be >= 1, got {lookback_years}")
+
+    end = today - timedelta(days=1)
+    try:
+        start = end.replace(year=end.year - lookback_years)
+    except ValueError:  # Feb-29 on a non-leap target year
+        start = end.replace(year=end.year - lookback_years, day=28)
+    return start, end
+
+
+def download_and_calculate_metrics(
+    ticker_symbols: list,
+    risk_free_rate: float,
+    lookback_years: int,
+):
+    """Download adjusted prices over an explicit calendar window and compute
+    per-asset return/risk metrics.
+
+    Both `risk_free_rate` and `lookback_years` are REQUIRED — their single
+    sources of truth are PortfolioConfig attributes; no local defaults exist
+    on purpose.
 
     Returns:
         tuple[dict, dict, dict]:
@@ -29,8 +53,7 @@ def download_and_calculate_metrics(ticker_symbols: list, risk_free_rate: float):
     # Keep import local so offline/unit tests can import the module without yfinance.
     import yfinance as yf
 
-    end_date = (datetime.today() - timedelta(days=1)).date()
-    start_date = end_date - timedelta(days=5 * 365)
+    start_date, end_date = _resolve_window(datetime.today().date(), lookback_years)
 
     logger.info(
         "Downloading historical prices: tickers=%d window_start=%s window_end=%s",

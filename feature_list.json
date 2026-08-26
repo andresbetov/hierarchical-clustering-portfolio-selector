@@ -105,8 +105,8 @@
       "dependencies": [
         "feat-008"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion: _resolve_window pura (replace-year + clamp Feb29); lookback requerido sin default (TypeError binding test); config.lookback_years=5 pasado por pipeline; grep 5*365=0; 6 tests fecha nuevos; suite 43->49 passed; gates verdes."
     },
     {
       "id": "feat-012",

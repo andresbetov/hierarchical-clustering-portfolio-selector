@@ -2,18 +2,18 @@
 
 ## Current Objective
 
-- Goal: feat-006 package-console-entrypoint → COMPLETADO — **Fase Higiene 1-7 cerrada**
-- Current status: proyecto instalable + entrypoint portfolio-run; abre Fase D
-- Branch / commit: `feat/package-console-entrypoint` sobre `develop@4f4ea69`
+- Goal: ejecución continua del DAG — **feat-004..008 mergeados** (PR #8..#12), Higiene 1-7 completa, Fase D avanzada (A2✓ A3✓)
+- Current status: develop = 17c749a; suite 43 passed; CI verde x3 corridas consecutivas
+- Siguiente sesión: arrancar feat-011/009/013 (tres desbloqueados)
 
-## Completed This Session
+## Completed This Session (continuación)
 
-- [x] PR #9 (feat-005) mergeada; suite 30 passed con tests runtime-diagnostics
-- [x] Change openspec `feat-006-package-console-entrypoint` — valid ✓
-- [x] hatchling build-system: uv sync ahora instala el PROYECTO (primera vez)
-- [x] entrypoint portfolio-run → cli:main verificado via importlib.metadata
-- [x] script legacy wrapper sin sys.path hacks; TOML corruption al vuelo corregida
-- [x] Suite 30→33 passed (test_cli identidad)
+- feat-004: ruff+pyright+CI matrix+pre-commit (PR #8) — 39 hallazgos mecánicos resueltos
+- feat-005: logging paquete+LOG_LEVEL+Agg guard+pipeline sin pyplot (PR #9) — bug getLevelName cazado por TDD
+- feat-006: hatchling instalable+portfolio-run+wrapper limpio (PR #10) — TOML corruption atrapada por build
+- feat-007: risk_free_rate requerido, fuente única config (PR #11)
+- feat-008: calendario común inner-join para toda matriz multivariada + pandas explícita (PR #12) — 8 tests
+- Cada feature: openspec-propose→validate→apply→init.sh fresco→archive→PR squash→CI watch
 
 ## Verification Evidence
 

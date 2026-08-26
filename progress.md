@@ -16,7 +16,8 @@ Fase Higiene posiciones 1-6 completas. CI verde en primera corrida (matriz 3.11/
 - [x] **feat-004**: dev-deps pinned; ruff(E,F,W/I/l120)+pyright(basic); Makefile lint/types; init.sh 4 gates; ci.yml matriz; pre-commit opt-in — 18+21 hallazgos mecánicos resueltos · PR #8 mergeada
 - [x] **feat-005**: logging aislado+idempotente, LOG_LEVEL funcional, guard Agg, pipeline sin pyplot, 14 tests contrato — PR #9
 - [x] **feat-006**: paquete instalable + entrypoint portfolio-run — PR #10, CI verde x2
-- [x] **feat-007**: risk_free_rate requerido sin default; capability market-data-contract creada; 2 tests contrato offline
+- [x] **feat-007**: risk_free_rate requerido sin default; market-data-contract creada — PR #11
+- [x] **feat-008**: alineación por calendario común (inner join) + guard loud + pandas explícita + 8 tests — PR #12
 
 ### What's In Progress
 
@@ -25,8 +26,8 @@ Fase Higiene posiciones 1-6 completas. CI verde en primera corrida (matriz 3.11/
 ### What's Next
 
 1. PR de esta rama → develop
-2. `feat-008` returns-date-alignment (A3): join por fechas antes de retornos — dep crítica para C3/C1
-3. Luego feat-011/009/010/012 y M1/C4/A1
+2. **Siguiente del DAG**: feat-011 lookback-param-calendar (A4, pos 10; deps feat-008 ✓) o feat-009 numeric-guards (C3, pos 11; deps feat-008 ✓) o feat-013 frozen-config (M1, pos 14; dep feat-002 ✓) — tres desbloqueados; elegir uno por sesión
+3. Luego: feat-010→M10, feat-012→C2, feat-014→C4, y así hasta HRP real (feat-018)
 4. Regla vigente: features complejos leen docs/decision-log-feat001.md
 4. Regla vigente: features complejos (016/018/021/023) leen docs/decision-log-feat001.md
 
