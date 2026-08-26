@@ -3,7 +3,6 @@
 import logging
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from ..core.config import PortfolioConfig
@@ -12,6 +11,7 @@ from ..data.data_fetch import download_and_calculate_metrics
 from ..portfolio.allocation import calculate_optimal_portfolio_weights
 from ..portfolio.selection import apply_asset_filters, select_optimal_diversified_portfolio
 from ..viz.reporting import (
+    finalize_report_show,
     plot_asset_metrics_comparison,
     plot_correlation_covariance_matrices,
     plot_correlation_heatmap,
@@ -204,9 +204,9 @@ def generate_complete_analysis_report(
     else:
         logger.warning("Skipping optimal portfolio chart: no selected assets")
 
-    if show_plots:
-        # Keep windows open only once after all figures are created.
-        plt.show()
+    # Single lifecycle decision point: display interactively when requested
+    # (and possible), otherwise close everything deterministically.
+    finalize_report_show(show_plots)
 
     logger.info(
         "Report generated: plots=%d analyzed=%d filtered=%d final_portfolio=%d",

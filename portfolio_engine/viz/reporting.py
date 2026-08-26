@@ -1,23 +1,83 @@
 """Visualization and text-report utilities for portfolio outputs."""
 
-import matplotlib.pyplot as plt
-import numpy as np
-import seaborn as sns
+import logging
+import os
+import sys
+
+import matplotlib
 
 from ..core.config import PortfolioConfig
+
+logger = logging.getLogger(__name__)
+
+
+def _resolve_backend(env: dict[str, str], platform: str) -> str | None:
+    """Pick the matplotlib backend for the current environment.
+
+    Returns "Agg" only when there is no display available, the user has NOT
+    forced MPLBACKEND, and the platform cannot provide a native backend
+    (non-macOS). Returns None when the environment already dictates one.
+    """
+    if env.get("MPLBACKEND"):
+        return None
+    if platform == "darwin":
+        return None
+    if env.get("DISPLAY"):
+        return None
+    return "Agg"
+
+
+def _apply_backend_guard() -> None:
+    """Force Agg before pyplot/seaborn get imported anywhere in the process.
+
+    seaborn imports pyplot internally, so this must run before that import.
+    """
+    resolved = _resolve_backend(dict(os.environ), sys.platform)
+    if resolved:
+        logger.debug("Headless environment detected: forcing backend=%s", resolved)
+        matplotlib.use(resolved)
+
+
+_apply_backend_guard()
+
+import matplotlib.pyplot as plt  # noqa: E402  (must run after backend guard)
+import numpy as np  # noqa: E402  (grouped after guard: see matplotlib/seaborn)
+import seaborn as sns  # noqa: E402  (seaborn pulls pyplot; guard must run first)
+
+
+def finalize_report_show(show: bool) -> None:
+    """Close or display all pending figures depending on the runtime mode.
+
+    - show=False (batch/report mode): deterministic close of every figure.
+    - show=True with an interactive backend: non-blocking pause so windows render.
+    - show=True under a headless (Agg) backend: falls back to closing quietly,
+      guaranteeing CI runs never hang or warn about interactivity.
+    """
+    if not show:
+        plt.close("all")
+        return
+
+    if plt.get_backend().lower() == "agg":
+        plt.close("all")
+        return
+
+    # Non-blocking per figure; caller can block once at the end if desired.
+    plt.show(block=False)
+    plt.pause(0.001)
 
 
 def _finalize_plot(save_path: str | None = None, show_plot: bool = True):
     """Apply consistent save/show behavior for every chart.
 
-    Uses non-blocking display so batch report generation does not stop between
-    figures when `show_plot=True`.
+    Deterministic lifecycle: figures are always closed when not requested to
+    display; interactive backends get non-blocking shows. Under Agg the show
+    branch is skipped entirely so CI never warns or hangs.
     """
 
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
 
-    if show_plot:
+    if show_plot and plt.get_backend().lower() != "agg":
         # Non-blocking per figure; caller can block once at the end if desired.
         plt.show(block=False)
         plt.pause(0.001)
