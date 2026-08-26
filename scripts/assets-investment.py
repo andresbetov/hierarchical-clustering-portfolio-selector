@@ -1,5 +1,5 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Make project root importable when running this script directly.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -10,7 +10,6 @@ from portfolio_engine import (
     generate_complete_analysis_report,
     print_portfolio_summary,
 )
-
 
 if __name__ == "__main__":
     configure_logging()

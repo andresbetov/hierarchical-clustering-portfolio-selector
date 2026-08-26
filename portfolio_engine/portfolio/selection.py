@@ -1,12 +1,12 @@
 """Asset filtering and diversified candidate selection."""
 
 import logging
+
 import numpy as np
 from numba import jit
 
 from ..core.config import PortfolioConfig
 from ..core.metrics import compute_correlation_distance_matrix
-
 
 logger = logging.getLogger(__name__)
 
@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 def apply_asset_filters(
     asset_metrics: dict,
     closing_prices: dict,
-    minimum_sharpe: float = None,
-    maximum_volatility: float = None,
+    minimum_sharpe: float | None = None,
+    maximum_volatility: float | None = None,
 ):
     """Apply basic Sharpe/volatility screening before correlation clustering."""
 
@@ -43,7 +43,11 @@ def apply_asset_filters(
         filtered_metrics[ticker] = metrics
         filtered_prices[ticker] = closing_prices[ticker]
 
-    logger.info("Asset filters complete: kept=%d rejected=%d", len(filtered_metrics), len(asset_metrics) - len(filtered_metrics))
+    logger.info(
+        "Asset filters complete: kept=%d rejected=%d",
+        len(filtered_metrics),
+        len(asset_metrics) - len(filtered_metrics),
+    )
     return filtered_metrics, filtered_prices
 
 

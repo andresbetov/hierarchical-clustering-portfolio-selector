@@ -7,7 +7,7 @@ import seaborn as sns
 from ..core.config import PortfolioConfig
 
 
-def _finalize_plot(save_path: str = None, show_plot: bool = True):
+def _finalize_plot(save_path: str | None = None, show_plot: bool = True):
     """Apply consistent save/show behavior for every chart.
 
     Uses non-blocking display so batch report generation does not stop between
@@ -25,7 +25,12 @@ def _finalize_plot(save_path: str = None, show_plot: bool = True):
         plt.close()
 
 
-def plot_historical_prices(historical_prices: dict, price_dates: dict, save_path: str = None, show_plot: bool = True):
+def plot_historical_prices(
+    historical_prices: dict,
+    price_dates: dict,
+    save_path: str | None = None,
+    show_plot: bool = True,
+):
     plt.figure(figsize=(15, 10))
 
     for ticker in historical_prices:
@@ -48,7 +53,7 @@ def plot_historical_prices(historical_prices: dict, price_dates: dict, save_path
 def plot_risk_return_scatter(
     asset_metrics: dict,
     config: PortfolioConfig,
-    save_path: str = None,
+    save_path: str | None = None,
     show_plot: bool = True,
 ):
     plt.figure(figsize=(12, 8))
@@ -61,9 +66,20 @@ def plot_risk_return_scatter(
     scatter = plt.scatter(volatilities, returns, c=sharpe_ratios, s=100, cmap="RdYlGn", alpha=0.7, edgecolors="black")
 
     for i, ticker in enumerate(tickers):
-        plt.annotate(ticker, (volatilities[i], returns[i]), xytext=(5, 5), textcoords="offset points", fontweight="bold")
+        plt.annotate(
+            ticker,
+            (volatilities[i], returns[i]),
+            xytext=(5, 5),
+            textcoords="offset points",
+            fontweight="bold",
+        )
 
-    plt.axhline(y=config.risk_free_rate, color="blue", linestyle="--", label=f"Risk-free rate ({config.risk_free_rate:.1%})")
+    plt.axhline(
+        y=config.risk_free_rate,
+        color="blue",
+        linestyle="--",
+        label=f"Risk-free rate ({config.risk_free_rate:.1%})",
+    )
     plt.axvline(
         x=config.maximum_volatility_threshold,
         color="red",
@@ -86,7 +102,7 @@ def plot_correlation_covariance_matrices(
     correlation_matrix: np.ndarray,
     covariance_matrix: np.ndarray,
     asset_tickers: list,
-    save_path: str = None,
+    save_path: str | None = None,
     show_plot: bool = True,
 ):
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
@@ -136,7 +152,7 @@ def plot_correlation_covariance_matrices(
 def plot_correlation_heatmap(
     correlation_matrix: np.ndarray,
     asset_tickers: list,
-    save_path: str = None,
+    save_path: str | None = None,
     show_plot: bool = True,
 ):
     plt.figure(figsize=(12, 10))
@@ -160,7 +176,7 @@ def plot_correlation_heatmap(
     _finalize_plot(save_path, show_plot)
 
 
-def plot_asset_metrics_comparison(asset_metrics: dict, save_path: str = None, show_plot: bool = True):
+def plot_asset_metrics_comparison(asset_metrics: dict, save_path: str | None = None, show_plot: bool = True):
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
 
     tickers = list(asset_metrics.keys())
@@ -191,7 +207,13 @@ def plot_asset_metrics_comparison(asset_metrics: dict, save_path: str = None, sh
 
     axes[1, 1].scatter(volatilities, returns, s=100, alpha=0.7, c=sharpe_ratios, cmap="RdYlGn")
     for i, ticker in enumerate(tickers):
-        axes[1, 1].annotate(ticker, (volatilities[i], returns[i]), xytext=(3, 3), textcoords="offset points", fontsize=8)
+        axes[1, 1].annotate(
+            ticker,
+            (volatilities[i], returns[i]),
+            xytext=(3, 3),
+            textcoords="offset points",
+            fontsize=8,
+        )
     axes[1, 1].set_title("Risk-Return Efficiency", fontweight="bold")
     axes[1, 1].set_xlabel("Annual Volatility")
     axes[1, 1].set_ylabel("Annual Return")
@@ -206,7 +228,7 @@ def plot_filtering_analysis(
     all_metrics: dict,
     filtered_metrics: dict,
     config: PortfolioConfig,
-    save_path: str = None,
+    save_path: str | None = None,
     show_plot: bool = True,
 ):
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
@@ -266,7 +288,7 @@ def plot_optimal_portfolio_analysis(
     optimal_portfolio: dict,
     portfolio_weights: dict,
     config: PortfolioConfig,
-    save_path: str = None,
+    save_path: str | None = None,
     show_plot: bool = True,
 ):
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
@@ -297,7 +319,13 @@ def plot_optimal_portfolio_analysis(
         edgecolors="black",
     )
     for i, ticker in enumerate(tickers):
-        axes[1, 0].annotate(ticker, (volatilities[i], returns[i]), xytext=(5, 5), textcoords="offset points", fontweight="bold")
+        axes[1, 0].annotate(
+            ticker,
+            (volatilities[i], returns[i]),
+            xytext=(5, 5),
+            textcoords="offset points",
+            fontweight="bold",
+        )
 
     axes[1, 0].set_title("Selected Assets: Risk-Return Profile\n(Bubble size = Weight)", fontweight="bold")
     axes[1, 0].set_xlabel("Annual Volatility")

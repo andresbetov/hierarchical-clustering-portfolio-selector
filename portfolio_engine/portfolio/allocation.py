@@ -6,7 +6,6 @@ from numba import jit
 
 from ..core.config import PortfolioConfig
 
-
 logger = logging.getLogger(__name__)
 
 

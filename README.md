@@ -1,5 +1,7 @@
 # Hierarchical Clustering Portfolio Selector
 
+[![CI](https://github.com/andresbetov/hierarchical-clustering-portfolio-selector/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/andresbetov/hierarchical-clustering-portfolio-selector/actions/workflows/ci.yml)
+
 Pipeline cuantitativo para construir carteras de renta variable con enfoque de diversificacion efectiva. El motor descarga datos de mercado, calcula metricas de riesgo-retorno, filtra activos con criterios explicitos, reduce redundancia con clustering jerarquico y asigna pesos con `risk_parity` bajo restricciones operativas.
 
 ## Resumen ejecutivo

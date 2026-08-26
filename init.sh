@@ -15,6 +15,20 @@ if command -v uv >/dev/null 2>&1; then
   # Prefer the project interpreter: uv sync puts pytest in .venv, system python3 may not see it.
   # exit 5 = no tests collected — not a failure for harness bootstrap.
   uv run python -m pytest || [ $? -eq 5 ]
+
+  echo "=== Lint (ruff) ==="
+  if uv run python -c "import ruff" 2>/dev/null || uv run ruff --version >/dev/null 2>&1; then
+    uv run ruff check .
+  else
+    echo "ruff not installed — skipping lint (run 'uv sync' to enable)"
+  fi
+
+  echo "=== Type check (pyright) ==="
+  if uv run pyright --version >/dev/null 2>&1; then
+    uv run pyright
+  else
+    echo "pyright not installed — skipping type check (run 'uv sync' to enable)"
+  fi
 elif python3 -c "import pytest" 2>/dev/null; then
   # exit 5 = no tests collected — not a failure for harness bootstrap
   python3 -m pytest || [ $? -eq 5 ]

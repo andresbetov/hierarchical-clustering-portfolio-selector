@@ -4,6 +4,8 @@ help:
 	@echo "Hierarchical Clustering Portfolio Selector — Common Tasks"
 	@echo ""
 	@echo "  make install    Install dependencies via uv"
+	@echo "  make lint       Run ruff static checks"
+	@echo "  make types      Run pyright type checks"
 	@echo "  make test       Run the offline test suite (pytest)"
 	@echo "  make run        Run full portfolio analysis (downloads data)"
 	@echo "  make run-debug  Run with DEBUG logging"
@@ -12,6 +14,12 @@ help:
 
 install:
 	uv sync
+
+lint:
+	uv run ruff check .
+
+types:
+	uv run pyright
 
 test:
 	uv run python -m pytest

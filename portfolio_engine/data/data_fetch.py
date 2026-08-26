@@ -1,13 +1,14 @@
 import logging
 from datetime import datetime, timedelta
 
+import numpy as np
+
 from ..core.metrics import (
     calculate_annualized_return,
     calculate_annualized_volatility,
     calculate_sharpe_ratio,
     compute_logarithmic_returns,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +45,14 @@ def download_and_calculate_metrics(ticker_symbols: list, risk_free_rate: float =
             stock_data = yf.Ticker(ticker)
             price_history = stock_data.history(start=start_date, end=end_date, auto_adjust=False)
 
-            adjusted_closing_prices = price_history["Adj Close"].values
+            adjusted_closing_prices = np.asarray(price_history["Adj Close"].values, dtype=np.float64)
             dates = price_history.index
             historical_prices[ticker] = adjusted_closing_prices
             price_dates[ticker] = dates
 
             daily_log_returns = compute_logarithmic_returns(adjusted_closing_prices)
-            annual_return = calculate_annualized_return(daily_log_returns)
-            annual_volatility = calculate_annualized_volatility(daily_log_returns)
+            annual_return = float(calculate_annualized_return(daily_log_returns))
+            annual_volatility = float(calculate_annualized_volatility(daily_log_returns))
             sharpe_ratio = calculate_sharpe_ratio(annual_return, annual_volatility, risk_free_rate)
 
             asset_metrics[ticker] = {

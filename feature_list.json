@@ -35,8 +35,8 @@
       "dependencies": [
         "feat-003"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-004: make lint 'All checks passed!' (18 hallazgos iniciales resueltos: 9 I001 autofix, 6 E501 wrap manual, 1 F401+1 F841 tests muertos); make types 0 errors (21 reportArgumentType: implicit-Optional -> X|None en firmas viz/pipeline/selection, floating[Any] -> float() en data_fetch, pandas .values -> np.asarray dtype); make test 16 passed; ./init.sh exit 0 corriendo los 4 gates; YAML x2 validados. Dev-deps pinned en lock (ruff 0.16.4, pyright 1.1.411)."
     },
     {
       "id": "feat-005",
