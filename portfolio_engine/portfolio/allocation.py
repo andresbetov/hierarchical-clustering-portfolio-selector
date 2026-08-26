@@ -135,14 +135,97 @@ def calculate_minimum_variance_weights(covariance_matrix: np.ndarray) -> np.ndar
         return calculate_equal_weights(covariance_matrix.shape[0])
 
 
-def apply_weight_constraints(weights: np.ndarray, min_weight: float, max_weight: float) -> np.ndarray:
-    """Clip by min/max bounds, then renormalize to preserve total weight = 1."""
+_BOUNDS_MAX_ITERATIONS = 500
+_BOUNDS_TOLERANCE = 1e-9
 
-    # Clipping changes the total allocation, so normalize again after enforcing bounds.
-    weights = np.maximum(weights, min_weight)
-    weights = np.minimum(weights, max_weight)
-    weights = weights / np.sum(weights)
-    return weights
+
+def _project_onto_simplex(vector: np.ndarray) -> np.ndarray:
+    """Exact Euclidean projection onto the probability simplex (sum==1, w>=0)."""
+    size = vector.size
+    ordered = np.sort(vector)[::-1]
+    cumulative = np.cumsum(ordered)
+    index_range = np.arange(1, size + 1)
+    condition = ordered * index_range > (cumulative - 1.0)
+    rho = np.nonzero(condition)[0][-1]
+    theta = (cumulative[rho] - 1.0) / (rho + 1)
+    return np.maximum(vector - theta, 0.0)
+
+
+def apply_weight_constraints(weights: np.ndarray, min_weight: float, max_weight: float) -> np.ndarray:
+    """Enforce min/max bounds simultaneously with sum(weight)==1 (C4).
+
+    Uses Dykstra's alternating projection onto the intersection of three
+    convex sets — the probability simplex plus the two half-spaces imposed
+    by the bounds. Convergence to the unique feasible region is guaranteed;
+    raises ValueError when that intersection is empty (bounds infeasible for
+    the asset count) or if the numerical verification at the end fails.
+    """
+    w = np.asarray(weights, dtype=np.float64).copy()
+    n_assets = w.size
+
+    if n_assets * min_weight > 1.0 + _BOUNDS_TOLERANCE or n_assets * max_weight < 1.0 - _BOUNDS_TOLERANCE:
+        raise ValueError(
+            f"Bounds infeasible for {n_assets} assets: need n*min<=1<=n*max "
+            f"(n*min={n_assets * min_weight:.4f}, n*max={n_assets * max_weight:.4f}). "
+            "Adjust minimum/maximum_single_asset_weight or the universe size."
+        )
+
+    # Working copy starts pre-normalized on the simplex.
+    x = _project_onto_simplex(np.maximum(w, 0.0))
+
+    # Dykstra correction accumulators per constraint set.
+    p_min = np.zeros_like(x)
+    p_max = np.zeros_like(x)
+    p_sim = np.zeros_like(x)
+
+    converged = False
+    for _ in range(_BOUNDS_MAX_ITERATIONS):
+        previous_x = x.copy()
+
+        # Stage 1 — projection onto {w >= min_weight}:
+        u_min = x + p_min
+        v_min = np.maximum(u_min, min_weight)
+        p_min = u_min - v_min
+
+        # Stage 2 — projection onto {w <= max_weight}:
+        u_max = v_min + p_max
+        v_max = np.minimum(u_max, max_weight)
+        p_max = u_max - v_max
+
+        # Stage 3 — projection onto the probability simplex:
+        u_sim = v_max + p_sim
+        v_sim = _project_onto_simplex(u_sim)
+        p_sim = u_sim - v_sim
+
+        x = v_sim
+
+        shift = float(np.max(np.abs(x - previous_x)))
+        if shift < _BOUNDS_TOLERANCE / 10.0:
+            converged = True
+            break
+
+    if not converged:
+        logger.warning(
+            "Weight-constraint projections did not converge within %d cycles "
+            "(shift threshold %.1e)",
+            _BOUNDS_MAX_ITERATIONS,
+            _BOUNDS_TOLERANCE / 10.0,
+        )
+
+    # Hard final verification — never return silent violations.
+    total = float(x.sum())
+    if abs(total - 1.0) > _BOUNDS_TOLERANCE:
+        raise ValueError(f"Constraint solver failed to normalize weights (sum={total:.12f})")
+    violations = [
+        i for i in range(n_assets)
+        if x[i] < min_weight - _BOUNDS_TOLERANCE or x[i] > max_weight + _BOUNDS_TOLERANCE
+    ]
+    if violations:
+        raise ValueError(
+            f"Constraint solver left bounds violated at indices {violations}: {x}"
+        )
+
+    return x
 
 
 def calculate_optimal_portfolio_weights(

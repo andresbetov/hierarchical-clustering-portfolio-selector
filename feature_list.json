@@ -135,8 +135,8 @@
       "dependencies": [
         "feat-009"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-014: primer intento water-filling con fixed-sets FALLO para fijacion simultanea ambos lados (suma 0.55, free vacio — test lo expuso); reemplazo por Dykstra ciclico (proyecciones {w>=min}/{w<=max}/simplex) convergencia garantizada; segundo bug propio: acumulador p_max anulado por reasignacion de variable — corregido con temps por etapa; verificacion final dura (sum/bounds ±1e-9 raise), viabilidad ruidosa n*min<=1<=n*max; 100 seeds stress siempre validos. Suite 80->88 passed."
     },
     {
       "id": "feat-015",
