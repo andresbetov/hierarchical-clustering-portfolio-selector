@@ -115,8 +115,8 @@
       "dependencies": [
         "feat-011"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-012: batch unico yf.download(auto_adjust=False, group_by=ticker) via _fetch_batch monkeypatcheable; retry stdlib 3 intentos backoff (1s,2s) loggeado; _extract_adjusted_close puro: Adj Close->Close fallback nombrado->rechazo; MultiIndex/flat tolerado; NaN colas dropna+log; rechazos agregados 1 warning (batch_failed_or_empty/no_usable_prices); no raises al caller. Suite 63->70 passed. Bug fixture propio: index or BASE_INDEX bool(DatetimeIndex) -> is not None. Gates verdes."
     },
     {
       "id": "feat-013",
