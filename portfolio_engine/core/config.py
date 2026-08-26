@@ -21,6 +21,9 @@ class PortfolioConfig:
         self.volatility_penalty_scale = 0.20
         self.max_volatility_penalty_multiplier = 3.0
 
+        # Data window (calendar years of adjusted prices to download)
+        self.lookback_years = 5
+
         # Weight allocation parameters
         self.weight_allocation_method = "risk_parity"
         self.target_portfolio_volatility = 0.15

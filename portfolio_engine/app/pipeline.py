@@ -52,7 +52,11 @@ def main(ticker_symbols: list, config: PortfolioConfig | None = None):
 
     logger.info("Pipeline started: tickers=%d", len(ticker_symbols))
 
-    asset_metrics, closing_prices, price_dates = download_and_calculate_metrics(ticker_symbols, config.risk_free_rate)
+    asset_metrics, closing_prices, price_dates = download_and_calculate_metrics(
+        ticker_symbols,
+        config.risk_free_rate,
+        config.lookback_years,
+    )
 
     filtered_metrics, filtered_prices = apply_asset_filters(
         asset_metrics,
