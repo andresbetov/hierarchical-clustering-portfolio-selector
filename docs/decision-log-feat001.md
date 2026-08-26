@@ -25,7 +25,7 @@ Las citas `file:line` de los documentos anteriores se basan en el árbol de `dev
 | Feature | Decisión pendiente | Alternativas |
 |---|---|---|
 | feat-015 | vol-target implementar o eliminar | ✅ ELIMINAR (ADR 001): incompatible con mandato long-only fully-invested |
-| feat-016 | distancia firmada vs abs | ver racional arriba; exponer parametrizada |
+| feat-016 | distancia firmada vs abs | ✅ SIGNED default (ADR 002, PR #20) |
 | feat-018 | biblioteca / variante quasiDiag | ver opciones arriba |
 | feat-019 | solve/pinv/LedoitWolf | shrinkage primero (cov ruidosa es raíz de sensibilidad HRP según Trucíos 2026) |
 | feat-021 | librería prop tests | hypothesis; pytest-mock para fetcher |

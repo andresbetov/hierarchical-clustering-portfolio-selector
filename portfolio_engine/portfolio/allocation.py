@@ -2,7 +2,6 @@
 import logging
 
 import numpy as np
-from numba import jit
 
 from ..core.config import PortfolioConfig
 from ..core.metrics import VOL_FLOOR_EPS
@@ -32,12 +31,10 @@ def create_portfolio_covariance_matrix(
     return portfolio_cov_matrix
 
 
-@jit(nopython=True, cache=True)
 def calculate_portfolio_variance(weights: np.ndarray, covariance_matrix: np.ndarray) -> float:
     return np.dot(weights, np.dot(covariance_matrix, weights))
 
 
-@jit(nopython=True, cache=True)
 def calculate_portfolio_return(weights: np.ndarray, expected_returns: np.ndarray) -> float:
     return np.dot(weights, expected_returns)
 
