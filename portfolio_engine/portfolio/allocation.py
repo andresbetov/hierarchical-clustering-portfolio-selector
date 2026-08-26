@@ -104,36 +104,97 @@ def calculate_risk_parity_weights(
     return weights
 
 
+def _ensure_positive_definite(covariance_matrix: np.ndarray) -> np.ndarray:
+    """Return a repaired PD copy of the covariance, or raise LinAlgError.
+
+    Deterministic progressive diagonal jitter (documented in log): each step
+    adds a small share of the average variance magnitude until Cholesky
+    succeeds — never random, never silent.
+    """
+    cov = np.asarray(covariance_matrix, dtype=np.float64)
+    reference_scale = float(np.trace(cov)) / cov.shape[0] if cov.size else 0.0
+    if not np.isfinite(reference_scale) or reference_scale <= 0.0:
+        # A covariance with zero total variance carries NO information to
+        # preserve: jitter would fabricate signal out of nothing (C3 honesty).
+        raise np.linalg.LinAlgError(
+            "Irreparable covariance: total variance is non-positive/invalid "
+            f"(trace={np.trace(cov)})"
+        )
+
+    jitter = 0.0
+    for step in range(6):
+        candidate = cov if step == 0 else cov + np.eye(cov.shape[0]) * jitter
+        try:
+            np.linalg.cholesky(candidate)
+            if step > 0:
+                logger.warning(
+                    "Covariance was not positive definite; repaired with "
+                    "diagonal jitter=%s (scale=%s)",
+                    jitter,
+                    reference_scale,
+                )
+            return candidate
+        except np.linalg.LinAlgError:
+            jitter = reference_scale * 1e-8 * (10.0**step)
+
+    raise np.linalg.LinAlgError(
+        f"Covariance could not be repaired into positive-definite form "
+        f"(max jitter tried={jitter})"
+    )
+
+
 def calculate_maximum_sharpe_weights(
     expected_returns: np.ndarray,
     covariance_matrix: np.ndarray,
     risk_free_rate: float,
 ) -> np.ndarray:
+    """Max-Sharpe tangency portfolio via linear solve — no explicit inverse.
+
+    w ∝ Σ⁻¹(μ - rf) is computed as the solution of Σw = (μ - rf).
+    """
     try:
         excess_returns = np.asarray(expected_returns - risk_free_rate, dtype=np.float64)
-        inv_cov_matrix = np.linalg.inv(covariance_matrix)
-        optimal_weights = np.asarray(np.dot(inv_cov_matrix, excess_returns), dtype=np.float64)
-        optimal_weights = optimal_weights / np.sum(optimal_weights)
-        return optimal_weights
+        positive_definite_covariance = _ensure_positive_definite(np.asarray(covariance_matrix, dtype=np.float64))
+
+        solved = np.linalg.solve(positive_definite_covariance, excess_returns)
+        weight_mass = float(solved.sum())
+        if not np.isfinite(weight_mass) or abs(weight_mass) <= VOL_FLOOR_EPS:
+            logger.warning(
+                "Max Sharpe solve degenerated (weight mass=%s); falling back to equal weights",
+                weight_mass,
+            )
+            return calculate_equal_weights(len(expected_returns))
+
+        return np.asarray(solved / weight_mass, dtype=np.float64)
     except np.linalg.LinAlgError:
-        logger.warning("Max Sharpe allocation fallback: singular covariance matrix -> equal weights")
+        logger.warning("Max Sharpe allocation fallback: irreparable covariance -> equal weights")
         return calculate_equal_weights(len(expected_returns))
 
 
 def calculate_minimum_variance_weights(covariance_matrix: np.ndarray) -> np.ndarray:
+    """Global minimum-variance weights via a single linear solve.
+
+    GMV w = Σ⁻¹1 / (1ᵀΣ⁻¹1): both numerator and denominator come from one
+    factorization of Σ through np.linalg.solve — Σ⁻¹ is never materialized.
+    """
+    n_assets = covariance_matrix.shape[0]
     try:
-        n_assets = covariance_matrix.shape[0]
-        ones_vector = np.ones((n_assets, 1))
-        inv_cov_matrix = np.linalg.inv(covariance_matrix)
+        positive_definite_covariance = _ensure_positive_definite(np.asarray(covariance_matrix, dtype=np.float64))
+        ones_vector = np.ones(n_assets)
 
-        numerator = np.dot(inv_cov_matrix, ones_vector)
-        denominator = np.dot(ones_vector.T, np.dot(inv_cov_matrix, ones_vector))
+        numerator = np.linalg.solve(positive_definite_covariance, ones_vector)
+        denominator = float(ones_vector @ numerator)
+        if not np.isfinite(denominator) or abs(denominator) <= VOL_FLOOR_EPS:
+            logger.warning(
+                "Min Variance solve degenerated (denominator=%s); falling back to equal weights",
+                denominator,
+            )
+            return calculate_equal_weights(n_assets)
 
-        optimal_weights = (numerator / denominator).flatten()
-        return optimal_weights
+        return np.asarray(numerator / denominator, dtype=np.float64)
     except np.linalg.LinAlgError:
-        logger.warning("Min Variance allocation fallback: singular covariance matrix -> equal weights")
-        return calculate_equal_weights(covariance_matrix.shape[0])
+        logger.warning("Min Variance allocation fallback: irreparable covariance -> equal weights")
+        return calculate_equal_weights(n_assets)
 
 
 _BOUNDS_MAX_ITERATIONS = 500
