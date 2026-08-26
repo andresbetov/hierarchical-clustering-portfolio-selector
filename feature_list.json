@@ -262,8 +262,8 @@
       "dependencies": [
         "feat-024"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-026: _iter_walk_windows puro con embargo verificado (gap exacto), guard insuficiencia; walk_forward_evaluate fold-a-fold ex-ante (pesos solo de train; test de mutacion OOS no altera pesos — la prueba anti-fuga PASA); WalkForwardReport dataclass + to_dict agregados coherentes, folds degenerados excluidos con warning; capa validation/ nueva. Suite 147->154 passed (+7)."
     },
     {
       "id": "feat-027",
