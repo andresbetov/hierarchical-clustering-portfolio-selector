@@ -1,6 +1,6 @@
 # configuration-contract Specification (delta)
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Enum de métodos de asignación incluye HRP
 
