@@ -145,8 +145,8 @@
       "dependencies": [
         "feat-014"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-015: ADR docs/adr/001-volatility-target-removal.md aceptado (implementar exige leverage fuera del mandato long-only fully-invested; diagnostico duplicaria feat-020/A5); campo+regla eliminados de config; README D1 cerrada; regresion en test_config documenta remocion; grep fuente=0 refs; suite 80->89 passed."
     },
     {
       "id": "feat-016",

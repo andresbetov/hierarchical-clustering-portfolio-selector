@@ -57,6 +57,13 @@ class TestValidationRules:
             "min_variance",
         }
 
+    def test_dead_vol_target_parameter_removed_by_adr_001(self):
+        """ADR 001 (docs/adr/001-volatility-target-removal.md): vol-targeting
+        requires leverage, out of the long-only fully-invested mandate."""
+        import dataclasses
+
+        assert not any(f.name == "target_portfolio_volatility" for f in dataclasses.fields(PortfolioConfig))
+
     def test_replace_pattern_is_the_legal_override_route(self):
         loosened = dataclasses.replace(PortfolioConfig(), minimum_sharpe_threshold=-10.0)
         assert loosened.minimum_sharpe_threshold == -10.0

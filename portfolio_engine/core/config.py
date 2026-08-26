@@ -49,7 +49,6 @@ class PortfolioConfig:
 
     # Weight allocation parameters
     weight_allocation_method: str = "risk_parity"
-    target_portfolio_volatility: float = 0.15
     maximum_single_asset_weight: float = 0.30
     minimum_single_asset_weight: float = 0.05
 
@@ -70,7 +69,6 @@ class PortfolioConfig:
             _require_range(weight_name, getattr(self, weight_name), 0.0, 1.0)
 
         _require_range("risk_free_rate", self.risk_free_rate, 0.0, 1.0)
-        _require_range("target_portfolio_volatility", self.target_portfolio_volatility, 0.0, 1.0)
 
         if self.maximum_volatility_threshold <= 0:
             raise ValueError(
