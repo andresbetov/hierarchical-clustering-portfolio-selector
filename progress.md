@@ -3,16 +3,10 @@
 ## Current State
 
 **Last Updated:** 2026-08-26
-**Branch:** `develop` (@4544171+ — DAG COMPLETO, PRs #22-#30)
-**Active Feature:** ninguna — **27/27 features done**, auditoría inicial completamente ejecutada
+**Branch:** `develop` — DAG COMPLETO (27/27) + documentación sincronizada
+**Active Feature:** ninguna en ejecución
 
-Suite: 16→154 passed total. CI verde en cada merge. Racha final: feat-019 (B5 solvers), feat-020 (A5 Sharpe cov), feat-021 (M8 red caracterización + 3 bugs reales descubiertos), feat-022 (M6 numba out), feat-023 (M3 provider seam), feat-024 (B2 universe yaml), feat-025 (B3 ADRs docs), feat-026 (B6 walk-forward anti-fuga), feat-027 (B7 exports sync).
-
-**Last Updated:** 2026-08-26
-**Branch:** `feat/logging-headless-viz` (desde `develop@382a482`, post PR #8)
-**Active Feature:** feat-005 logging-and-headless-viz → **done**
-
-Fase Higiene posiciones 1-6 completas. CI verde en primera corrida (matriz 3.11/3.13, run 32996200798). Suite 16→30 passed con tests de contrato runtime. `make run-debug` ahora funciona de verdad (LOG_LEVEL era ignorado).
+Proyecto en estado de cierre de hito: motor HRP jerárquico real, validación walk-forward anti-fuga, arquitectura con provider seam, documentación viva sincronizada (README/AGENTS/CONTRIBUTING/decision-log), ADRs indexados, históricos con banners de estado.
 
 ## Status
 

@@ -1,3 +1,5 @@
+> **ESTADO (2026-08-26): EJECUTADO COMPLETO** — los 28 hallazgos aquí inventariados fueron resueltos y mergeados vía el DAG de feat-001..027. Este documento es snapshot histórico de la auditoría inicial: los números de línea citados corresponden a `develop@d55c2d5` y NO reflejan el árbol actual. Estado vivo del proyecto: `README.md` y `progress.md`.
+
 # Knowledge Base — Auditoría Arquitectónica y Técnica
 
 **Proyecto:** `hierarchical-clustering-portfolio-selector`  

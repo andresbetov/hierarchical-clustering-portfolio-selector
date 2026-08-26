@@ -1,3 +1,5 @@
+> **ESTADO (2026-08-26): SECUENCIA EJECUTADA AL 100%** — las 28 posiciones aquí ordenadas se ejecutaron como feat-002..027 (PRs #6..#30). Snapshot histórico; el árbol actual refleja las soluciones en el orden derivado por este DAG.
+
 # Orden de Resolución — Grafo de Dependencias y Secuencia Cronológica
 
 **Feature:** feat-001 · **Change:** `openspec/changes/feat-001-analisis-orden-resolucion/` · **Fecha:** 2026-08-26
