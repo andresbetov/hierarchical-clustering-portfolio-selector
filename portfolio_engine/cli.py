@@ -1,8 +1,7 @@
 """Console entrypoint for the standard portfolio analysis run.
 
-Deliberately argument-free: CLI flags (--config/--universe) are deferred to
-Phase 4 alongside config files. Replicates exactly what
-scripts/assets-investment.py did, now from an installable location.
+CLI flags beyond --universe remain deferred to Phase 4; the universe itself
+is externalized to config/universe.yaml (B2) and loaded at runtime.
 """
 
 import logging
@@ -10,35 +9,25 @@ import logging
 from .app.pipeline import generate_complete_analysis_report
 from .core.config import PortfolioConfig
 from .core.logging_utils import configure_logging
+from .data.universe import DEFAULT_UNIVERSE_PATH, load_universe
 from .viz.reporting import print_portfolio_summary
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_UNIVERSE: list[str] = [
-    "JNJ",   # Johnson & Johnson
-    "JPM",   # JPMorgan Chase & Co.
-    "V",     # Visa
-    "PG",    # Procter & Gamble
-    "HD",    # The Home Depot
-    "MA",    # Mastercard
-    "CVX",   # Chevron
-    "PFE",   # Pfizer
-    "ABBV",  # AbbVie
-    "TMO",   # Thermo Fisher Scientific
-    "MRK",   # Merck & Co.
-    "WMT",   # Walmart
-]
 
+def main(universe_path: str | None = None) -> None:
+    """Run the standard configured analysis over the YAML universe.
 
-def main() -> None:
-    """Run the standard offline-configured analysis and print the summary."""
+    `universe_path` defaults to config/universe.yaml (B2 externalization).
+    """
     configure_logging()
 
     portfolio_config = PortfolioConfig()
+    universe = load_universe(universe_path or DEFAULT_UNIVERSE_PATH)
 
     logger.warning(
         "Universe restricted to Yahoo Finance tickers: tickers=%d",
-        len(DEFAULT_UNIVERSE),
+        len(universe),
     )
 
     (
@@ -47,7 +36,7 @@ def main() -> None:
         optimal_portfolio,
         portfolio_weights,
     ) = generate_complete_analysis_report(
-        DEFAULT_UNIVERSE,
+        universe,
         portfolio_config,
         save_plots=True,
         show_plots=False,

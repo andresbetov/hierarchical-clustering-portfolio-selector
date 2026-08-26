@@ -26,12 +26,12 @@ def test_console_script_entrypoint_wiring():
 
 
 def test_cli_main_importable_without_path_hacks():
-    from portfolio_engine.cli import (
-        DEFAULT_UNIVERSE,
-        main,  # noqa: F401  (import is the assertion)
-    )
+    from portfolio_engine.cli import main  # noqa: F401  (import is the assertion)
 
-    assert isinstance(DEFAULT_UNIVERSE, list) and len(DEFAULT_UNIVERSE) > 0
+    # B2: the hardcoded universe moved to config/universe.yaml via load_universe.
+    from portfolio_engine.data.universe import DEFAULT_UNIVERSE_PATH
+
+    assert str(DEFAULT_UNIVERSE_PATH) == "config/universe.yaml"
 
 
 if __name__ == "__main__":
