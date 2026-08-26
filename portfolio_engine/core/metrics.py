@@ -188,8 +188,11 @@ def align_prices_to_common_calendar(prices_dictionary: dict, dates_dictionary: d
     """
     import pandas as pd
 
-    if set(prices_dictionary) != set(dates_dictionary):
-        missing_dates = set(prices_dictionary) - set(dates_dictionary)
+    # One-directional requirement: every PRICE series must have dates; extra
+    # date entries are legitimate (e.g. tickers filtered out downstream still
+    # feed charts from the same dict).
+    missing_dates = [ticker for ticker in prices_dictionary if ticker not in dates_dictionary]
+    if missing_dates:
         raise ValueError(f"Missing dates entry for tickers: {sorted(missing_dates)}")
 
     columns = {}

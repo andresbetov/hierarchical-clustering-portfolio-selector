@@ -212,8 +212,8 @@
         "feat-014",
         "feat-018"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-021: hypothesis dev-dep (derandomize CI-determinista); conftest panel sintetico yfinance-shape multi-ticker (drift positivo para cruzar filtro Sharpe); test_properties.py 6 propiedades simplex-invarianza (HRP/minvar/riskparity/Dykstra-bounds sobre cov PD arbitrarias n=2-25); test_pipeline_e2e.py 4 composicion end-to-end offline. BUGS REALES DESCUBIERTOS: (1) align set-comparacion direccionalmente ciega rechazaba fechas extra de tickers filtrados (fix one-directional); (2) politica de relajacion del mandato para universos pequenos (n*max<1 crasheaba main — ahora CRITICAL log + max=1/n; solver puro intacto); (3) pinneado contrato precios full-universe para charts vs stats filtradas. Suite 129->140+1skip."
     },
     {
       "id": "feat-022",
