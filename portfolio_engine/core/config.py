@@ -16,6 +16,10 @@ WEIGHT_ALLOCATION_METHODS = (
     "min_variance",
 )
 
+# Clustering distance modes (ADR 002): signed is the methodologically
+# correct default; abs preserves legacy behavior on demand.
+DISTANCE_METRICS = ("signed", "abs")
+
 _WEIGHT_SUM_TOLERANCE = 1e-9
 
 
@@ -36,6 +40,9 @@ class PortfolioConfig:
     minimum_sharpe_threshold: float = 0.5
     maximum_volatility_threshold: float = 0.25
     maximum_correlation_threshold: float = 0.65
+
+    # Clustering distance metric (ADR 002): signed keeps diversifiers apart.
+    distance_metric: str = "signed"
 
     # Portfolio selection scoring weights (must sum to 1.0)
     sharpe_weight: float = 0.45
@@ -88,4 +95,10 @@ class PortfolioConfig:
             raise ValueError(
                 f"weight_allocation_method '{self.weight_allocation_method}' is invalid; "
                 f"allowed values: {list(WEIGHT_ALLOCATION_METHODS)}"
+            )
+
+        if self.distance_metric not in DISTANCE_METRICS:
+            raise ValueError(
+                f"distance_metric '{self.distance_metric}' is invalid; "
+                f"allowed values: {list(DISTANCE_METRICS)}"
             )

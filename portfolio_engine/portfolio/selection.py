@@ -109,6 +109,20 @@ def perform_hierarchical_clustering(distance_matrix: np.ndarray, distance_thresh
     return cluster_assignments
 
 
+def _resolve_distance_threshold(maximum_correlation: float, metric: str) -> float:
+    """Convert a user correlation threshold into the distance scale.
+
+    Preserves the semantic "merge pairs whose |signed| correlation exceeds
+    the threshold" regardless of the active metric (ADR 002):
+      signed -> sqrt(0.5*(1-t));  abs -> 1 - t.
+    """
+    if metric == "signed":
+        return math.sqrt(0.5 * (1.0 - maximum_correlation))
+    if metric == "abs":
+        return 1.0 - maximum_correlation
+    raise ValueError(f"Unknown distance metric '{metric}'; allowed: ['abs', 'signed']")
+
+
 def select_optimal_diversified_portfolio(
     correlation_matrix: np.ndarray,
     asset_metrics: dict,
@@ -129,10 +143,17 @@ def select_optimal_diversified_portfolio(
     if number_of_assets <= 1:
         return asset_metrics
 
-    # Use 1 - |corr| so strongly correlated or anti-correlated assets are treated as close
-    # and the clustering step avoids selecting redundant exposures.
-    correlation_distance_threshold = 1.0 - config.maximum_correlation_threshold
-    distance_matrix = compute_correlation_distance_matrix(correlation_matrix)
+    # Use ADR-002-selected distance; threshold converted to preserve the
+    # user-facing "merge if corr > threshold" semantic in either mode.
+    correlation_distance_threshold = _resolve_distance_threshold(
+        config.maximum_correlation_threshold, config.distance_metric
+    )
+    logger.debug(
+        "Clustering distances ready: metric=%s threshold_equivalent=%s",
+        config.distance_metric,
+        correlation_distance_threshold,
+    )
+    distance_matrix = compute_correlation_distance_matrix(correlation_matrix, config.distance_metric)
     cluster_labels = perform_hierarchical_clustering(distance_matrix, correlation_distance_threshold)
 
     asset_clusters = {}

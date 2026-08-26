@@ -155,8 +155,8 @@
       "dependencies": [
         "feat-013"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-016: ADR 002 aceptado (signed default, abs legacy bajo demanda); kernel numba flag entero + wrapper str con validacion; _resolve_distance_threshold preserva semantica corr-threshold por modo (signed: sqrt(0.5(1-t))); config distance_metric=signed validada; 11 tests incl contraste behavioral real (hedge corr<-0.65 vs gemelo +0.9) — bug propio cazado: pasaba matriz covarianza como correlacion (test firmado vacuamente verde); corregido np.corrcoef + assert sanidad anti-vacio. Suite 89->100 passed."
     },
     {
       "id": "feat-017",

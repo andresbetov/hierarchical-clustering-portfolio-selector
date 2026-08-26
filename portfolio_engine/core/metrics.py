@@ -217,10 +217,25 @@ def align_prices_to_common_calendar(prices_dictionary: dict, dates_dictionary: d
     }
 
 
-@jit(nopython=True, cache=True)
-def compute_correlation_distance_matrix(correlation_matrix: np.ndarray) -> np.ndarray:
-    """Transform correlation to clustering distance: d(i,j) = 1 - |corr(i,j)|."""
+_METRIC_CODES = {"signed": 1, "abs": 0}
 
+
+def compute_correlation_distance_matrix(correlation_matrix: np.ndarray, metric: str = "signed") -> np.ndarray:
+    """Clustering distance from correlations, per ADR 002.
+
+    - "signed": d = sqrt(0.5*(1-corr)) — negative correlation means maximum
+      distance (diversifiers are never merged with their hedge partners).
+    - "abs": legacy d = 1-|corr| — collapses sign, kept for reproducibility
+      of historical behavior on demand.
+    NaN entries (flat assets) propagate honestly in both modes.
+    """
+    if metric not in _METRIC_CODES:
+        raise ValueError(f"Unknown distance metric '{metric}'; allowed: {sorted(_METRIC_CODES)}")
+    return _correlation_distance_kernel(correlation_matrix, _METRIC_CODES[metric])
+
+
+@jit(nopython=True, cache=True)
+def _correlation_distance_kernel(correlation_matrix: np.ndarray, metric_code: int) -> np.ndarray:
     matrix_size = correlation_matrix.shape[0]
     distance_matrix = np.empty((matrix_size, matrix_size), dtype=np.float64)
     for i in range(matrix_size):
@@ -228,6 +243,11 @@ def compute_correlation_distance_matrix(correlation_matrix: np.ndarray) -> np.nd
             if i == j:
                 distance_matrix[i, j] = 0.0
             else:
-                distance_matrix[i, j] = 1.0 - abs(correlation_matrix[i, j])
+                corr_value = correlation_matrix[i, j]
+                if metric_code == 1:
+                    # signed: sqrt(0.5*(1-corr)); NaN propagates via arithmetic.
+                    distance_matrix[i, j] = np.sqrt(0.5 * (1.0 - corr_value))
+                else:
+                    distance_matrix[i, j] = 1.0 - abs(corr_value)
     return distance_matrix
 
