@@ -74,5 +74,11 @@ SemVer mapping: `feat` → MINOR · `fix` → PATCH · `!` / `BREAKING CHANGE` �
 ```bash
 uv sync
 uv run pytest          # suite completa (offline) — equivalente a make test
+make lint              # ruff static checks (también corre en ./init.sh)
+make types             # pyright type checks (también corre en ./init.sh)
 make run               # pipeline completo (requiere red, yfinance)
 ```
+
+Los cuatro gates (lint, types, test, compileall) corren automáticamente en CI
+(push a develop/main y PRs) y localmente vía `./init.sh`. Opcional: hooks de
+pre-commit con `uv tool install pre-commit && pre-commit install`.

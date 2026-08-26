@@ -4,12 +4,12 @@ import numpy as np
 import pytest
 
 from portfolio_engine.core.metrics import (
-    compute_logarithmic_returns,
     calculate_annualized_return,
     calculate_annualized_volatility,
-    calculate_sharpe_ratio,
     calculate_correlation_matrix,
     calculate_covariance_matrix,
+    calculate_sharpe_ratio,
+    compute_logarithmic_returns,
     construct_returns_matrix,
 )
 

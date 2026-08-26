@@ -1,14 +1,16 @@
 """Top-level orchestration of the portfolio analysis workflow."""
 
 import logging
-import matplotlib.pyplot as plt
-import numpy as np
 from pathlib import Path
 
-from ..portfolio.allocation import calculate_optimal_portfolio_weights
+import matplotlib.pyplot as plt
+import numpy as np
+
 from ..core.config import PortfolioConfig
-from ..data.data_fetch import download_and_calculate_metrics
 from ..core.metrics import calculate_correlation_matrix, calculate_covariance_matrix, construct_returns_matrix
+from ..data.data_fetch import download_and_calculate_metrics
+from ..portfolio.allocation import calculate_optimal_portfolio_weights
+from ..portfolio.selection import apply_asset_filters, select_optimal_diversified_portfolio
 from ..viz.reporting import (
     plot_asset_metrics_comparison,
     plot_correlation_covariance_matrices,
@@ -18,8 +20,6 @@ from ..viz.reporting import (
     plot_optimal_portfolio_analysis,
     plot_risk_return_scatter,
 )
-from ..portfolio.selection import apply_asset_filters, select_optimal_diversified_portfolio
-
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ CHART_FILENAMES = {
 }
 
 
-def main(ticker_symbols: list, config: PortfolioConfig = None):
+def main(ticker_symbols: list, config: PortfolioConfig | None = None):
     """Run the core pipeline: download -> filter -> stats -> select -> allocate.
 
     Returns raw metrics, filtered universe, selected portfolio, weights and matrices
@@ -102,7 +102,7 @@ def main(ticker_symbols: list, config: PortfolioConfig = None):
 
 def generate_complete_analysis_report(
     ticker_symbols: list,
-    config: PortfolioConfig = None,
+    config: PortfolioConfig | None = None,
     save_plots: bool = False,
     show_plots: bool = False,
 ):
@@ -120,10 +120,16 @@ def generate_complete_analysis_report(
         Path("charts").mkdir(parents=True, exist_ok=True)
         logger.info("Charts directory ready: path=charts")
 
-    all_metrics, filtered_metrics, optimal_portfolio, portfolio_weights, corr_matrix, _, historical_prices, price_dates = main(
-        ticker_symbols,
-        config,
-    )
+    (
+        all_metrics,
+        filtered_metrics,
+        optimal_portfolio,
+        portfolio_weights,
+        corr_matrix,
+        _,
+        historical_prices,
+        price_dates,
+    ) = main(ticker_symbols, config)
 
     logger.info("Generating complete portfolio analysis report")
 

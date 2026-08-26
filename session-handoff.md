@@ -2,46 +2,49 @@
 
 ## Current Objective
 
-- Goal: feat-003 project-manifests-lockfile → COMPLETADO (entorno determinista versionado)
-- Current status: rama lista para PR; siguiente feature feat-004 (CI)
-- Branch / commit: `chore/project-manifests-lockfile` sobre `develop@d524c93`
+- Goal: feat-004 quality-gates-ci → COMPLETADO (4 gates local+CI, toolchain pinned)
+- Current status: rama lista para PR; siguiente feature feat-005
+- Branch / commit: `feat/quality-gates-ci` sobre `develop@723b139`
 
 ## Completed This Session
 
-- [x] PR #6 (feat-002) squash-mergeada a develop, rama borrada
-- [x] Change openspec `feat-003-project-manifests-lockfile` (proposal + specs/project-packaging + design + tasks) — valid ✓
-- [x] B1+A6: uv.lock 587KB versionado; paquete renombrado; requires-python >=3.10; re-lock universal 52 packages
-- [x] Gates: make test 16 passed · ./init.sh exit 0 · uv sync --frozen reproduce · numba jit OK
+- [x] PR #7 (feat-003) squash-mergeada a develop
+- [x] Change openspec `feat-004-quality-gates-ci` (proposal + specs/quality-gates + design + tasks) — valid ✓
+- [x] M9: dev-deps pinned, ruff+pyright configs, Makefile lint/types, init.sh 4-gates, ci.yml matriz 3.11/3.13, pre-commit opt-in, badge
+- [x] Hallazgos reales resueltos: 18 ruff + 21 pyright (todos mecánicos)
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| lock reproducible | `uv sync --frozen` | ✓ Checked sin re-resolver | contrato determinista |
-| suite nueva resolución | `make test` | ✓ 16 passed | numpy 2.5.2, scipy 1.18.1 |
-| harness completo | `./init.sh` | ✓ exit 0 con pytest visible | — |
-| smoke kernels | numba jit inline | ✓ 0.67.0 funciona | riesgo feat-022 acotado |
-| change validation | `openspec validate` | valid | design incluido esta vez |
+| lint | `make lint` | All checks passed! | tras resolver 18 hallazgos |
+| types | `make types` | 0 errors | tras modernizar firmas Optional |
+| test | `make test` | 16 passed | sin regresión de comportamiento |
+| harness | `./init.sh` | exit 0 con los 4 gates visibles | sync→pytest→ruff→pyright→compileall |
+| YAML | estructura x2 | OK | workflows + pre-commit |
 
 ## Files Changed
 
-- `.gitignore`, `pyproject.toml`, `uv.lock` (nuevo), tracker/progress/handoff, openspec change feat-003
+- `pyproject.toml`, `uv.lock`, `Makefile`, `init.sh`, `CONTRIBUTING.md`, `README.md`
+- `.github/workflows/ci.yml`, `.pre-commit-config.yaml` (nuevos)
+- `portfolio_engine/{viz,app,portfolio,data}/*` — solo firmas tipadas
+- tracker/progress/handoff + openspec change feat-004
 
 ## Decisions Made
 
-- scipy = única excepción documentada de deps fantasma hasta feat-018 (spec project-packaging)
-- Lock universal para >=3.10; matriz CI real en feat-004
+- pyright basic hoy (strict = progresión futura); reglas ruff mínimas; format diferido (evitar reescritura masiva fuera de scope)
+- Firmas `X | None` y `float(...)`/`np.asarray`: tipado puro sin cambio de conducta
 
 ## Blockers / Risks
 
-- Numba pesados aún sin ejercicio profundo (feat-022)
+- Primera corrida CI real puede fallar por detalles de runner (setup-uv cache, node de pyright) — monitorear tras merge
 
 ## Next Session Startup
 
 1. AGENTS.md → ./init.sh
-2. PR de esta rama si pendiente
-3. feat-004 quality-gates-ci: flujo openspec completo
+2. PR de esta rama si pendiente; monitorear checks del PR #n en GitHub
+3. feat-005 logging-and-headless-viz: flujo openspec completo
 
 ## Recommended Next Step
 
-- feat-004 (M9): [tool.ruff]+[tool.pyright], pre-commit, GitHub Actions corriendo sync-frozen+ruff+pyright+pytest+compileall en push/PR a develop
+- feat-005 (M4+M5): logger "portfolio_engine" con handler propio respetando LOG_LEVEL env; matplotlib Agg cuando no hay display; eliminar show-bloqueante en modo save; primer test del módulo viz headless-safe

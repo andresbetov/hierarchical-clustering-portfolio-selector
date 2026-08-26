@@ -4,13 +4,12 @@ import pytest
 
 from portfolio_engine import (
     PortfolioConfig,
-    download_and_calculate_metrics,
     apply_asset_filters,
-    construct_returns_matrix,
     calculate_correlation_matrix,
     calculate_covariance_matrix,
-    select_optimal_diversified_portfolio,
     calculate_optimal_portfolio_weights,
+    construct_returns_matrix,
+    select_optimal_diversified_portfolio,
 )
 
 
@@ -28,7 +27,6 @@ def sample_config():
 def synthetic_prices():
     """Generate synthetic price data for offline testing."""
     np.random.seed(42)
-    dates = np.arange(100)
 
     # Create 4 synthetic assets with correlated movements
     asset_1 = 100 * np.exp(np.cumsum(np.random.randn(100) * 0.01))
