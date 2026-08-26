@@ -189,8 +189,8 @@
       "dependencies": [
         "feat-018"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-019: _ensure_positive_definite (cholesky-test + jitter progresivo determinista loggeado; trace<=0 = irreparable sin fabricar senal); max_sharpe/min_variance via np.linalg.solve (denominador GMV por identidad, una factorizacion); fallback equal-weights nombrado conservado; TDD expuso: jitter sobre matriz cero fabricaba varianza y casing del match regex. Equivalencia analitica diagonal exacta; colinealidad severa finita/normalizada. Suite 116->123 passed."
     },
     {
       "id": "feat-020",
