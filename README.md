@@ -38,7 +38,7 @@ Con esta secuencia, el motor evita que un solo criterio domine el resultado fina
 | Seleccion | `diversification_weight` | `0.35` |
 | Seleccion | `volatility_penalty_weight` | `0.20` |
 | Riesgo | `risk_free_rate` | `0.045` |
-| Asignacion | `weight_allocation_method` | `risk_parity` |
+| Asignacion | `weight_allocation_method` | `hrp` |
 | Asignacion | `minimum_single_asset_weight` | `0.05` |
 | Asignacion | `maximum_single_asset_weight` | `0.30` |
 
