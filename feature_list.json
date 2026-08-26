@@ -165,8 +165,8 @@
       "dependencies": [
         "feat-013"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-017: kernels anualizacion aceptan trading_days param (numba-compatible); config trading_days_per_year=252 validado [1,366]; fetcher 4to requerido (TypeError contracts actualizados), pipeline pasa desde config; tests crypto 365 exactos + distinct vols + validacion parametrizada; grep *252 fuente=0; suite 100->105 passed."
     },
     {
       "id": "feat-018",

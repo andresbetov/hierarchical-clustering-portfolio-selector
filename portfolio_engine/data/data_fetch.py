@@ -143,13 +143,14 @@ def download_and_calculate_metrics(
     ticker_symbols: list,
     risk_free_rate: float,
     lookback_years: int,
+    trading_days_per_year: int,
 ):
     """Download adjusted prices over an explicit calendar window and compute
     per-asset return/risk metrics.
 
-    Both `risk_free_rate` and `lookback_years` are REQUIRED — their single
-    sources of truth are PortfolioConfig attributes; no local defaults exist
-    on purpose.
+    `risk_free_rate`, `lookback_years` and `trading_days_per_year` are all
+    REQUIRED — their single sources of truth are PortfolioConfig attributes;
+    no local defaults exist on purpose.
 
     Ingestion contract (C2): one batched request; per-ticker extraction with
     Adj Close→Close fallback; all rejections aggregated into a single warning;
@@ -194,8 +195,8 @@ def download_and_calculate_metrics(
             price_dates[ticker] = dates_index
 
             daily_log_returns = compute_logarithmic_returns(adjusted_closing_prices)
-            annual_return = float(calculate_annualized_return(daily_log_returns))
-            annual_volatility = float(calculate_annualized_volatility(daily_log_returns))
+            annual_return = float(calculate_annualized_return(daily_log_returns, trading_days_per_year))
+            annual_volatility = float(calculate_annualized_volatility(daily_log_returns, trading_days_per_year))
             sharpe_ratio = calculate_sharpe_ratio(annual_return, annual_volatility, risk_free_rate)
 
             asset_metrics[ticker] = {

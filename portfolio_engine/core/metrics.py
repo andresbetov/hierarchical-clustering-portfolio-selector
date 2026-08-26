@@ -23,14 +23,16 @@ def compute_logarithmic_returns(price_series: np.ndarray) -> np.ndarray:
 
 
 @jit(nopython=True, cache=True)
-def calculate_annualized_return(daily_log_returns: np.ndarray) -> floating[Any]:
+def calculate_annualized_return(daily_log_returns: np.ndarray, trading_days: int = 252) -> floating[Any]:
     daily_mean_return = np.mean(daily_log_returns)
-    return daily_mean_return * 252
+    return daily_mean_return * trading_days
 
 
 @jit(nopython=True, cache=True)
-def calculate_annualized_volatility(daily_log_returns: np.ndarray) -> float:
-    """Annualized SAMPLE volatility: std(ddof=1) * sqrt(252).
+def calculate_annualized_volatility(
+    daily_log_returns: np.ndarray, trading_days: int = 252
+) -> float:
+    """Annualized SAMPLE volatility: std(ddof=1) * sqrt(trading_days).
 
     Manual computation because numba does not support np.std(..., ddof=);
     keeps the estimator consistent with the covariance kernel below.
@@ -44,7 +46,7 @@ def calculate_annualized_volatility(daily_log_returns: np.ndarray) -> float:
         diff = daily_log_returns[i] - mean_value
         sum_sq += diff * diff
     sample_std = np.sqrt(sum_sq / (n - 1))
-    return sample_std * np.sqrt(252.0)
+    return sample_std * np.sqrt(float(trading_days))
 
 
 def calculate_sharpe_ratio(annual_return: float, annual_volatility: float, risk_free_rate: float) -> float:

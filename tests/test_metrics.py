@@ -92,6 +92,26 @@ class TestNumericGuards:
         assert np.allclose(matrix, matrix.T)
 
 
+class TestTradingDaysParameterization:
+    """B4: the annualization constant is an explicit parameter."""
+
+    def test_legacy_252_default_unchanged(self):
+        returns = np.array([0.001] * 252)
+        assert calculate_annualized_return(returns) == pytest.approx(0.252)
+
+    def test_crypto_calendar_365(self):
+        returns = np.array([0.001] * 365)
+        assert calculate_annualized_return(returns, trading_days=365) == pytest.approx(0.365)
+        expected_vol = float(np.std(returns, ddof=1)) * np.sqrt(365)
+        assert calculate_annualized_volatility(returns, trading_days=365) == pytest.approx(expected_vol, rel=1e-12)
+
+    def test_distinct_calendars_produce_distinct_vols(self):
+        rng_returns = np.array([0.01, -0.005] * 100)
+        vol_252 = calculate_annualized_volatility(rng_returns, trading_days=252)
+        vol_365 = calculate_annualized_volatility(rng_returns, trading_days=365)
+        assert vol_365 > vol_252
+
+
 class TestCorrelationMatrix:
     """Test correlation matrix computation."""
 

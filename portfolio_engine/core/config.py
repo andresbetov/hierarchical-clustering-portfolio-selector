@@ -62,6 +62,9 @@ class PortfolioConfig:
     # Data window
     lookback_years: int = 5
 
+    # Annualization constant per market calendar (crypto uses 365, etc.)
+    trading_days_per_year: int = 252
+
     def __post_init__(self) -> None:
         weight_sum = self.sharpe_weight + self.diversification_weight + self.volatility_penalty_weight
         if abs(weight_sum - 1.0) > _WEIGHT_SUM_TOLERANCE:
@@ -90,6 +93,11 @@ class PortfolioConfig:
 
         if self.lookback_years < 1:
             raise ValueError(f"lookback_years must be >= 1, got {self.lookback_years}")
+
+        if not (1 <= self.trading_days_per_year <= 366):
+            raise ValueError(
+                f"trading_days_per_year must be within [1, 366], got {self.trading_days_per_year}"
+            )
 
         if self.weight_allocation_method not in WEIGHT_ALLOCATION_METHODS:
             raise ValueError(

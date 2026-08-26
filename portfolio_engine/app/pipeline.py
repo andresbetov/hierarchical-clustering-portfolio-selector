@@ -56,6 +56,7 @@ def main(ticker_symbols: list, config: PortfolioConfig | None = None):
         ticker_symbols,
         config.risk_free_rate,
         config.lookback_years,
+        config.trading_days_per_year,
     )
 
     filtered_metrics, filtered_prices = apply_asset_filters(

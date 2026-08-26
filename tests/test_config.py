@@ -44,6 +44,11 @@ class TestValidationRules:
         with pytest.raises(ValueError, match="lookback_years"):
             PortfolioConfig(lookback_years=0)
 
+    @pytest.mark.parametrize("bad_days", [0, 367])
+    def test_invalid_trading_days_rejected(self, bad_days):
+        with pytest.raises(ValueError, match="trading_days_per_year"):
+            PortfolioConfig(trading_days_per_year=bad_days)
+
     def test_unknown_allocation_method_rejected(self):
         with pytest.raises(ValueError, match="risk_parit"):
             PortfolioConfig(weight_allocation_method="risk_parit")
