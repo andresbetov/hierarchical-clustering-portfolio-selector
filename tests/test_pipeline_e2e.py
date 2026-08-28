@@ -164,6 +164,25 @@ class TestInjectedComposition:
         assert injected_main[6] is injected_bundle[1]
         assert injected_main[7] is injected_bundle[2]
 
+    def test_shrunken_covariance_estimator_end_to_end(self):
+        """feat-033: ledoit_wolf covariance flows through HRP allocation
+        offline and still yields finite simplex weights."""
+        config = PortfolioConfig(
+            minimum_sharpe_threshold=0.5,
+            maximum_volatility_threshold=10.0,
+            weight_allocation_method="hrp",
+            covariance_estimator="ledoit_wolf",
+            lookback_years=1,
+        )
+        result = main(TICKERS, config, provider=SyntheticProvider())
+        _, filtered_metrics, _, portfolio_weights = result[:4]
+
+        assert set(portfolio_weights) == set(filtered_metrics)
+        values = np.array(list(portfolio_weights.values()))
+        assert np.all(np.isfinite(values))
+        assert values.sum() == pytest.approx(1.0, abs=1e-6)
+        assert np.all(values > 0)
+
 
 def _equal_length_legacy_bundle():
     """Bundle with equal-length prices for the FULL-universe charts.

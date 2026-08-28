@@ -76,6 +76,18 @@ class TestValidationRules:
         # Original untouched (immutability semantics):
         assert PortfolioConfig().minimum_sharpe_threshold == 0.5
 
+    def test_default_covariance_estimator_is_sample(self):
+        assert PortfolioConfig().covariance_estimator == "sample"
+
+    def test_unknown_covariance_estimator_rejected(self):
+        with pytest.raises(ValueError, match="covariance_estimator"):
+            PortfolioConfig(covariance_estimator="shrinkage_otro")
+
+    def test_replace_preserves_covariance_estimator_contract(self):
+        config = dataclasses.replace(PortfolioConfig(), covariance_estimator="ledoit_wolf")
+        assert config.covariance_estimator == "ledoit_wolf"
+        assert PortfolioConfig().covariance_estimator == "sample"
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

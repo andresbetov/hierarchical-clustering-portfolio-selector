@@ -11,6 +11,7 @@ from ..core.metrics import (
     calculate_correlation_matrix,
     calculate_covariance_matrix,
     construct_returns_matrix,
+    estimate_covariance,
 )
 from ..portfolio.allocation import (
     calculate_optimal_portfolio_weights,
@@ -113,7 +114,7 @@ def main(
 
     daily_returns_matrix = construct_returns_matrix(aligned_prices)
     correlation_matrix = calculate_correlation_matrix(daily_returns_matrix)
-    covariance_matrix = calculate_covariance_matrix(daily_returns_matrix)
+    covariance_matrix = estimate_covariance(daily_returns_matrix, config.covariance_estimator)
 
     if config.weight_allocation_method == "hrp":
         # End-to-end hierarchical path (ADR 003): every filtered asset is

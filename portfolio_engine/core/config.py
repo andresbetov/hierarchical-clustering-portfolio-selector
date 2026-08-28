@@ -21,6 +21,11 @@ WEIGHT_ALLOCATION_METHODS = (
 # correct default; abs preserves legacy behavior on demand.
 DISTANCE_METRICS = ("signed", "abs")
 
+# Covariance estimation methods (ADR 005): sample keeps the legacy
+# ddof=1 matrix bit-identical; ledoit_wolf/oas delegate to scikit-learn
+# shrinkage. Default remains sample in v0.1.0 (no silent change).
+COVARIANCE_ESTIMATORS = ("sample", "ledoit_wolf", "oas")
+
 _WEIGHT_SUM_TOLERANCE = 1e-9
 
 
@@ -44,6 +49,9 @@ class PortfolioConfig:
 
     # Clustering distance metric (ADR 002): signed keeps diversifiers apart.
     distance_metric: str = "signed"
+
+    # Covariance estimation method (ADR 005): sample default, no silent flip.
+    covariance_estimator: str = "sample"
 
     # Portfolio selection scoring weights (must sum to 1.0)
     sharpe_weight: float = 0.45
@@ -110,4 +118,10 @@ class PortfolioConfig:
             raise ValueError(
                 f"distance_metric '{self.distance_metric}' is invalid; "
                 f"allowed values: {list(DISTANCE_METRICS)}"
+            )
+
+        if self.covariance_estimator not in COVARIANCE_ESTIMATORS:
+            raise ValueError(
+                f"covariance_estimator '{self.covariance_estimator}' is invalid; "
+                f"allowed values: {list(COVARIANCE_ESTIMATORS)}"
             )

@@ -24,6 +24,7 @@ from .core.metrics import (
     compute_correlation_distance_matrix,
     compute_logarithmic_returns,
     construct_returns_matrix,
+    estimate_covariance,
 )
 from .data.data_fetch import download_and_calculate_metrics
 from .data.provider import MarketDataProvider, YFinanceProvider
@@ -73,6 +74,7 @@ __all__ = [
     "calculate_sharpe_ratio",
     "calculate_correlation_matrix",
     "calculate_covariance_matrix",
+    "estimate_covariance",
     "construct_returns_matrix",
     "align_prices_to_common_calendar",
     "compute_correlation_distance_matrix",

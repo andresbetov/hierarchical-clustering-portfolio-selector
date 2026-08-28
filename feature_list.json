@@ -325,8 +325,8 @@
       "dependencies": [
         "feat-032"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-033: ADR 005 aceptado (default sample en v0.1.0, flip ledoit_wolf diferido a v0.2.0 con evidencia WF); TDD rojo (import error de seam inexistente + param inexistente); implementado: COVARIANCE_ESTIMATORS + campo validado en config.py, seam estimate_covariance en core/metrics.py (sample bit a bit, LedoitWolf/OAS sklearn, degeneracion NaN sin sklearn), consumo en pipeline.py y walk_forward.py, export __init__; verde: 23 tests (paridad sklearn 1e-12, condition number <= sample, default/replace/valores invalidos) + E2E offline ledoit_wolf con weights finitos suma 1; ./init.sh exit 0: 170 passed (159+11), ruff (2 I001 cazados y corregidos), pyright 0 errors, compileall OK; red feat-021 diff 0; specs configuration-contract + numeric-correctness sincronizadas (2 deltas ADDED); change archivado 2026-08-28-feat-covariance-estimator; README tabla + CHANGELOG actualizados."
     },
     {
       "id": "feat-034",

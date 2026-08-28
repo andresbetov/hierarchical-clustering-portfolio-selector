@@ -37,6 +37,18 @@ El dispatcher de asignación SHALL cubrir exactamente el enum validado y SHALL N
 - **WHEN** se construye con distance_metric="euclidean"
 - **THEN** ValueError enumera los valores permitidos
 
+### Requirement: Estimador de covarianza validado
+
+`PortfolioConfig` SHALL exponer `covariance_estimator` con valores {sample, ledoit_wolf, oas} (default `sample` según ADR 005) y SHALL rechazar cualquier otro valor en construcción con `ValueError` descriptivo.
+
+#### Scenario: valor inválido
+- **WHEN** se construye con covariance_estimator="shrinkage_otro"
+- **THEN** ValueError enumera los valores permitidos
+
+#### Scenario: default sin cambio
+- **WHEN** se construye sin especificar covariance_estimator
+- **THEN** el campo vale "sample"
+
 ### Requirement: Días de trading configurables y validados
 
 `PortfolioConfig` SHALL exponer `trading_days_per_year` (default 252) validado dentro de [1, 366]; los kernels de anualización SHALL recibirlo como parámetro explícito y SHALL NOT contener la constante enterrada.
