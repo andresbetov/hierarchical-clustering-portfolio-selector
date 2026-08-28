@@ -281,8 +281,8 @@
       "name": "Reporting legacy covariance slice",
       "description": "Fix bug ruta no-HRP: pipeline.py:249 pasa la covarianza N*N del universo filtrado a plot_optimal_portfolio_analysis, pero optimal_portfolio en la ruta legacy (metodos != hrp) tiene M<N activos tras el pruning por cluster -> error de broadcasting en reporting.py:440-446 (weight_vector @ cov @ weight_vector con vector M y matriz N*N). El default hrp (M==N) oculta el defecto y ningun test cubre la ruta legacy del reporte. Fix: rebanar la covarianza al subconjunto de optimal_portfolio reutilizando create_portfolio_covariance_matrix (allocation.py:13-31) antes de graficar. Aceptacion: test E2E ruta legacy (risk_parity) con pruning M<N genera las 7 graficas sin excepcion; Sharpe del resumen == wT*Cov*w manual; suite 154 verde. TDD: test de regresion rojo primero.",
       "dependencies": [],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-028: TDD rojo registrado (test E2E legacy risk_parity con pruning M<N reprodujo ValueError matmul size 5 vs 3 en reporting.py:367 pre-fix); fix en pipeline.py reutilizando create_portfolio_covariance_matrix antes de plot_optimal_portfolio_analysis; test E2E verde con spy verificando covarianza rebanada 3x3 == slice esperado; +2 tests unitarios contrato en test_reporting_sharpe.py (acuerdo manual wT*Cov*w 3 activos + dims desalineadas ValueError); ./init.sh exit 0: 157 passed (154+3), ruff OK, pyright 0 errors, compileall OK; red feat-021 sin asserts modificados (git diff 0 en test_hrp/properties/solvers/walk_forward); change OpenSpec valid + archivado."
     },
     {
       "id": "feat-029",

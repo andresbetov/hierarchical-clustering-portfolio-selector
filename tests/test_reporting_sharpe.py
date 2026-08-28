@@ -51,6 +51,33 @@ class TestSummaryMetrics:
         manual_variance = float(np.asarray(weights) @ cov @ np.asarray(weights))
         assert summary["volatility"] == pytest.approx(np.sqrt(manual_variance), rel=1e-12)
 
+    def test_manual_wtw_agreement_three_assets(self):
+        """feat-028 contract: sliced MxM covariance yields the exact manual Sharpe."""
+        cov = np.array(
+            [
+                [0.0400, 0.0060, 0.0020],
+                [0.0060, 0.0100, 0.0010],
+                [0.0020, 0.0010, 0.0225],
+            ]
+        )
+        weights = [0.5, 0.3, 0.2]
+        returns = [0.12, 0.07, 0.05]
+        rf = 0.02
+        summary = _portfolio_summary_metrics(weights, returns, cov, rf)
+
+        manual_variance = float(np.asarray(weights) @ cov @ np.asarray(weights))
+        manual_sharpe = (np.dot(weights, returns) - rf) / np.sqrt(manual_variance)
+        assert summary["volatility"] == pytest.approx(np.sqrt(manual_variance), rel=1e-12)
+        assert summary["sharpe"] == pytest.approx(manual_sharpe, rel=1e-12)
+
+    def test_mismatched_dims_raise_contract(self):
+        """M weights vs NxN covariance (M<N) raises — the shape that crashed the
+        legacy report; the contract is that callers must slice the covariance
+        before invoking the summary (fix lives upstream in the pipeline)."""
+        cov = np.eye(5)
+        with pytest.raises(ValueError):
+            _portfolio_summary_metrics([0.4, 0.35, 0.25], [0.10, 0.08, 0.06], cov, 0.03)
+
     def test_missing_cov_falls_back_with_warning(self, caplog):
         with caplog.at_level(logging.WARNING):
             summary = _portfolio_summary_metrics(
