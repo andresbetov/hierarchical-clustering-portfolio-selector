@@ -289,8 +289,8 @@
       "name": "Walk forward first return fix",
       "description": "Fix bug validacion: walk_forward.py:144-146 computa log_test = np.log(matrix[test_idx] / np.roll(matrix[test_idx], 1, axis=0))[1:] — el truco roll genera log(P[0]/P[ultimo]) (valor basura contra un precio FUTURO dentro de la ventana) y luego lo descarta con [1:], por lo que cada fold pierde el retorno del primer dia del test (n retornos = test_rows-1) y el comentario que lo justifica es engañoso. Fix: computar el retorno del primer dia del test contra el ultimo precio previo a test_start (precio pasado conocido, leak-free), eliminando np.roll y el comentario. Aceptacion: fold sintetico con retornos constantes -> OOS exacto analiticamente; n retornos por fold == test_rows; test anti-fuga de feat-026 intacto.",
       "dependencies": [],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-029: TDD rojo registrado (test analitico obtuvo 0.08542 = 0.02/59*252 pre-fix — el spike del primer dia excluido; esperado 0.52/60*252); fix en walk_forward.py: ventana extendida [test_start-1, test_end) con diff logaritmico directo (sin np.roll, precio previo = pasado leak-free); verde con valor exacto 2.184 (rel 1e-9) y valid_folds=1; ./init.sh exit 0: 158 passed (157+1), ruff OK, pyright 0 errors, compileall OK; test anti-fuga feat-026 intacto; red feat-021 sin asserts modificados (git diff 0); change OpenSpec valid + archivado, spec out-of-sample-validation sincronizada (scenario primer dia del test)."
     },
     {
       "id": "feat-030",

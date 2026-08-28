@@ -105,6 +105,36 @@ class TestWalkForwardEngine:
         for k in set(w_normal) & set(w_poisoned):
             assert w_normal[k] == pytest.approx(w_poisoned[k], abs=1e-9)
 
+    def test_first_test_day_return_included_exactly(self):
+        """feat-029: the OOS series must cover every test day (test_rows
+        returns), including the first day computed against the prior close."""
+        n_rows = 315  # exactly one fold: 250 train + 5 embargo + 60 test
+        rng = np.random.default_rng(11)
+        log_returns = rng.normal(0.0, 0.01, size=n_rows)
+        log_returns[255] = 0.5  # first test day: the spike under test
+        log_returns[256] = 0.02  # second test day: keeps pre-fix fold valid (std > 0)
+        log_returns[257:] = 0.0
+
+        prices_path = 100.0 * np.exp(np.cumsum(log_returns))
+        dates = np.datetime64("2023-01-02", "ns") + np.arange(n_rows, dtype="timedelta64[ns]")
+
+        # Identical paths across assets: portfolio return == asset return for
+        # any weights summing to 1 — the assert needs no knowledge of HRP.
+        prices = {f"T{i}": prices_path.copy() for i in range(3)}
+        dates_by_ticker = {f"T{i}": dates.copy() for i in range(3)}
+
+        config = PortfolioConfig()
+        report = walk_forward_evaluate(
+            prices, dates_by_ticker, config, train_rows=250, test_rows=60, embargo_days=5
+        )
+
+        assert len(report.folds) == 1
+        fold = report.folds[0]
+        assert fold.oos_return is not None
+        # 60 test returns: [0.5, 0.02, 0, ...] -> mean 0.52/60 annualized.
+        assert fold.oos_return == pytest.approx(0.52 / 60 * 252, rel=1e-9)
+        assert report.to_dict()["valid_folds"] == 1
+
     def test_aggregates_coherent_when_valid_folds_exist(self, report):
         summary = report.to_dict()
         valid = summary["valid_folds"]
