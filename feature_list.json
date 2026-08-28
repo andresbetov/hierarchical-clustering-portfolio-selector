@@ -315,8 +315,8 @@
       "dependencies": [
         "feat-031"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-032 (breaking): requires-python>=3.11 + scikit-learn>=1.8 en pyproject (ruff target py311); CI matrix [3.11,3.12,3.13]; uv lock re-resuelto (sklearn 1.9.0 + threadpoolctl 3.6.0 + narwhals 2.25.0; scipy 1.15.3 eliminada del lock por ser resolucion exclusiva 3.10; tomli fuera — consecuente con el floor); uv sync --frozen reproduce + uv lock --check OK + import sklearn 1.9.0 y transitivas joblib/threadpoolctl/narwhals OK; ./init.sh exit 0: 159 passed, ruff/pyright/compileall verdes; CHANGELOG Unreleased con entrada Removed breaking (drop python 3.10); change skip_specs (contrato ya declarado en project-packaging feat-031) valid + archivado 2026-08-28-chore-python-floor-311-sklearn; commit chore! + BREAKING CHANGE footer."
     },
     {
       "id": "feat-033",
