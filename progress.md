@@ -3,55 +3,33 @@
 ## Current State
 
 **Last Updated:** 2026-08-28
-**Branch:** `fix/test-fixture-determinism` — DAG v0.1.0 en curso (feat-028..030 done, feat-031 next)
-**Active Feature:** feat-030 (cerrada en esta sesión); siguiente: feat-031
+**Branch:** `docs/spec-sync-pre-release` — DAG v0.1.0 en curso (feat-028..031 done, CP1 cerrado)
+**Active Feature:** feat-031 (cerrada en esta sesión); siguiente: feat-032
 
-Hito v0.1.0 en marcha: Fase A en curso — 3 de 4 cerrados (reporte legacy, walk-forward, determinismo de fixtures). feat-031 (spec-sync pre-release) cierra CP1 "Estable".
+Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO**: los 4 fixes de Fase A cerrados (reporte legacy, walk-forward, determinismo de fixtures, sync documental pre-release). Suite 159 passed. Fase B (metodología) lista para arrancar con feat-032 (Python ≥3.11 + scikit-learn).
 
 ## Status
 
-### What's Done
+### What's Done (hito v0.1.0 — Fase A / CP1)
 
-- [x] **feat-030** (2026-08-28): fix determinismo de fixtures — `abs(hash(ticker))` salado por PYTHONHASHSEED reemplazado por `zlib.crc32(ticker.encode())`; +1 test de subprocesos con seeds 1 vs 999 (bytes idénticos); suite 158→159; spec `system-verification` sincronizada; change `2026-08-28-fix-test-fixture-determinism` archivado
-- [x] **feat-029** (2026-08-28): fix walk-forward primer retorno — `np.roll`+`[1:]` omitía el retorno del primer día del test (test_rows−1 valores) y generaba un valor basura contra precio futuro; ventana extendida `[test_start−1, test_end)` leak-free; +1 test analítico (spike primer día, valor exacto 0.52/60·252); suite 157→158; spec `out-of-sample-validation` sincronizada; change `2026-08-28-fix-walk-forward-first-return` archivado
-- [x] **feat-028** (2026-08-28): fix crash ruta legacy del reporte — pipeline rebanaba nunca la covarianza (N×N) antes de `plot_optimal_portfolio_analysis` con portfolio M<N (ValueError matmul size 5 vs 3 reproducido por TDD en reporting.py:367); fix reutilizando `create_portfolio_covariance_matrix`; +3 tests (1 E2E con spy de covarianza rebanada, 2 unitarios de contrato); suite 154→157; change OpenSpec `2026-08-28-fix-reporting-legacy-covariance-slice` valid + archivado con spec sincronizada
-- [x] feat-001 orden de resolución (PR #5) · feat-002 suite real (PR #6) · feat-003 manifests+lock (PR #7)
-- [x] **feat-004**: dev-deps pinned; ruff(E,F,W/I/l120)+pyright(basic); Makefile lint/types; init.sh 4 gates; ci.yml matriz; pre-commit opt-in — 18+21 hallazgos mecánicos resueltos · PR #8 mergeada
-- [x] **feat-005**: logging aislado+idempotente, LOG_LEVEL funcional, guard Agg, pipeline sin pyplot, 14 tests contrato — PR #9
-- [x] **feat-006**: paquete instalable + entrypoint portfolio-run — PR #10, CI verde x2
-- [x] **feat-007**: risk_free_rate requerido sin default; market-data-contract creada — PR #11
-- [x] **feat-008**: alineación por calendario común (inner join) + guard loud + pandas explícita + 8 tests — PR #12
+- [x] **feat-031** (2026-08-28): sync documental pre-release — specs merged corregidas (`hrp` en el set de métodos de configuration-contract, errata SHANL, doble negación en numeric-correctness, rango 3.11-3.13 en project-packaging); feat-018 tasks.md cerrado retroactivo; CHANGELOG.md inicial (Keep a Changelog); progress.md consolidado; change `2026-08-28-docs-spec-sync-pre-release` archivado (skip_specs documental)
+- [x] **feat-030** (2026-08-28): fix determinismo de fixtures — `abs(hash(ticker))` salado por PYTHONHASHSEED → `zlib.crc32(ticker.encode())`; +1 test de subprocesos (bytes idénticos seeds 1 vs 999); suite 158→159; spec `system-verification` sincronizada; PR #34
+- [x] **feat-029** (2026-08-28): fix walk-forward primer retorno — `np.roll`+`[1:]` omitía el primer día del test; ventana extendida `[test_start−1, test_end)` leak-free; +1 test analítico (0.52/60·252 exacto); suite 157→158; spec `out-of-sample-validation` sincronizada; PR #33
+- [x] **feat-028** (2026-08-28): fix crash ruta legacy del reporte — covarianza N×N sin rebanar con M<N; rebanado en pipeline reutilizando `create_portfolio_covariance_matrix`; +3 tests; suite 154→157; spec `numeric-correctness` sincronizada; PR #32
+
+### What's Done (DAG histórico feat-001..027 — 27/27, cerrado 2026-08-26)
+
+Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquitectura por capas con provider seam (feat-023), universo YAML (feat-024), ADRs 001-004, specs OpenSpec 11 capacidades, CI 4 gates, 154 tests. Detalle por feature en `feature_list.json:evidence`. Auditoría original: `docs/auditoria-tecnica.md` (histórico).
 
 ### What's In Progress
 
 - [ ] —
 
-### What's Next
+### What's Next (DAG v0.1.0 — Fase B/D)
 
-1. PR de esta rama → develop
-### What's Done (racha feat-011..014)
-
-- [x] **feat-011** A4: ventana calendario exacta `_resolve_window` pura + lookback requerido sin default (+6 tests) — PR #13
-- [x] **feat-009** C3: ε-floor, Sharpe NaN para vol degenerada, ddof=1 consistente, corr diagonal honesta, filtros nombrando excluidos, risk-parity protegida (+13 tests) — PR #14 · capability `numeric-correctness`
-- [x] **feat-010** M10: piso ε en inverse-vol reutilizando helper compartido (+1 test) — PR #15
-- [x] **feat-012** C2: batch único yf.download, fallback Adj→Close nombrado, rechazos agregados, retry stdlib acotado (+7 tests offline vía monkeypatch del boundary) — PR #16
-- [x] **feat-013** M1: config frozen dataclass validada, enum público, dispatch sin fallback muerto (+10 tests; fixture integración migrada a kwargs) — PR #17 · capability `configuration-contract`
-- [x] **feat-014** C4: Dykstra cíclico {≥min}{≤max}{simplex} — bounds simultáneos garantizados; 2 bugs propios cazados por TDD (+8 tests, estrés 100 seeds) — PR #18
-
-## What's Next
-
-### What's Done (esta racha feat-019..020)
-
-- [x] **feat-019** B5: solvers cuadráticos via np.linalg.solve sin inv explícita; _ensure_positive_definite cholesky+jitter determinista loggeado; zero-trace irreparable por contrato (+7 tests) — PR #23
-- [x] **feat-020** A5: Sharpe reporte con wTΣw real; fallback diagonal solo defensivo con warning (+6 tests: ρ=0 equivalencia legacy, ρ=1 identidad analítica) — PR #24
-
-## What's Next (post-DAG)
-
-1. Monitorear CI del último PR mergeado (#30)
-2. Oportunidades post-auditoría (no bloqueantes): bump actions Node24, LedoitWolf transversal formal, HERC/linkage paramétrico, turnover costs sobre walk-forward
-3. Posible tag v0.1.0 sobre develop si se quiere sellar hito
-4. Regla vigente: features complejos leen docs/decision-log-feat001.md
-4. Regla vigente: features complejos (016/018/021/023) leen docs/decision-log-feat001.md
+1. feat-032 `chore/python-floor-311-sklearn` (breaking: drop 3.10) → feat-033 `feat/covariance-estimator` (ADR 005) → feat-034 `feat/linkage-parameter` (ADR 006)
+2. feat-035 `feat/walk-forward-production-parity` (filtros por fold + benchmarks 1/N e IVP) → feat-036 `fix/sharpe-convention` → feat-037 `feat/alignment-overlap-guard`
+3. Fase D: feat-038 cache parquet → feat-039 CLI+dendrograma → feat-040 cobertura → feat-041 release v0.1.0
 
 ## Process Deviations (transparencia)
 
@@ -61,37 +39,17 @@ Hito v0.1.0 en marcha: Fase A en curso — 3 de 4 cerrados (reporte legacy, walk
 ## Blockers / Risks
 
 - **Hallazgo feat-028 (fuera de scope, propuesto como feature nueva)**: `generate_complete_analysis_report` chart 4 re-cálcula matrices full-universe con `construct_returns_matrix` sobre `historical_prices` crudos (longitudes por-ticker propias); con datos reales yfinance cualquier ticker con calendario distinto (suspensión, IPO, delisting) lanza ValueError. Candidata: feature de alineación full-universe para charts (emparentada con feat-037; evaluar si se absorbe en feat-037 o se abre aparte).
-- pyright baja a `basic`: strict es progresión futura (registrar como feature dedicado si se quiere formalizar)
-- scipy sigue siendo excepción documentada hasta feat-018
+- pyright baja a `basic`: strict es progresión futura (registrar como feature dedicado si se quiere formalizar).
+- aviso cosmético Node20→24 en GitHub Actions (bump futuro).
+- feat-032 es breaking change (Python floor) — exige `chore!:` + footer `BREAKING CHANGE` por CONTRIBUTING.
 
 ## Evidence of Completion
 
-- [x] uv sync instala el proyecto ("Built hierarchical-clustering-portfolio-selector"); import desde cwd externo OK
-- [x] entrypoint resuelto: portfolio-run -> portfolio_engine.cli:main (importlib.metadata)
-- [x] suite 35 passed (+2 contrato A2) · gates verdes · grep 0.03 fuente=0
+- feat-031: `openspec validate --specs` 11/11 · `grep SHANL openspec/` = 0 · set de métodos en spec == enum código (6) · `./init.sh` exit 0 con 159 passed · CHANGELOG.md con formato Keep a Changelog
+- feat-028..030: evidencia completa por feature en `feature_list.json:evidence` (rojo TDD → verde → init.sh fresco → spec sincronizada → PR squash)
 
 ## Decisions Made
 
-- Logger "portfolio_engine" propietario vs root: aislamiento de caplog/ruido; idempotencia por deduplicación (tagged handler)
-- getLevelName(int)→string hallado por TDD: ints retornan directo, strings por lookup — documentado inline
-- Guard Agg SOLO si no-DISPLAY && !MPLBACKEND && !darwin; función pura testeable + noqa E402 justificados
-- `float(...)` en métricas de data_fetch + `np.asarray(dtype=float64)` para `.values`: contrato más fuerte del dict de métricas
-- Reglas ruff minimalistas (E,F,W,I) — endurecer queda como progresión explícita
-- pre-commit opt-in: CI es la autoridad enforcing
-
-## Files Modified This Session
-
-- `pyproject.toml` (dev group + tool.ruff + tool.pyright), `uv.lock`, `Makefile`, `init.sh`
-- `.github/workflows/ci.yml` (nuevo), `.pre-commit-config.yaml` (nuevo)
-- `CONTRIBUTING.md` (gates), `README.md` (badge), fixes menores en portfolio_engine (tiping signatures)
-- tracker/progress/handoff + openspec change feat-004
-
-## Decisions Made
-
-- hatchling vs setuptools/flit: config mínimo, estándar en análisis numérico flat-layout
-- Edición TOML corrupta cazada por build failure en vivo: dependencies quedó dentro de project.scripts — reordenado canónico; lección: validar estructura completa tras inserts multi-sección
-- pythonpath=["."] se conserva belt-and-suspenders pese a instalación real
-
-## Notes for Next Session
-
-- PR → develop; luego feat-007 abre Fase D (integridad de datos)
+- feat-031 declarado `skip_specs: true` (cambio puramente documental: las specs se corrigen para reflejar comportamiento YA implementado — precedente feat-025)
+- CHANGELOG arranca con `[Unreleased]` + placeholder `[0.1.0]` que feat-041 completará y fechará al tag
+- `project-packaging` actualizado a 3.11-3.13 en feat-031 para que feat-032 solo implemente lo que la spec ya declara

@@ -305,8 +305,8 @@
       "name": "Spec sync pre release",
       "description": "Sincronizacion documental previa a Fase B: (1) openspec/specs/configuration-contract/spec.md:18 lista 5 metodos sin 'hrp' (default desde feat-018) — el delta de feat-018 no se fusiono completo; (2) errata 'SHANL' en configuration-contract/spec.md:54 y 'no SHALL NO coexistir' en numeric-correctness/spec.md:26; (3) tasks.md del change archivado feat-018 con boxes sin marcar; (4) crear CHANGELOG.md inicial (formato Keep a Changelog 2.0: seccion Unreleased + Added/Changed/Fixed, fechas ISO); (5) limpiar progress.md (secciones 'What's Next' duplicadas, restos de sesiones anteriores); (6) actualizar session-handoff.md obsoleto (habla de feat-004..008 como sesion actual); (7) spec project-packaging a matrix 3.11-3.13 en preparacion de feat-032. Aceptacion: set de metodos en spec == enum del codigo (6); grep SHANL = 0; CHANGELOG.md existe con formato canonico; un solo bloque What's Next en progress.md.",
       "dependencies": [],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-031 (cierra CP1): configuration-contract corregida (set 6 metodos con hrp, errata SHANL eliminada — grep SHANL=0 en openspec/specs/ vivos); numeric-correctness doble negacion corregida; project-packaging a 3.11-3.13 (prep feat-032); feat-018 tasks.md 0 boxes sin marcar; CHANGELOG.md inicial Keep a Changelog (Unreleased + placeholder 0.1.0); progress.md consolidado (1 solo What's Next); change skip_specs documental (precedente feat-025) valid + archivado 2026-08-28-docs-spec-sync-pre-release; openspec validate --specs 11/11; ./init.sh exit 0: 159 passed, ruff/pyright/compileall verdes (docs-only, cero cambios de comportamiento)."
     },
     {
       "id": "feat-032",
