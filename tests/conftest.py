@@ -1,6 +1,8 @@
 """Shared offline fixtures: synthetic yfinance-shaped batch panels (feat-021)."""
 
 
+import zlib
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -20,7 +22,10 @@ def _build_panel(spec, rows=20, start="2024-01-01"):
     dates = pd.date_range(start=start, periods=rows, freq="D")
     columns = {}
     for ticker, options in spec.items():
-        rng = np.random.default_rng(abs(hash(ticker)) % 2**32)
+        # feat-030: zlib.crc32 is stable across processes; the previous
+        # abs(hash(ticker)) depended on the interpreter's PYTHONHASHSEED
+        # salt and produced different panels for the same commit.
+        rng = np.random.default_rng(zlib.crc32(ticker.encode()))
         drift = options.get("drift", 0.0008)
         values = 100.0 * np.exp(np.cumsum(drift + rng.normal(scale=0.01, size=rows)))
         if options.get("flat"):

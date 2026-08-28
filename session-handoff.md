@@ -3,37 +3,38 @@
 ## Current Objective
 
 - Goal: v0.1.0 "estable y correcta" — DAG feat-028..041 registrado (commit 27580a7)
-- Current status: rama `fix/walk-forward-first-return` (feat-029 lista para PR) · suite 158 passed
-- Next: feat-030 `fix/test-fixture-determinism` (hash salado por PYTHONHASHSEED en conftest.py:23 → zlib.crc32)
+- Current status: rama `fix/test-fixture-determinism` (feat-030 lista para PR) · suite 159 passed
+- Next: feat-031 `docs/spec-sync-pre-release` (cierra CP1 "Estable": specs + CHANGELOG inicial + limpieza progress/handoff)
 
 ## Completed This Session
 
-- feat-029: fix walk-forward primer retorno OOS. TDD rojo→verde (rojo: 0.08542 sin spike; verde: 2.184 exacto); ventana extendida `[test_start−1, test_end)` sin `np.roll`; +1 test analítico; spec `out-of-sample-validation` sincronizada; change OpenSpec archivado
-- feat-028 (sesión previa): fix crash ruta legacy del reporte — mergeada en PR #32 (b8ed733)
+- feat-030: fix determinismo de fixtures. TDD rojo (subprocesos PYTHONHASHSEED=1 vs 999 → paneles distintos) → verde (bytes idénticos con `zlib.crc32`); +1 test de contrato; spec `system-verification` sincronizada; change archivado
+- feat-028 (PR #32) y feat-029 (PR #33) mergeadas a develop en sesiones previas
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| suite | `./init.sh` | ✓ 158 passed (157+1) | rojo pre-fix registrado: 0.08542 vs 2.184 esperado |
-| gates | ruff / pyright / compileall | ✓ / ✓ / ✓ | sin hallazgos nuevos |
-| red feat-021/026 | git diff tests existentes | 0 cambios | solo adiciones en test_walk_forward.py |
-| openspec | validate + archive + validate --specs | ✓ 11 specs OK | delta MODIFIED sincronizado en out-of-sample-validation |
+| suite | `./init.sh` | ✓ 159 passed (158+1) | rojo pre-fix: AssertionError bytes distintos bajo seeds saladas |
+| gates | ruff / pyright / compileall | ✓ / ✓ / ✓ | ruff cazó import muerto (corregido en la misma feature) |
+| red feat-021/026 | git diff tests existentes | 0 asserts modificados | solo conftest.py cambia; invariantes sostenidos con paneles nuevos |
+| openspec | validate + archive + validate --specs | ✓ 11 specs OK | delta MODIFIED sincronizado en system-verification |
 
 ## Decisions Made
 
-- D1: ventana extendida `[test_start−1, test_end)` con diff logarítmico directo (precio previo = pasado conocido; sin tocar `_iter_walk_windows`)
-- D3: test analítico con columnas idénticas (retorno del portfolio == retorno del activo, independiente de pesos HRP)
+- D1: `zlib.crc32(ticker.encode())` como derivación estable de seed (stdlib, determinista entre procesos)
+- D2: test vía subprocesos reales con env PYTHONHASHSEED distinto (comportamiento, no estática)
 
 ## Blockers / Risks
 
-- Hallazgo feat-028 sigue abierto como candidata de feature: chart 4 full-universe con `construct_returns_matrix` sobre precios crudos de longitud desigual (ver progress.md → Blockers/Risks)
-- feat-029 requiere PR → develop (squash) antes de abrir feat-030
+- Hallazgo feat-028 sigue abierto: chart 4 full-universe con `construct_returns_matrix` sobre precios crudos de longitud desigual (candidata a absorberse en feat-037)
+- feat-030 requiere PR → develop (squash) antes de abrir feat-031
+- feat-031 debe cerrar CP1: sync configuration-contract (+hrp, SHANL), CHANGELOG inicial KaC, limpiar progress.md duplicado, session-handoff actualizado
 
 ## Next Session Startup
 
-1. PR de feat-029 → CI verde → squash merge → borrar rama
-2. feat-030: rama `fix/test-fixture-determinism`, OpenSpec propose→apply→archive, TDD (paneles bit a bit con PYTHONHASHSEED=1 vs 999)
+1. PR de feat-030 → CI verde → squash merge → borrar rama
+2. feat-031: rama `docs/spec-sync-pre-release`, OpenSpec propose→apply→archive
 3. Rutina: TDD rojo → fix → ./init.sh fresco → evidencia en feature_list.json
 
 ## Lecciones consolidadas del proyecto

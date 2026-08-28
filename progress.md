@@ -3,15 +3,16 @@
 ## Current State
 
 **Last Updated:** 2026-08-28
-**Branch:** `fix/walk-forward-first-return` — DAG v0.1.0 en curso (feat-028/029 done, feat-030 next)
-**Active Feature:** feat-029 (cerrada en esta sesión); siguiente: feat-030
+**Branch:** `fix/test-fixture-determinism` — DAG v0.1.0 en curso (feat-028..030 done, feat-031 next)
+**Active Feature:** feat-030 (cerrada en esta sesión); siguiente: feat-031
 
-Hito v0.1.0 en marcha: DAG feat-028..041 registrado en `feature_list.json` (commit 27580a7), Fase A en curso — 2 de 4 fixes cerrados (reporte legacy, walk-forward).
+Hito v0.1.0 en marcha: Fase A en curso — 3 de 4 cerrados (reporte legacy, walk-forward, determinismo de fixtures). feat-031 (spec-sync pre-release) cierra CP1 "Estable".
 
 ## Status
 
 ### What's Done
 
+- [x] **feat-030** (2026-08-28): fix determinismo de fixtures — `abs(hash(ticker))` salado por PYTHONHASHSEED reemplazado por `zlib.crc32(ticker.encode())`; +1 test de subprocesos con seeds 1 vs 999 (bytes idénticos); suite 158→159; spec `system-verification` sincronizada; change `2026-08-28-fix-test-fixture-determinism` archivado
 - [x] **feat-029** (2026-08-28): fix walk-forward primer retorno — `np.roll`+`[1:]` omitía el retorno del primer día del test (test_rows−1 valores) y generaba un valor basura contra precio futuro; ventana extendida `[test_start−1, test_end)` leak-free; +1 test analítico (spike primer día, valor exacto 0.52/60·252); suite 157→158; spec `out-of-sample-validation` sincronizada; change `2026-08-28-fix-walk-forward-first-return` archivado
 - [x] **feat-028** (2026-08-28): fix crash ruta legacy del reporte — pipeline rebanaba nunca la covarianza (N×N) antes de `plot_optimal_portfolio_analysis` con portfolio M<N (ValueError matmul size 5 vs 3 reproducido por TDD en reporting.py:367); fix reutilizando `create_portfolio_covariance_matrix`; +3 tests (1 E2E con spy de covarianza rebanada, 2 unitarios de contrato); suite 154→157; change OpenSpec `2026-08-28-fix-reporting-legacy-covariance-slice` valid + archivado con spec sincronizada
 - [x] feat-001 orden de resolución (PR #5) · feat-002 suite real (PR #6) · feat-003 manifests+lock (PR #7)
