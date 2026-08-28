@@ -3,15 +3,16 @@
 ## Current State
 
 **Last Updated:** 2026-08-28
-**Branch:** `chore/python-floor-311-sklearn` — DAG v0.1.0 en curso (feat-028..032 done, CP1 cerrado, CP2 en curso)
-**Active Feature:** feat-032 (cerrada en esta sesión); siguiente: feat-033
+**Branch:** `feat/covariance-estimator` — DAG v0.1.0 en curso (feat-028..033 done, CP1 cerrado, CP2 en curso)
+**Active Feature:** feat-033 (cerrada en esta sesión); siguiente: feat-034
 
-Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · CP2 "Correcta" en curso: feat-032 (plataforma: Python ≥3.11 + scikit-learn) cerrada; siguiente feat-033 (estimador de covarianza, ADR 005). Suite 159 passed.
+Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · CP2 "Correcta" en curso: plataforma (feat-032) y estimador de covarianza (feat-033, ADR 005) cerrados; siguiente feat-034 (linkage parametrizable, ADR 006). Suite 170 passed.
 
 ## Status
 
 ### What's Done (hito v0.1.0 — Fase A / CP1)
 
+- [x] **feat-033** (2026-08-28): estimador de covarianza parametrizable (ADR 005) — `covariance_estimator ∈ {sample, ledoit_wolf, oas}` validado en config; seam `estimate_covariance` en core/metrics consumida por pipeline y walk-forward; sample bit a bit (red feat-021 intacta), shrinkage con paridad sklearn 1e-12; +11 tests + E2E offline ledoit_wolf; suite 159→170; specs configuration-contract + numeric-correctness sincronizadas; change `2026-08-28-feat-covariance-estimator` archivado
 - [x] **feat-032** (2026-08-28): breaking plataforma — `requires-python>=3.11` (drop 3.10, EOL 2026-10-31/SPEC 0) + `scikit-learn>=1.8` (para feat-033); CI matrix 3.11/3.12/3.13; uv.lock re-resuelto (sklearn 1.9.0, threadpoolctl, narwhals; scipy 1.15.3 fuera por resolución exclusiva 3.10); `uv sync --frozen` + import verificados; CHANGELOG breaking; change `2026-08-28-chore-python-floor-311-sklearn` archivado
 - [x] **feat-031** (2026-08-28): sync documental pre-release — specs merged corregidas (`hrp` en el set de métodos de configuration-contract, errata SHANL, doble negación en numeric-correctness, rango 3.11-3.13 en project-packaging); feat-018 tasks.md cerrado retroactivo; CHANGELOG.md inicial (Keep a Changelog); progress.md consolidado; change `2026-08-28-docs-spec-sync-pre-release` archivado (skip_specs documental)
 - [x] **feat-030** (2026-08-28): fix determinismo de fixtures — `abs(hash(ticker))` salado por PYTHONHASHSEED → `zlib.crc32(ticker.encode())`; +1 test de subprocesos (bytes idénticos seeds 1 vs 999); suite 158→159; spec `system-verification` sincronizada; PR #34
@@ -28,7 +29,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's Next (DAG v0.1.0 — Fase B/D)
 
-1. feat-033 `feat/covariance-estimator` (ADR 005) → feat-034 `feat/linkage-parameter` (ADR 006)
+1. feat-034 `feat/linkage-parameter` (ADR 006)
 2. feat-035 `feat/walk-forward-production-parity` (filtros por fold + benchmarks 1/N e IVP) → feat-036 `fix/sharpe-convention` → feat-037 `feat/alignment-overlap-guard`
 3. Fase D: feat-038 cache parquet → feat-039 CLI+dendrograma → feat-040 cobertura → feat-041 release v0.1.0
 

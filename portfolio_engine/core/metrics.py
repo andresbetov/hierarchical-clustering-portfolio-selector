@@ -6,6 +6,7 @@ gains, while the characterization suite pins exact semantics.
 """
 
 import numpy as np
+from sklearn.covariance import OAS, LedoitWolf
 
 # Floor for variance/std-like magnitudes: anything <= EPS is "no information"
 # and maps to NaN semantics rather than infinities (C3 contract).
@@ -90,6 +91,35 @@ def calculate_covariance_matrix(returns_matrix: np.ndarray) -> np.ndarray:
 
     centered = matrix - matrix.mean(axis=0, keepdims=True)
     return centered.T @ centered / (number_of_days - 1)
+
+
+COVARIANCE_ESTIMATORS = ("sample", "ledoit_wolf", "oas")
+
+
+def estimate_covariance(returns_matrix: np.ndarray, method: str = "sample") -> np.ndarray:
+    """Single covariance-estimation seam (ADR 005).
+
+    - "sample": the legacy ddof=1 sample covariance (bit-identical to
+      calculate_covariance_matrix — the default, no silent behavior change).
+    - "ledoit_wolf" / "oas": scikit-learn shrinkage estimators
+      (parity-tested against sklearn.covariance at 1e-12).
+
+    Degenerate inputs (<= 1 observation) return the full-NaN matrix without
+    invoking sklearn, mirroring calculate_covariance_matrix semantics.
+    """
+    if method not in COVARIANCE_ESTIMATORS:
+        raise ValueError(
+            f"Unknown covariance_estimator '{method}'; allowed: {list(COVARIANCE_ESTIMATORS)}"
+        )
+
+    matrix, number_of_days, _ = _validate_observations_matrix(returns_matrix)
+    if number_of_days == 0:
+        return matrix
+    if method == "sample":
+        return calculate_covariance_matrix(returns_matrix)
+
+    estimator = LedoitWolf() if method == "ledoit_wolf" else OAS()
+    return estimator.fit(matrix).covariance_
 
 
 def construct_returns_matrix(prices_dictionary: dict) -> np.ndarray:

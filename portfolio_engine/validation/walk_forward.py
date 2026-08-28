@@ -15,8 +15,8 @@ import numpy as np
 from ..core.config import PortfolioConfig
 from ..core.metrics import (
     align_prices_to_common_calendar,
-    calculate_covariance_matrix,
     construct_returns_matrix,
+    estimate_covariance,
 )
 from ..portfolio.allocation import _resolve_effective_bounds, apply_weight_constraints, calculate_hrp_weights
 
@@ -131,7 +131,7 @@ def walk_forward_evaluate(
             daily_train = construct_returns_matrix({
                 t: matrix[train_idx, i] for i, t in enumerate(tickers)
             })
-            cov_train = calculate_covariance_matrix(daily_train)
+            cov_train = estimate_covariance(daily_train, config.covariance_estimator)
 
             raw_weights = calculate_hrp_weights(cov_train)
             min_bound, max_bound = _resolve_effective_bounds(len(tickers), config)
