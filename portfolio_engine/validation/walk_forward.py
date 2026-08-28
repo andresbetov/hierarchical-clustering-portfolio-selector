@@ -141,8 +141,12 @@ def walk_forward_evaluate(
 
             weight_vector = np.array([constrained[i] for i in range(len(tickers))])
 
-            log_test = np.log(matrix[test_idx] / np.roll(matrix[test_idx], 1, axis=0))[1:]
-            # First row return unavailable (roll trick produces log(P/P)); treat as first-day return vs prior close.
+            # OOS returns cover EVERY test day (exactly test_rows values): the
+            # first test-day return is log(P[test_start]/P[test_start-1]), using
+            # the last price before the window (embargo row, or last train row
+            # when embargo_days=0) — past information, no leakage (feat-029).
+            extended_test = matrix[np.concatenate(([test_idx[0] - 1], test_idx))]
+            log_test = np.log(extended_test[1:] / extended_test[:-1])
             portfolio_daily_returns = log_test @ weight_vector
 
             if len(portfolio_daily_returns) == 0 or float(np.std(portfolio_daily_returns, ddof=1)) <= 0:
