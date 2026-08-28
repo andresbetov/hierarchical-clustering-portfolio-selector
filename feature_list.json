@@ -275,6 +275,146 @@
       ],
       "status": "done",
       "evidence": "2026-08-26 sesion feat-027: __init__.py docstring de paquete (hrp default/signed/walk-forward/ADRs); exports canonicos añadidos (calculate_hrp_weights, load_universe, walk_forward_evaluate, MarketDataProvider/YFinanceProvider, construct_returns_matrix recuperado); pyright warning __all__ vs imports reales saldado (sharpe/risk_parity faltaban por perdida heredoc); data_fetch/selection docstrings a arquitectura final. Suite 154 passed; gates verdes."
+    },
+    {
+      "id": "feat-028",
+      "name": "Reporting legacy covariance slice",
+      "description": "Fix bug ruta no-HRP: pipeline.py:249 pasa la covarianza N*N del universo filtrado a plot_optimal_portfolio_analysis, pero optimal_portfolio en la ruta legacy (metodos != hrp) tiene M<N activos tras el pruning por cluster -> error de broadcasting en reporting.py:440-446 (weight_vector @ cov @ weight_vector con vector M y matriz N*N). El default hrp (M==N) oculta el defecto y ningun test cubre la ruta legacy del reporte. Fix: rebanar la covarianza al subconjunto de optimal_portfolio reutilizando create_portfolio_covariance_matrix (allocation.py:13-31) antes de graficar. Aceptacion: test E2E ruta legacy (risk_parity) con pruning M<N genera las 7 graficas sin excepcion; Sharpe del resumen == wT*Cov*w manual; suite 154 verde. TDD: test de regresion rojo primero.",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-029",
+      "name": "Walk forward first return fix",
+      "description": "Fix bug validacion: walk_forward.py:144-146 computa log_test = np.log(matrix[test_idx] / np.roll(matrix[test_idx], 1, axis=0))[1:] — el truco roll genera log(P[0]/P[ultimo]) (valor basura contra un precio FUTURO dentro de la ventana) y luego lo descarta con [1:], por lo que cada fold pierde el retorno del primer dia del test (n retornos = test_rows-1) y el comentario que lo justifica es engañoso. Fix: computar el retorno del primer dia del test contra el ultimo precio previo a test_start (precio pasado conocido, leak-free), eliminando np.roll y el comentario. Aceptacion: fold sintetico con retornos constantes -> OOS exacto analiticamente; n retornos por fold == test_rows; test anti-fuga de feat-026 intacto.",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-030",
+      "name": "Test fixture determinism",
+      "description": "Fix determinismo de tests: conftest.py:23 usa np.random.default_rng(abs(hash(ticker)) % 2**32) — hash() de strings en Python esta salado por PYTHONHASHSEED, asi que el panel sintetico difiere entre procesos (demostrado: PYTHONHASHSEED=1 vs 999 producen seeds distintos) y la afirmacion 'semillas fijas en fixtures' de README.md:103 y system-verification/spec.md:26 es falsa. Fix: seed estable por ticker (zlib.crc32(ticker.encode())) independiente del salting del interprete. Aceptacion: paneles identicos bit a bit ejecutando la suite con PYTHONHASHSEED=1 y PYTHONHASHSEED=999; asserts de la suite (invariantes) siguen verdes en ambos.",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-031",
+      "name": "Spec sync pre release",
+      "description": "Sincronizacion documental previa a Fase B: (1) openspec/specs/configuration-contract/spec.md:18 lista 5 metodos sin 'hrp' (default desde feat-018) — el delta de feat-018 no se fusiono completo; (2) errata 'SHANL' en configuration-contract/spec.md:54 y 'no SHALL NO coexistir' en numeric-correctness/spec.md:26; (3) tasks.md del change archivado feat-018 con boxes sin marcar; (4) crear CHANGELOG.md inicial (formato Keep a Changelog 2.0: seccion Unreleased + Added/Changed/Fixed, fechas ISO); (5) limpiar progress.md (secciones 'What's Next' duplicadas, restos de sesiones anteriores); (6) actualizar session-handoff.md obsoleto (habla de feat-004..008 como sesion actual); (7) spec project-packaging a matrix 3.11-3.13 en preparacion de feat-032. Aceptacion: set de metodos en spec == enum del codigo (6); grep SHANL = 0; CHANGELOG.md existe con formato canonico; un solo bloque What's Next en progress.md.",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-032",
+      "name": "Python floor 311 sklearn",
+      "description": "Bump de plataforma para v0.1.0: requires-python >=3.11 (Python 3.10 llega a EOL 31-oct-2026 segun PEP 619/devguide; SPEC 0 del ecosistema cientifico recomienda soltarlo) y entrada de scikit-learn>=1.8 (exige Python >=3.11) como dependencia para el estimador de covarianza de feat-033. Cambios: pyproject.toml requires-python + dependencies; CI matrix ['3.11','3.12','3.13'] en .github/workflows/ci.yml; re-lock uv (scikit-learn + joblib + threadpoolctl + narwhals transitivos); nota breaking en CHANGELOG Unreleased. Aceptacion: CI verde en las 3 versiones; uv sync --frozen reproducible sin re-resolver; import sklearn OK offline; gates locales verdes.",
+      "dependencies": [
+        "feat-031"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-033",
+      "name": "Covariance estimator param",
+      "description": "Estimador de covarianza parametrizable con ADR 005 (decision metodologica aprobada: dependencia sklearn). Justificacion: Trucios 2026 (Empirical Economics) demuestra que metodos jerarquicos son sensibles al estimador de covarianza; LedoitWolf/OAS mitigan el ruido de la covarianza muestral (shrunk = (1-s)*cov + s*mu*I, sklearn.covariance). Alcance: ADR 005 aceptado; PortfolioConfig.covariance_estimator: 'sample'|'ledoit_wolf'|'oas' validado en __post_init__; seam puro estimate_covariance(returns_matrix, method) en core/metrics.py; pipeline.main y walk_forward_evaluate lo consumen. Default 'sample' en v0.1.0 (la red feat-021 pina numeros exactos — sin cambio silencioso de resultados); flip de default a ledoit_wolf diferido a v0.2.0 con evidencia walk-forward. Aceptacion: paridad con sklearn.covariance.LedoitWolf/OAS a 1e-12; condition number de ledoit_wolf <= sample en cov ruidosa; enum invalido rechazado en construccion; E2E offline con ledoit_wolf pasa la red feat-021 sin modificar asserts.",
+      "dependencies": [
+        "feat-032"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-034",
+      "name": "Linkage parameter ADR 006",
+      "description": "Linkage parametrizable con ADR 006. Justificacion: De Prado 2016 usa single (original) pero sufre chaining; skfolio setea Ward como default por estabilidad y pyhrp documenta la comparativa — exponerlo es practica 2025-26 (diferido historico en decision-log feat-025). Alcance: ADR 006 aceptado; PortfolioConfig.linkage_method: 'single'|'ward'|'average' (default 'single', fiel al paper y a los snapshots de la red feat-021); calculate_hrp_weights(covariance_matrix, linkage_method='single') propaga a scipy.cluster.hierarchy.linkage; pipeline y walk_forward pasan el valor desde config. Aceptacion: snapshot bit a bit con default single (red feat-021 intacta sin modificar asserts); ward sobre universo sintetico de 3 bloques de correlacion produce pesos finitos suma 1; enum invalido rechazado en construccion.",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-035",
+      "name": "Walk forward production parity",
+      "description": "El walk-forward debe validar la ESTRATEGIA productiva completa, no solo el nucleo HRP: walk_forward.py:131-140 no aplica apply_asset_filters por fold de train mientras el pipeline productivo si lo hace (pipeline.py:76-81) — la validacion OOS cubre una estrategia distinta. Alcance: (1) aplicar filtros Sharpe/vol por fold de train (universos variables por fold con warning nombrado si difieren); (2) WalkForwardReport añade benchmarks 'equal' (1/N) e 'ivp' (inverse-volatility) con retorno/volatilidad/Sharpe medianos calculados sobre los MISMOS retornos OOS — sin benchmark 1/N la lectura del Sharpe mediano es engañosa (Palomar: '1/N jerarquico dificil de batir'); (3) documentar en docstring que embargo=5d esta dentro de la practica (5-20 dias diarios) y que la purga implicita es 1d (horizonte de la etiqueta = retorno diario). Aceptacion: fold donde un activo no pasa el filtro de train queda fuera de los pesos de ese fold; benchmarks computados sobre retornos OOS identicos a los del motor; test anti-fuga de feat-026 intacto; to_dict() expone benchmarks.",
+      "dependencies": [
+        "feat-029",
+        "feat-033",
+        "feat-034"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-036",
+      "name": "Sharpe convention unification",
+      "description": "Fix consistencia estadistica: metrics.py:23-40 mezcla media de log-returns anualizada (numerador) con rf aritmetica (0.045) — convencion ambigua sin aproximacion log/aritmetica explicita. Fix: convertir rf a terminos logaritmicos (ln(1+rf)) coherente con los log-returns del pipeline, con constante derivada una sola vez desde PortfolioConfig. Ademas: addendum en ADR 003 documentando que la proyeccion Dykstra post-hoc (feat-014) altera el balance de riesgo HRP — eleccion de ingenieria consciente, no propiedad del metodo. Aceptacion: Sharpe con rf=0 invariante; rf=0.045 produce numerador con ln(1.045) (assert exacto); red feat-021 actualizada donde pine rf; cambio de contrato registrado en CHANGELOG Unreleased; ADR 003 con addendum firmado.",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-037",
+      "name": "Alignment overlap guard",
+      "description": "Guard de solapamiento en alineacion: align_prices_to_common_calendar (metrics.py:127-168) hace inner join — un ticker delisted/IPO a mitad de ventana trunca la historia de TODOS los demas al overlap, corrupcion silenciosa del calendario comun (impacto bajo con 12 large-caps, alto en universos amplios). Alcance: PortfolioConfig.minimum_overlap_ratio (default 0.9, rango (0,1]); la alineacion excluye con warning nombrado a tickers cuya historia solapa menos que el ratio contra el span comun, preservando la historia del resto; manejo por-ticker completo (union + forward-fill por politica) queda explicitamente diferido a v0.2.0. Aceptacion: ticker con historia 50% mas corta es excluido y NO trunca a los demas; sin delistings el comportamiento es bit a bit identico al actual (invariancia); config rechaza ratio fuera de (0,1].",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-038",
+      "name": "Data cache parquet",
+      "description": "Cache de datos local para confiabilidad operativa: rate-limiting de yfinance activo 2025-2026 (issues #2280, #2422, #2526; soluciones comunitarias yfinance-cache/requests_cache) hace que corridas repetidas fallen intermitentemente — sin cache, cada corrida del pipeline depende de red exitosa. Alcance: cache opcional data/cache/*.parquet en YFinanceProvider (key determinista: tickers + ventana resuelta + trading_days; invalidacion por cambio de key); flag --refresh-cache en CLI; data/cache/ en .gitignore; exclusion explicita de CI (que sigue offline). Aceptacion: segunda llamada con misma key NO invoca _fetch_batch (verificado con contador monkeypatcheado); --refresh-cache fuerza re-descarga; corrida sin red desde cache produce resultados identicos; suite offline verde sin tocar red.",
+      "dependencies": [],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-039",
+      "name": "CLI args and dendrogram",
+      "description": "Cierre de producto para v0.1.0: (1) argparse en cli.py — flags --universe, --method, --covariance-estimator, --linkage, --save/--show, --refresh-cache propagados a PortfolioConfig y generate_complete_analysis_report (argparse venia diferido por decision-log feat-006); (2) grafica 8 del reporte: dendrograma del linkage real del HRP (scipy.cluster.hierarchy.dendrogram sobre la matriz de linkage de calculate_hrp_weights, reutilizando la misma construccion de distancia firmada) — la visualizacion mas natural del proyecto, hoy ausente (skfolio la incluye por defecto); (3) export de la funcion en __init__.py. Aceptacion: tests CLI con provider monkeypatcheado verifican que cada flag propaga a config; dendrograma headless genera PNG con hojas en orden quasi-diagonal consistente con el HRP; --help documenta todos los flags; suite offline verde.",
+      "dependencies": [
+        "feat-033",
+        "feat-034",
+        "feat-038"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-040",
+      "name": "Coverage gate CI",
+      "description": "Medicion y umbral de cobertura + higiene de dependencias: (1) pytest-cov con --cov-fail-under en addopts (umbral = baseline medido tras estabilizar el codigo de Fases A/B + feat-038/039, ~85% estimado; medir antes de fijar); (2) mover pytest de dependencies runtime a dev-dependency-groups (pyproject.toml:14 — pytest en runtime es un residuo del arranque del proyecto); (3) Makefile test target reporta cobertura. Aceptacion: make test reporta cobertura y falla bajo el umbral; pyproject sin pytest en dependencies runtime; uv sync instala igual el proyecto; gates y CI verdes con el umbral fijado.",
+      "dependencies": [
+        "feat-039"
+      ],
+      "status": "not-started",
+      "evidence": ""
+    },
+    {
+      "id": "feat-041",
+      "name": "Release v0.1.0",
+      "description": "Cierre del hito v0.1.0 'estable y correcta': (1) CHANGELOG.md con entrada [0.1.0] completa (Added/Changed/Fixed desde el origen del proyecto, fecha ISO); (2) seccion README 'Limitaciones conocidas' declarando explicitamente: no apta para decisiones de inversion hasta v0.2.0 (sin costos de transaccion ni turnover), survivorship bias del universo fijo, dependencia de disponibilidad de yfinance; (3) tag anotado v0.1.0 sobre develop apuntando a SHA con CI verde; (4) GitHub Release opcional; (5) progress.md/session-handoff.md finales de hito con backlog v0.2.0 registrado (CPCV/DSR/PBO via purgedcv o temporalcv, costos+turnover, HERC, tearsheet, VaR/CVaR, flip default LedoitWolf con evidencia WF, pyright strict, delistings por-ticker). Merge develop -> main queda a decision del usuario (regla CONTRIBUTING). Aceptacion: tag sobre SHA con ./init.sh verde fresco en sesion; CHANGELOG completo y fechado; README con limitaciones; repo reiniciable (git status limpio, ./init.sh pasa de nuevo).",
+      "dependencies": [
+        "feat-028",
+        "feat-029",
+        "feat-030",
+        "feat-031",
+        "feat-032",
+        "feat-033",
+        "feat-034",
+        "feat-035",
+        "feat-036",
+        "feat-037",
+        "feat-038",
+        "feat-039",
+        "feat-040"
+      ],
+      "status": "not-started",
+      "evidence": ""
     }
   ]
 }
