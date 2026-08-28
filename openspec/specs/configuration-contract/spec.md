@@ -49,6 +49,18 @@ El dispatcher de asignación SHALL cubrir exactamente el enum validado y SHALL N
 - **WHEN** se construye sin especificar covariance_estimator
 - **THEN** el campo vale "sample"
 
+### Requirement: Método de linkage validado
+
+`PortfolioConfig` SHALL exponer `linkage_method` con valores {single, ward, average} (default `single` según ADR 006) y SHALL rechazar cualquier otro valor en construcción con `ValueError` descriptivo.
+
+#### Scenario: valor inválido
+- **WHEN** se construye con linkage_method="centroid"
+- **THEN** ValueError enumera los valores permitidos
+
+#### Scenario: default sin cambio
+- **WHEN** se construye sin especificar linkage_method
+- **THEN** el campo vale "single"
+
 ### Requirement: Días de trading configurables y validados
 
 `PortfolioConfig` SHALL exponer `trading_days_per_year` (default 252) validado dentro de [1, 366]; los kernels de anualización SHALL recibirlo como parámetro explícito y SHALL NOT contener la constante enterrada.

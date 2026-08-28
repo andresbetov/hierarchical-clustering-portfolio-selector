@@ -114,6 +114,67 @@ class TestDegenerateInputs:
             calculate_hrp_weights(np.array([[0.01, 0.0], [0.0, -0.02]]))
 
 
+class TestLinkageParameter:
+    """feat-034 (ADR 006): linkage parametrizable, single keeps the snapshot."""
+
+    def _three_block_cov(self, n_per_block=2, seed=19):
+        """3 independent latent factors, one per block: intra-block corr high,
+        inter-block corr ~0. Returns (cov, corr) for 3*n_per_block assets."""
+        rng = np.random.default_rng(seed)
+        columns = []
+        for _ in range(3):
+            factor = rng.normal(scale=0.01, size=(250,))
+            for _ in range(n_per_block):
+                columns.append(factor * 0.9 + rng.normal(scale=0.003, size=(250,)))
+        returns = np.column_stack(columns)
+        cov = np.cov(returns, rowvar=False)
+        corr = cov / np.outer(np.sqrt(np.diag(cov)), np.sqrt(np.diag(cov)))
+        return cov, corr
+
+    def test_default_single_preserves_snapshot(self):
+        """No linkage_method => weights identical to the legacy call (snapshot)."""
+        cov, _ = self._three_block_cov()
+        assert np.array_equal(
+            calculate_hrp_weights(cov),
+            calculate_hrp_weights(cov, linkage_method="single"),
+        )
+
+    def test_ward_yields_valid_weights_and_adjacent_blocks(self):
+        from scipy.cluster.hierarchy import linkage
+        from scipy.spatial.distance import squareform
+
+        from portfolio_engine.portfolio.hrp import _leaf_order
+
+        cov, corr = self._three_block_cov()
+        weights = calculate_hrp_weights(cov, linkage_method="ward")
+
+        assert np.all(np.isfinite(weights))
+        assert np.all(weights > 0)
+        assert weights.sum() == pytest.approx(1.0, abs=1e-12)
+
+        distance = np.sqrt(np.maximum(0.5 * (1 - corr), 0))
+        np.fill_diagonal(distance, 0)
+        link = linkage(squareform(distance, checks=False), method="ward")
+        order = _leaf_order(link, 6)
+
+        for block_start in (0, 2, 4):
+            positions = [order.index(block_start), order.index(block_start + 1)]
+            assert abs(positions[0] - positions[1]) == 1  # block members adjacent
+
+    def test_average_yields_valid_weights(self):
+        cov, _ = self._three_block_cov()
+        weights = calculate_hrp_weights(cov, linkage_method="average")
+
+        assert np.all(np.isfinite(weights))
+        assert np.all(weights > 0)
+        assert weights.sum() == pytest.approx(1.0, abs=1e-12)
+
+    def test_unknown_linkage_raises(self):
+        cov, _ = self._three_block_cov()
+        with pytest.raises(ValueError, match="linkage"):
+            calculate_hrp_weights(cov, linkage_method="centroid")
+
+
 class TestEndToEndWrapper:
     def _metrics(self, tickers):
         return {

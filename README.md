@@ -44,6 +44,7 @@ Las decisiones metodológicas están versionadas como ADRs en [docs/adr/](docs/a
 | Clustering | `maximum_correlation_threshold` | `0.65` |
 | Clustering | `distance_metric` | `signed` |
 | Clustering | `covariance_estimator` | `sample` (`ledoit_wolf`, `oas` disponibles — ADR 005) |
+| Clustering | `linkage_method` | `single` (`ward`, `average` disponibles — ADR 006) |
 | Datos | `lookback_years` | `5` |
 | Datos | `trading_days_per_year` | `252` |
 | Riesgo | `risk_free_rate` | `0.045` |

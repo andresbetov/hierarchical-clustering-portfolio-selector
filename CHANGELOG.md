@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DAG v0.1.0 registrado en `feature_list.json` (feat-028..feat-041) con dependencias explícitas hacia CP1/CP2/CP3 (chore(project): register v0.1.0 DAG).
 - feat-032: dependencia `scikit-learn>=1.8` (consumida por el estimador de covarianza de feat-033/ADR 005).
 - feat-033: `covariance_estimator ∈ {sample, ledoit_wolf, oas}` (ADR 005) — seam `estimate_covariance` consumida por el pipeline y el walk-forward; default `sample` (sin cambio silencioso), shrinkage con paridad sklearn a 1e-12; flip de default a `ledoit_wolf` diferido a v0.2.0 con evidencia walk-forward.
+- feat-034: `linkage_method ∈ {single, ward, average}` (ADR 006) — propagado a `scipy.cluster.hierarchy.linkage` desde config; default `single` (De Prado, snapshot-compatible); flip a `ward` candidato para v0.2.0.
 
 ### Changed
 
