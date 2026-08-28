@@ -3,13 +3,17 @@
 import numpy as np
 import pytest
 
-from portfolio_engine.app.pipeline import main
+from portfolio_engine.app import pipeline as pipeline_module
+from portfolio_engine.app.pipeline import generate_complete_analysis_report, main
 from portfolio_engine.core.config import PortfolioConfig
 from portfolio_engine.core.metrics import (
     calculate_annualized_return,
     calculate_annualized_volatility,
+    calculate_correlation_matrix,
+    calculate_covariance_matrix,
     calculate_sharpe_ratio,
     compute_logarithmic_returns,
+    construct_returns_matrix,
 )
 
 TICKERS = ["AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF"]
@@ -159,6 +163,108 @@ class TestInjectedComposition:
         # Same bundle identity ends up returned:
         assert injected_main[6] is injected_bundle[1]
         assert injected_main[7] is injected_bundle[2]
+
+
+def _equal_length_legacy_bundle():
+    """Bundle with equal-length prices for the FULL-universe charts.
+
+    Reproduces the legacy-report data flow (feat-028): N=5 filtered assets,
+    M=3 selected representatives after cluster pruning — the shape that used
+    to crash `_portfolio_summary_metrics` (weights M vs covariance NxN).
+    """
+    dates = np.datetime64("2024-01-01", "ns") + np.arange(ROWS, dtype="timedelta64[ns]")
+    rng = np.random.default_rng(7)
+
+    prices = {}
+    for ticker in TICKERS:
+        values = 100.0 * np.exp(np.cumsum(0.0008 + rng.normal(scale=0.01, size=ROWS)))
+        prices[ticker] = values
+
+    asset_metrics = {}
+    for ticker in TICKERS:
+        daily = compute_logarithmic_returns(prices[ticker])
+        asset_metrics[ticker] = {
+            "daily_returns": daily,
+            "annual_return": float(calculate_annualized_return(daily)),
+            "annual_volatility": float(calculate_annualized_volatility(daily)),
+            "sharpe_ratio": calculate_sharpe_ratio(
+                float(calculate_annualized_return(daily)),
+                float(calculate_annualized_volatility(daily)),
+                0.045,
+            ),
+        }
+
+    filtered_tickers = TICKERS[:5]
+    selected_tickers = filtered_tickers[:3]
+
+    filtered_metrics = {t: asset_metrics[t] for t in filtered_tickers}
+    optimal_portfolio = {t: asset_metrics[t] for t in selected_tickers}
+    portfolio_weights = {t: 1.0 / 3.0 for t in selected_tickers}
+
+    returns_matrix = construct_returns_matrix({t: prices[t] for t in filtered_tickers})
+    correlation_matrix = calculate_correlation_matrix(returns_matrix)
+    covariance_matrix = calculate_covariance_matrix(returns_matrix)
+
+    return {
+        "asset_metrics": asset_metrics,
+        "filtered_metrics": filtered_metrics,
+        "optimal_portfolio": optimal_portfolio,
+        "portfolio_weights": portfolio_weights,
+        "corr_matrix": correlation_matrix,
+        "cov_matrix": covariance_matrix,
+        "prices": prices,
+        "dates": {t: dates for t in TICKERS},
+        "filtered_tickers": filtered_tickers,
+        "selected_tickers": selected_tickers,
+    }
+
+
+class TestLegacyReportGeneration:
+    @pytest.fixture
+    def legacy_bundle(self):
+        return _equal_length_legacy_bundle()
+
+    def test_pruning_path_report_completes_with_sliced_covariance(self, monkeypatch, legacy_bundle):
+        """feat-028: legacy (non-hrp) route with M<N must not crash and the
+        report must receive the covariance sliced to the selected portfolio."""
+        captured = {}
+
+        def fake_main(tickers, config):
+            return (
+                legacy_bundle["asset_metrics"],
+                legacy_bundle["filtered_metrics"],
+                legacy_bundle["optimal_portfolio"],
+                legacy_bundle["portfolio_weights"],
+                legacy_bundle["corr_matrix"],
+                legacy_bundle["cov_matrix"],
+                legacy_bundle["prices"],
+                legacy_bundle["dates"],
+            )
+
+        original_plot = pipeline_module.plot_optimal_portfolio_analysis
+
+        def spy(*args, **kwargs):
+            captured["kwargs"] = kwargs
+            return original_plot(*args, **kwargs)
+
+        monkeypatch.setattr(pipeline_module, "main", fake_main)
+        monkeypatch.setattr(pipeline_module, "plot_optimal_portfolio_analysis", spy)
+
+        config = PortfolioConfig(weight_allocation_method="risk_parity", lookback_years=1)
+        result = generate_complete_analysis_report(TICKERS, config, save_plots=False, show_plots=False)
+
+        assert captured["kwargs"], "report never reached the optimal-portfolio chart"
+        passed_cov = captured["kwargs"]["covariance_matrix"]
+
+        expected_index = [legacy_bundle["filtered_tickers"].index(t) for t in legacy_bundle["selected_tickers"]]
+        expected_cov = legacy_bundle["cov_matrix"][np.ix_(expected_index, expected_index)]
+
+        assert passed_cov.shape == (3, 3)
+        assert np.allclose(passed_cov, expected_cov)
+
+        _, _, returned_portfolio, returned_weights = result
+        assert set(returned_portfolio) == set(legacy_bundle["selected_tickers"])
+        assert set(returned_weights) == set(legacy_bundle["selected_tickers"])
 
 
 if __name__ == "__main__":

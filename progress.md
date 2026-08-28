@@ -2,16 +2,17 @@
 
 ## Current State
 
-**Last Updated:** 2026-08-26
-**Branch:** `develop` — DAG COMPLETO (27/27) + documentación sincronizada
-**Active Feature:** ninguna en ejecución
+**Last Updated:** 2026-08-28
+**Branch:** `fix/reporting-legacy-covariance-slice` — DAG v0.1.0 en curso (feat-028 done, feat-029 next)
+**Active Feature:** feat-028 (cerrada en esta sesión); siguiente: feat-029
 
-Proyecto en estado de cierre de hito: motor HRP jerárquico real, validación walk-forward anti-fuga, arquitectura con provider seam, documentación viva sincronizada (README/AGENTS/CONTRIBUTING/decision-log), ADRs indexados, históricos con banners de estado.
+Hito v0.1.0 en marcha: DAG feat-028..041 registrado en `feature_list.json` (commit 27580a7), primer fix de la Fase A (reporte legacy) implementado con TDD y archivado en OpenSpec.
 
 ## Status
 
 ### What's Done
 
+- [x] **feat-028** (2026-08-28): fix crash ruta legacy del reporte — pipeline rebanaba nunca la covarianza (N×N) antes de `plot_optimal_portfolio_analysis` con portfolio M<N (ValueError matmul size 5 vs 3 reproducido por TDD en reporting.py:367); fix reutilizando `create_portfolio_covariance_matrix`; +3 tests (1 E2E con spy de covarianza rebanada, 2 unitarios de contrato); suite 154→157; change OpenSpec `2026-08-28-fix-reporting-legacy-covariance-slice` valid + archivado con spec sincronizada
 - [x] feat-001 orden de resolución (PR #5) · feat-002 suite real (PR #6) · feat-003 manifests+lock (PR #7)
 - [x] **feat-004**: dev-deps pinned; ruff(E,F,W/I/l120)+pyright(basic); Makefile lint/types; init.sh 4 gates; ci.yml matriz; pre-commit opt-in — 18+21 hallazgos mecánicos resueltos · PR #8 mergeada
 - [x] **feat-005**: logging aislado+idempotente, LOG_LEVEL funcional, guard Agg, pipeline sin pyplot, 14 tests contrato — PR #9
@@ -57,6 +58,7 @@ Proyecto en estado de cierre de hito: motor HRP jerárquico real, validación wa
 
 ## Blockers / Risks
 
+- **Hallazgo feat-028 (fuera de scope, propuesto como feature nueva)**: `generate_complete_analysis_report` chart 4 re-cálcula matrices full-universe con `construct_returns_matrix` sobre `historical_prices` crudos (longitudes por-ticker propias); con datos reales yfinance cualquier ticker con calendario distinto (suspensión, IPO, delisting) lanza ValueError. Candidata: feature de alineación full-universe para charts (emparentada con feat-037; evaluar si se absorbe en feat-037 o se abre aparte).
 - pyright baja a `basic`: strict es progresión futura (registrar como feature dedicado si se quiere formalizar)
 - scipy sigue siendo excepción documentada hasta feat-018
 

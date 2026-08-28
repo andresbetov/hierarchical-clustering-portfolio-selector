@@ -12,7 +12,11 @@ from ..core.metrics import (
     calculate_covariance_matrix,
     construct_returns_matrix,
 )
-from ..portfolio.allocation import calculate_optimal_portfolio_weights, calculate_optimal_portfolio_weights_hrp
+from ..portfolio.allocation import (
+    calculate_optimal_portfolio_weights,
+    calculate_optimal_portfolio_weights_hrp,
+    create_portfolio_covariance_matrix,
+)
 from ..portfolio.selection import apply_asset_filters, select_optimal_diversified_portfolio
 from ..viz.reporting import (
     finalize_report_show,
@@ -240,13 +244,21 @@ def generate_complete_analysis_report(
 
     if optimal_portfolio and portfolio_weights:
         logger.info("Rendering chart: optimal portfolio analysis")
+        # feat-028: legacy routes can select M < N assets; the report must
+        # receive the covariance sliced to the exact selected subset (same
+        # ticker order as the weights), never the NxN filtered matrix.
+        portfolio_covariance = create_portfolio_covariance_matrix(
+            optimal_portfolio,
+            covariance_matrix,
+            filtered_metrics,
+        )
         plot_optimal_portfolio_analysis(
             optimal_portfolio,
             portfolio_weights,
             config,
             f"charts/{CHART_FILENAMES['optimal_portfolio_analysis']}" if save_plots else None,
             show_plot=show_plots,
-            covariance_matrix=covariance_matrix,
+            covariance_matrix=portfolio_covariance,
         )
     else:
         logger.warning("Skipping optimal portfolio chart: no selected assets")

@@ -2,56 +2,39 @@
 
 ## Current Objective
 
-- Goal: DOCUMENTACIÓN COMPLETAMENTE SINCRONIZADA post-DAG (cierre del proyecto)
-- Current status: develop @post-#30 · README/AGENTS/CONTRIBUTING/decision-log/READMEs-ADR todos reflejan el estado real · suite 154 passed
+- Goal: v0.1.0 "estable y correcta" — DAG feat-028..041 registrado (commit 27580a7)
+- Current status: rama `fix/reporting-legacy-covariance-slice` (feat-028 lista para PR) · suite 157 passed
+- Next: feat-029 `fix/walk-forward-first-return` (bug np.roll — test de regresión rojo primero)
 
 ## Completed This Session
 
-- feat-004: ruff+pyright+CI matrix+pre-commit (PR #8) — 39 hallazgos mecánicos resueltos
-- feat-005: logging paquete+LOG_LEVEL+Agg guard+pipeline sin pyplot (PR #9) — bug getLevelName cazado por TDD
-- feat-006: hatchling instalable+portfolio-run+wrapper limpio (PR #10) — TOML corruption atrapada por build
-- feat-007: risk_free_rate requerido, fuente única config (PR #11)
-- feat-008: calendario común inner-join para toda matriz multivariada + pandas explícita (PR #12) — 8 tests
-- Cada feature: openspec-propose→validate→apply→init.sh fresco→archive→PR squash→CI watch
+- feat-028: fix crash ruta legacy del reporte (covarianza sin rebanar con M<N → ValueError matmul). TDD rojo→verde; rebanado en `pipeline.py` reutilizando `create_portfolio_covariance_matrix`; +3 tests; spec `numeric-correctness` sincronizada; change OpenSpec archivado
+- Registro DAG v0.1.0 en `feature_list.json` (feat-028..041, deps explícitas)
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| build | `uv sync` | ✓ Built ...portfolio-selector | paquete se auto-instala |
-| metadata | importlib.metadata | ✓ 0.1.0 · portfolio-run→cli:main | comportamiento, no texto |
-| import externo | cwd /tmp + venv python | ✓ | sin sys.path hacks |
-| suite | `make test` | 33 passed | +3 identidad |
-| gates | make lint/types + ./init.sh | ✓/✓/exit 0 | — |
-
-## Files Changed
-
-- `pyproject.toml`, `uv.lock`, `Makefile`, `init.sh`, `CONTRIBUTING.md`, `README.md`
-- `.github/workflows/ci.yml`, `.pre-commit-config.yaml` (nuevos)
-- `portfolio_engine/{viz,app,portfolio,data}/*` — solo firmas tipadas
-- tracker/progress/handoff + openspec change feat-004
+| suite | `./init.sh` | ✓ 157 passed (154+3) | rojo pre-fix registrado: matmul size 5 vs 3 en reporting.py:367 |
+| gates | ruff / pyright / compileall | ✓ / ✓ / ✓ | sin hallazgos nuevos |
+| red feat-021 | git diff tests existentes | 0 cambios | solo adiciones en test_pipeline_e2e/test_reporting_sharpe |
+| openspec | validate + archive + validate --specs | ✓ 11 specs OK | delta MODIFIED sincronizado en numeric-correctness |
 
 ## Decisions Made
 
-- hatchling; wheel packages=[portfolio_engine]; cli.py dentro del paquete; argparse diferido (decision-log)
-- Edición multi-sección de TOML requiere validación estructural inmediata (lección viva)
-- yfinance drift 1.6.0→1.7.0 aceptado en re-lock (lock universal)
+- Rebanado de covarianza en `pipeline.py` (capa app prepara domain data), no en `reporting.py` (renderer puro) — design.md D1-D4
+- Test E2E vía monkeypatch de `pipeline.main` + spy sobre `plot_optimal_portfolio_analysis` (assert de contrato sobre la matriz recibida, independiente de matplotlib)
 
 ## Blockers / Risks
 
-- Node20→24 deprecation aviso cosmético GitHub Actions (bump futuro)
-- NO ejecutar `make run`/`uv run portfolio-run` en CI: descarga red real — solo interacción humana
+- Hallazgo nuevo registrado en progress.md: chart 4 full-universe con `construct_returns_matrix` sobre precios crudos de longitud desigual (crash potencial con datos reales) → proponer como feature (ver feat-037)
+- feat-028 requiere PR → develop (squash) antes de abrir feat-029
 
 ## Next Session Startup
 
-1. AGENTS.md → ./init.sh
-2. PR de esta rama si pendiente
-3. feat-006 package-console-entrypoint: flujo openspec completo
-
-## Recommended Next Step
-
-- Tag v0.1.0 sobre develop si se quiere sellar el hito de auditoría completa
-- Extensiones diferidas explícitamente: LedoitWolf transversal, HERC/linkage paramétrico, turnover costs, Reporter interface
+1. Revisar PR de feat-028 (CI verde) → squash merge → borrar rama
+2. feat-029: rama `fix/walk-forward-first-return` desde develop, OpenSpec propose→apply→archive
+3. Mantener rutina: TDD rojo → fix → ./init.sh fresco → evidencia en feature_list.json
 
 ## Lecciones consolidadas del proyecto
 
