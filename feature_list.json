@@ -297,8 +297,8 @@
       "name": "Test fixture determinism",
       "description": "Fix determinismo de tests: conftest.py:23 usa np.random.default_rng(abs(hash(ticker)) % 2**32) — hash() de strings en Python esta salado por PYTHONHASHSEED, asi que el panel sintetico difiere entre procesos (demostrado: PYTHONHASHSEED=1 vs 999 producen seeds distintos) y la afirmacion 'semillas fijas en fixtures' de README.md:103 y system-verification/spec.md:26 es falsa. Fix: seed estable por ticker (zlib.crc32(ticker.encode())) independiente del salting del interprete. Aceptacion: paneles identicos bit a bit ejecutando la suite con PYTHONHASHSEED=1 y PYTHONHASHSEED=999; asserts de la suite (invariantes) siguen verdes en ambos.",
       "dependencies": [],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-030: TDD rojo registrado (subprocesos con PYTHONHASHSEED=1 vs 999 produjeron paneles distintos pre-fix — AssertionError en test_fixture_determinism.py:43); fix conftest.py:23: np.random.default_rng(zlib.crc32(ticker.encode())) estable entre procesos; verde: paneles byte-identicos bajo ambas seeds; ./init.sh exit 0: 159 passed (158+1), ruff OK (import base64 muerto cazado y corregido), pyright 0 errors, compileall OK; red feat-021/026 sin asserts modificados (solo conftest.py cambia — invariantes sostenidos con paneles nuevos); change OpenSpec valid + archivado, spec system-verification sincronizada (requirement determinismo entre procesos + scenario PYTHONHASHSEED)."
     },
     {
       "id": "feat-031",
