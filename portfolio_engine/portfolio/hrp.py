@@ -17,6 +17,8 @@ from scipy.cluster.hierarchy import linkage
 
 logger = logging.getLogger(__name__)
 
+LINKAGE_METHODS = ("single", "ward", "average")
+
 
 def _leaf_order(linkage_matrix: np.ndarray, number_of_leaves: int) -> list[int]:
     """Expand the scipy linkage tree into its quasi-diagonal leaf order.
@@ -46,15 +48,23 @@ def _cluster_inverse_variance_portfolios(cov_slice: np.ndarray) -> float:
     return variance
 
 
-def calculate_hrp_weights(covariance_matrix: np.ndarray) -> np.ndarray:
+def calculate_hrp_weights(covariance_matrix: np.ndarray, linkage_method: str = "single") -> np.ndarray:
     """Compute HRP weights for assets ordered as covariance_matrix columns.
 
-    Deterministic; strictly positive weights summing to exactly 1 before any
-    downstream bound constraints are applied.
+    `linkage_method` (ADR 006) selects the scipy hierarchical clustering
+    method: "single" (De Prado original, default — snapshot-compatible),
+    "ward" or "average". Deterministic; strictly positive weights summing
+    to exactly 1 before any downstream bound constraints are applied.
 
-    Raises ValueError on non-finite/asymmetric inputs (C3 contract: fail loud).
+    Raises ValueError on non-finite/asymmetric inputs (C3 contract: fail loud)
+    and on unknown linkage methods (before touching scipy).
     """
     cov = np.asarray(covariance_matrix, dtype=np.float64)
+
+    if linkage_method not in LINKAGE_METHODS:
+        raise ValueError(
+            f"Unknown linkage_method '{linkage_method}'; allowed: {list(LINKAGE_METHODS)}"
+        )
 
     if cov.ndim != 2 or cov.shape[0] != cov.shape[1]:
         raise ValueError(f"Covariance must be square, got shape {cov.shape}")
@@ -83,7 +93,7 @@ def calculate_hrp_weights(covariance_matrix: np.ndarray) -> np.ndarray:
     from scipy.spatial.distance import squareform
 
     condensed = squareform(distance, checks=False)
-    linkage_matrix = linkage(condensed, method="single")
+    linkage_matrix = linkage(condensed, method=linkage_method)
 
     sort_index = _leaf_order(linkage_matrix, number_of_assets)
     sorted_tickers_cov = cov[np.ix_(sort_index, sort_index)]

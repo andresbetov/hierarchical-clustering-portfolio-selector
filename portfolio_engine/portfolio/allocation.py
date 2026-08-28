@@ -419,7 +419,7 @@ def calculate_optimal_portfolio_weights_hrp(
         logger.info("Single asset selected: assigning full weight to %s", tickers[0])
         return {tickers[0]: 1.0}
 
-    raw_weights = calculate_hrp_weights(covariance_matrix)
+    raw_weights = calculate_hrp_weights(covariance_matrix, linkage_method=config.linkage_method)
 
     effective_min, effective_max = _resolve_effective_bounds(len(tickers), config)
     constrained = apply_weight_constraints(

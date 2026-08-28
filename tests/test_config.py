@@ -88,6 +88,18 @@ class TestValidationRules:
         assert config.covariance_estimator == "ledoit_wolf"
         assert PortfolioConfig().covariance_estimator == "sample"
 
+    def test_default_linkage_method_is_single(self):
+        assert PortfolioConfig().linkage_method == "single"
+
+    def test_unknown_linkage_method_rejected(self):
+        with pytest.raises(ValueError, match="linkage_method"):
+            PortfolioConfig(linkage_method="centroid")
+
+    def test_replace_preserves_linkage_method_contract(self):
+        config = dataclasses.replace(PortfolioConfig(), linkage_method="ward")
+        assert config.linkage_method == "ward"
+        assert PortfolioConfig().linkage_method == "single"
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

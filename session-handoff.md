@@ -3,38 +3,38 @@
 ## Current Objective
 
 - Goal: v0.1.0 "estable y correcta" — DAG feat-028..041 registrado (commit 27580a7)
-- Current status: rama `feat/covariance-estimator` (feat-033 lista para PR) · suite 170 passed · CP1 cerrado, CP2 en curso (2/6)
-- Next: feat-034 `feat/linkage-parameter` (ADR 006: single default + ward/average)
+- Current status: rama `feat/linkage-parameter` (feat-034 lista para PR) · suite 177 passed · CP1 cerrado, CP2 en curso (3/6)
+- Next: feat-035 `feat/walk-forward-production-parity` (filtros por fold + benchmarks 1/N e IVP — la feature más grande de CP2)
 
 ## Completed This Session
 
-- feat-033: estimador de covarianza parametrizable (ADR 005) — enum validado {sample, ledoit_wolf, oas}, seam `estimate_covariance` consumida por pipeline + walk-forward, default sample bit a bit, paridad sklearn 1e-12; +11 tests + E2E ledoit_wolf; specs sincronizadas; change archivado
+- feat-034: linkage parametrizable (ADR 006) — {single, ward, average}, default single snapshot-compatible; ValueError pre-scipy; propagación config→HRP→pipeline→WF; +7 tests; specs sincronizadas; change archivado
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| TDD | tests nuevos pre-impl | rojo | import error (seam inexistente) + param inexistente |
-| suite | `./init.sh` | ✓ 170 passed (159+11) | ruff cazó 2 I001 (corregidos), pyright 0 |
-| red feat-021 | git diff tests caracterización | 0 | sample bit a bit por construcción (D4) |
+| TDD | tests nuevos pre-impl | rojo | 7 failures (param inexistente) |
+| suite | `./init.sh` | ✓ 177 passed (170+7) | gates verdes |
+| red feat-021 | git diff tests caracterización | solo adiciones | snapshot single bit a bit |
 | specs | validate + sync + archive | ✓ 11/11 | 2 deltas ADDED sincronizados |
 
 ## Decisions Made
 
-- ADR 005: default `sample` en v0.1.0 (single-flip discipline); flip a `ledoit_wolf` en v0.2.0 condicionado a evidencia WF (benchmarks feat-035)
-- D2: import sklearn a nivel de módulo en core/metrics (dep declarada, honesto)
-- D3: degeneración (n_rows<=1) → matriz NaN sin invocar sklearn
+- ADR 006: default `single` en v0.1.0; flip a `ward` candidato v0.2.0 evaluado junto con ADR 005 (evidencia WF conjunta)
+- D1: parámetro con default en `calculate_hrp_weights` (API pública no rompe); D2: doble validación (config + función, fail loud pre-scipy)
+- D4: test de adyacencia intra-bloque con ward vía `_leaf_order` (topología verificada, no solo simplex)
 
 ## Blockers / Risks
 
-- feat-034 (ADR 006) debe preservar snapshot bit a bit con default `single` (red feat-021)
+- feat-035 (deps 029/033/034 satisfechas): debe aplicar apply_asset_filters por fold de train, añadir benchmarks equal/ivp al WalkForwardReport y documentar embargo 5d/purga 1d — mantener el test anti-fuga intacto
 - Hallazgo feat-028 sigue abierto: chart 4 full-universe con precios crudos de longitud desigual (candidata a absorberse en feat-037)
-- feat-033 requiere PR → develop (squash) antes de abrir feat-034
+- feat-034 requiere PR → develop (squash) antes de abrir feat-035
 
 ## Next Session Startup
 
-1. PR de feat-033 → CI verde ×3 → squash merge → borrar rama
-2. feat-034: rama `feat/linkage-parameter`, ADR 006 previo, TDD snapshot single
+1. PR de feat-034 → CI verde ×3 → squash merge → borrar rama
+2. feat-035: rama `feat/walk-forward-production-parity`, OpenSpec propose→apply→archive (design obligatorio: universos variables por fold + benchmarks)
 3. Rutina: TDD rojo → fix → ./init.sh fresco → evidencia en feature_list.json
 
 ## Lecciones consolidadas del proyecto

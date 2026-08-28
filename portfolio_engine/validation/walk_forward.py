@@ -133,7 +133,7 @@ def walk_forward_evaluate(
             })
             cov_train = estimate_covariance(daily_train, config.covariance_estimator)
 
-            raw_weights = calculate_hrp_weights(cov_train)
+            raw_weights = calculate_hrp_weights(cov_train, linkage_method=config.linkage_method)
             min_bound, max_bound = _resolve_effective_bounds(len(tickers), config)
             if max_bound != config.maximum_single_asset_weight or min_bound != config.minimum_single_asset_weight:
                 relaxed = True

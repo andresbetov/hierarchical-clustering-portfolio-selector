@@ -26,6 +26,11 @@ DISTANCE_METRICS = ("signed", "abs")
 # shrinkage. Default remains sample in v0.1.0 (no silent change).
 COVARIANCE_ESTIMATORS = ("sample", "ledoit_wolf", "oas")
 
+# HRP linkage methods (ADR 006): single is the De Prado original and the
+# v0.1.0 default (snapshot-compatible); ward/average exposed to mitigate
+# chaining — flip candidate for v0.2.0 with walk-forward evidence.
+LINKAGE_METHODS = ("single", "ward", "average")
+
 _WEIGHT_SUM_TOLERANCE = 1e-9
 
 
@@ -52,6 +57,9 @@ class PortfolioConfig:
 
     # Covariance estimation method (ADR 005): sample default, no silent flip.
     covariance_estimator: str = "sample"
+
+    # HRP linkage method (ADR 006): single default, snapshot-compatible.
+    linkage_method: str = "single"
 
     # Portfolio selection scoring weights (must sum to 1.0)
     sharpe_weight: float = 0.45
@@ -124,4 +132,10 @@ class PortfolioConfig:
             raise ValueError(
                 f"covariance_estimator '{self.covariance_estimator}' is invalid; "
                 f"allowed values: {list(COVARIANCE_ESTIMATORS)}"
+            )
+
+        if self.linkage_method not in LINKAGE_METHODS:
+            raise ValueError(
+                f"linkage_method '{self.linkage_method}' is invalid; "
+                f"allowed values: {list(LINKAGE_METHODS)}"
             )

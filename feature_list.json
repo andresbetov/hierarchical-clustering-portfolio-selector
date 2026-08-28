@@ -333,8 +333,8 @@
       "name": "Linkage parameter ADR 006",
       "description": "Linkage parametrizable con ADR 006. Justificacion: De Prado 2016 usa single (original) pero sufre chaining; skfolio setea Ward como default por estabilidad y pyhrp documenta la comparativa — exponerlo es practica 2025-26 (diferido historico en decision-log feat-025). Alcance: ADR 006 aceptado; PortfolioConfig.linkage_method: 'single'|'ward'|'average' (default 'single', fiel al paper y a los snapshots de la red feat-021); calculate_hrp_weights(covariance_matrix, linkage_method='single') propaga a scipy.cluster.hierarchy.linkage; pipeline y walk_forward pasan el valor desde config. Aceptacion: snapshot bit a bit con default single (red feat-021 intacta sin modificar asserts); ward sobre universo sintetico de 3 bloques de correlacion produce pesos finitos suma 1; enum invalido rechazado en construccion.",
       "dependencies": [],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-034: ADR 006 aceptado (single default snapshot-compatible, ward/average expuestos; flip ward candidato v0.2.0); TDD rojo (7 failures: param inexistente en config y calculate_hrp_weights); implementado: LINKAGE_METHODS + campo validado en config.py, firma calculate_hrp_weights(cov, linkage_method='single') con ValueError pre-scipy, propagacion en hrp.py + allocation.py (ruta HRP) + walk_forward.py; verde: 7 tests nuevos (snapshot single bit a bit, ward 3 bloques con adyacencia intra-bloque via _leaf_order, average valido, enum invalido); ./init.sh exit 0: 177 passed (170+7), ruff/pyright/compileall verdes; red feat-021 diff 0 (solo adiciones en test_hrp/test_config); specs configuration-contract + numeric-correctness sincronizadas (2 deltas ADDED); change archivado 2026-08-28-feat-linkage-parameter; README + CHANGELOG actualizados."
     },
     {
       "id": "feat-035",
