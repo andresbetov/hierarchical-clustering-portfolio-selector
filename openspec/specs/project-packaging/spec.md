@@ -23,11 +23,11 @@ El `name` del paquete en `pyproject.toml` SHALL coincidir con el nombre del repo
 
 ### Requirement: Rango de Python honesto
 
-`requires-python` SHALL declarar un piso alcanzable por CI estándar (`>=3.10`) y el lockfile SHALL ser válido para todo el rango declarado.
+`requires-python` SHALL declarar un piso alcanzable por CI estándar (`>=3.11` — Python 3.10 alcanza EOL 2026-10-31 y el ecosistema científico lo retira por SPEC 0) y la matriz de CI SHALL cubrir 3.11-3.13; el lockfile SHALL ser válido para todo el rango declarado.
 
 #### Scenario: Resolución universal
 - **WHEN** se regenera `uv.lock` con el nuevo `requires-python`
-- **THEN** la resolución cubre 3.10-3.13+ y la suite pasa en el intérprete local
+- **THEN** la resolución cubre 3.11-3.13 y la suite pasa en el intérprete local
 
 ### Requirement: Dependencias justificadas
 

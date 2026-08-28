@@ -15,7 +15,7 @@ Post-construcción, cualquier intento de asignar un atributo SHALL fallar con `F
 
 ### Requirement: Validación al construir
 
-`__post_init__` SHALL validar y rechazar con `ValueError`: pesos de scoring que no sumen 1±1e-9; tasas y vol-target fuera de [0,1]; `minimum_single_asset_weight > maximum_single_asset_weight`; lookback < 1; método fuera del set {equal, inverse_volatility, risk_parity, max_sharpe, min_variance}.
+`__post_init__` SHALL validar y rechazar con `ValueError`: pesos de scoring que no sumen 1±1e-9; tasas y vol-target fuera de [0,1]; `minimum_single_asset_weight > maximum_single_asset_weight`; lookback < 1; método fuera del set {equal, inverse_volatility, risk_parity, max_sharpe, min_variance, hrp}.
 
 #### Scenario: typo de método
 - **WHEN** se construye con `weight_allocation_method="risk_parit"`
@@ -51,7 +51,7 @@ El dispatcher de asignación SHALL cubrir exactamente el enum validado y SHALL N
 
 ### Requirement: Ruta end-to-end HRP sin pruning intermedio
 
-Con method=hrp, la orquestación SHALL asignar pesos sobre TODO el universo filtrado mediante linkage→quasi-diag→bisección, omitiendo la selección por scoring compuesto; los bounds de feat-014 SHANL aplicarse al vector final igual que en los demás métodos.
+Con method=hrp, la orquestación SHALL asignar pesos sobre TODO el universo filtrado mediante linkage→quasi-diag→bisección, omitiendo la selección por scoring compuesto; los bounds de feat-014 SHALL aplicarse al vector final igual que en los demás métodos.
 
 #### Scenario: flujo hrp del pipeline
 - **WHEN** main() corre con config default

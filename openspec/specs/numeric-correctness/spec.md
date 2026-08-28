@@ -23,7 +23,7 @@ El filtro de activos SHALL excluir cualquier ticker cuyas métricas usadas por d
 
 ### Requirement: Consistencia muestral ddof
 
-La volatilidad anualizada y la covarianza/correlación SHALL usar el mismo estimador muestral (ddof=1); no SHALL NO coexistir ddof distinto en la misma cadena estadística.
+La volatilidad anualizada y la covarianza/correlación SHALL usar el mismo estimador muestral (ddof=1); SHALL NOT coexistir ddof distinto en la misma cadena estadística.
 
 #### Scenario: verificación exacta
 - **WHEN** se calcula la volatilidad anualizada sobre una serie conocida
