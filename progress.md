@@ -3,15 +3,16 @@
 ## Current State
 
 **Last Updated:** 2026-08-28
-**Branch:** `docs/spec-sync-pre-release` — DAG v0.1.0 en curso (feat-028..031 done, CP1 cerrado)
-**Active Feature:** feat-031 (cerrada en esta sesión); siguiente: feat-032
+**Branch:** `chore/python-floor-311-sklearn` — DAG v0.1.0 en curso (feat-028..032 done, CP1 cerrado, CP2 en curso)
+**Active Feature:** feat-032 (cerrada en esta sesión); siguiente: feat-033
 
-Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO**: los 4 fixes de Fase A cerrados (reporte legacy, walk-forward, determinismo de fixtures, sync documental pre-release). Suite 159 passed. Fase B (metodología) lista para arrancar con feat-032 (Python ≥3.11 + scikit-learn).
+Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · CP2 "Correcta" en curso: feat-032 (plataforma: Python ≥3.11 + scikit-learn) cerrada; siguiente feat-033 (estimador de covarianza, ADR 005). Suite 159 passed.
 
 ## Status
 
 ### What's Done (hito v0.1.0 — Fase A / CP1)
 
+- [x] **feat-032** (2026-08-28): breaking plataforma — `requires-python>=3.11` (drop 3.10, EOL 2026-10-31/SPEC 0) + `scikit-learn>=1.8` (para feat-033); CI matrix 3.11/3.12/3.13; uv.lock re-resuelto (sklearn 1.9.0, threadpoolctl, narwhals; scipy 1.15.3 fuera por resolución exclusiva 3.10); `uv sync --frozen` + import verificados; CHANGELOG breaking; change `2026-08-28-chore-python-floor-311-sklearn` archivado
 - [x] **feat-031** (2026-08-28): sync documental pre-release — specs merged corregidas (`hrp` en el set de métodos de configuration-contract, errata SHANL, doble negación en numeric-correctness, rango 3.11-3.13 en project-packaging); feat-018 tasks.md cerrado retroactivo; CHANGELOG.md inicial (Keep a Changelog); progress.md consolidado; change `2026-08-28-docs-spec-sync-pre-release` archivado (skip_specs documental)
 - [x] **feat-030** (2026-08-28): fix determinismo de fixtures — `abs(hash(ticker))` salado por PYTHONHASHSEED → `zlib.crc32(ticker.encode())`; +1 test de subprocesos (bytes idénticos seeds 1 vs 999); suite 158→159; spec `system-verification` sincronizada; PR #34
 - [x] **feat-029** (2026-08-28): fix walk-forward primer retorno — `np.roll`+`[1:]` omitía el primer día del test; ventana extendida `[test_start−1, test_end)` leak-free; +1 test analítico (0.52/60·252 exacto); suite 157→158; spec `out-of-sample-validation` sincronizada; PR #33
@@ -27,7 +28,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's Next (DAG v0.1.0 — Fase B/D)
 
-1. feat-032 `chore/python-floor-311-sklearn` (breaking: drop 3.10) → feat-033 `feat/covariance-estimator` (ADR 005) → feat-034 `feat/linkage-parameter` (ADR 006)
+1. feat-033 `feat/covariance-estimator` (ADR 005) → feat-034 `feat/linkage-parameter` (ADR 006)
 2. feat-035 `feat/walk-forward-production-parity` (filtros por fold + benchmarks 1/N e IVP) → feat-036 `fix/sharpe-convention` → feat-037 `feat/alignment-overlap-guard`
 3. Fase D: feat-038 cache parquet → feat-039 CLI+dendrograma → feat-040 cobertura → feat-041 release v0.1.0
 
@@ -41,7 +42,6 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 - **Hallazgo feat-028 (fuera de scope, propuesto como feature nueva)**: `generate_complete_analysis_report` chart 4 re-cálcula matrices full-universe con `construct_returns_matrix` sobre `historical_prices` crudos (longitudes por-ticker propias); con datos reales yfinance cualquier ticker con calendario distinto (suspensión, IPO, delisting) lanza ValueError. Candidata: feature de alineación full-universe para charts (emparentada con feat-037; evaluar si se absorbe en feat-037 o se abre aparte).
 - pyright baja a `basic`: strict es progresión futura (registrar como feature dedicado si se quiere formalizar).
 - aviso cosmético Node20→24 en GitHub Actions (bump futuro).
-- feat-032 es breaking change (Python floor) — exige `chore!:` + footer `BREAKING CHANGE` por CONTRIBUTING.
 
 ## Evidence of Completion
 
