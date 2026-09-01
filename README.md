@@ -25,9 +25,9 @@ Cinco etapas encadenadas, cada una con contrato testado:
 
 1. **Ingesta** — descarga batch de precios ajustados con reintentos acotados; rechazos nombrados por ticker (`data/provider.py` + `data/data_fetch.py`).
 2. **Alineación** — intersección de calendarios antes de cualquier estadística; una fila comparada contra fecha ajena es imposible.
-3. **Filtrado** — Sharpe mínimo y volatilidad máxima; métricas no finitas se excluyen nombrando el motivo.
+3. **Filtrado** — Sharpe mínimo y volatilidad máxima con coherencia logarítmica (`excess = return_log − ln(1+rf)` vía `math.log1p`); métricas no finitas se excluyen nombrando el motivo.
 4. **Clustering + asignación HRP** — distancia firmada `sqrt(0.5·(1-corr))` (los hedges nunca se fusionan con gemelos), linkage → quasi-diagonalization → bisección recursiva por varianza inversa. Sin inversión de matrices.
-5. **Constraints** — límites 0.05–0.30 satisfechos simultáneamente mediante proyecciones cíclicas (Dykstra), con verificación final dura.
+5. **Constraints** — límites 0.05–0.30 satisfechos simultáneamente mediante proyecciones cíclicas (Dykstra post-hoc — ver ADR 003 Addendum 2026-09-01: minimiza distancia euclídea al vector HRP puro, no varianza jerárquica), con verificación final dura.
 
 Opcionalmente, `portfolio_engine/validation/walk_forward.py` evalúa el motor out-of-sample: pesos fijados en la ventana de entrenamiento, aplicados congelada sobre ventanas futuras separadas por embargo.
 
@@ -47,7 +47,7 @@ Las decisiones metodológicas están versionadas como ADRs en [docs/adr/](docs/a
 | Clustering | `linkage_method` | `single` (`ward`, `average` disponibles — ADR 006) |
 | Datos | `lookback_years` | `5` |
 | Datos | `trading_days_per_year` | `252` |
-| Riesgo | `risk_free_rate` | `0.045` |
+| Riesgo | `risk_free_rate` | `0.045` (log coherente `risk_free_rate_log = ln(1+rf) ≈ 0.0440` — ver ADR 003 Addendum 2026-09-01) |
 | Asignación | `weight_allocation_method` | `hrp` |
 | Asignación | `minimum_single_asset_weight` | `0.05` |
 | Asignación | `maximum_single_asset_weight` | `0.30` |
@@ -98,7 +98,7 @@ Depende de datos de `yfinance`: los resultados cambian con fecha de consulta, un
 ```bash
 make lint    # ruff
 make types   # pyright
-make test    # pytest (154 tests)
+make test    # pytest (186 tests)
 ./init.sh    # los 4 gates completos
 ```
 

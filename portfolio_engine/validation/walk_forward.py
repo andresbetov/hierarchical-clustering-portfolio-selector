@@ -147,16 +147,20 @@ def _oos_metrics(daily_returns: np.ndarray, risk_free_rate: float, trading_days:
     NaN-blind guard (adversarial review feat-035): a single return makes
     std(ddof=1) NaN, and `NaN <= 0` is False — the negated comparison
     catches it, so degenerate folds are excluded instead of reported as
-    valid-with-NaN metrics.
+    valid-with-NaN metrics. Delegates Sharpe to the single source
+    `calculate_sharpe_ratio` (log coherence + VOL_FLOOR_EPS).
     """
-    if len(daily_returns) < 2 or not (float(np.std(daily_returns, ddof=1)) > 0):
+    if len(daily_returns) < 2:
         return None
     realized_return = float(np.mean(daily_returns) * trading_days)
     realized_vol = float(np.std(daily_returns, ddof=1) * np.sqrt(trading_days))
+    sharpe = calculate_sharpe_ratio(realized_return, realized_vol, risk_free_rate)
+    if not np.isfinite(sharpe):
+        return None
     return {
         "return": realized_return,
         "volatility": realized_vol,
-        "sharpe": (realized_return - risk_free_rate) / realized_vol,
+        "sharpe": sharpe,
     }
 
 

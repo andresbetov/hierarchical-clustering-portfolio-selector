@@ -8,6 +8,7 @@
 | [004](004-remove-numba.md) | Eliminación de numba por NumPy vectorizado | Aceptado | Escala n≪1000: warm-up JIT dominaba; paridad verificada bit-a-bit con la red feat-021 |
 | [005](005-covariance-estimator.md) | Estimador de covarianza parametrizable con scikit-learn | Aceptado | `covariance_estimator ∈ {sample, ledoit_wolf, oas}`; default `sample` en v0.1.0 (sin cambio silencioso); flip a `ledoit_wolf` en v0.2.0 con evidencia walk-forward |
 | [006](006-linkage-parameter.md) | Método de linkage parametrizable en HRP | Aceptado | `linkage_method ∈ {single, ward, average}`; default `single` (De Prado, snapshot feat-021 intacto); flip a `ward` diferido a v0.2.0 con evidencia walk-forward |
+| [003 Addendum 2026-09-01](003-hrp-adoption.md) | Dykstra post-hoc euclídea vs varianza jerárquica (feat-036) | Aceptado | Documenta que la proyección Dykstra altera el balance `inverse-variance por cluster`; intra-bisección descartada (Pfitzinger & Katzke) — ADR 007 candidato |
 
 ## Convención
 
