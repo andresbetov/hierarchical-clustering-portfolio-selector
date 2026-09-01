@@ -100,6 +100,22 @@ class TestValidationRules:
         assert config.linkage_method == "ward"
         assert PortfolioConfig().linkage_method == "single"
 
+    def test_default_overlap_ratio_is_0_9(self):
+        assert PortfolioConfig().minimum_overlap_ratio == 0.9
+
+    @pytest.mark.parametrize("bad", [0, 0.0, -0.1, 1.0001, 2.0])
+    def test_invalid_overlap_ratio_rejected(self, bad):
+        with pytest.raises(ValueError, match="minimum_overlap_ratio"):
+            PortfolioConfig(minimum_overlap_ratio=bad)
+
+    def test_overlap_ratio_one_is_valid(self):
+        assert PortfolioConfig(minimum_overlap_ratio=1.0).minimum_overlap_ratio == 1.0
+
+    def test_replace_preserves_overlap_ratio_contract(self):
+        config = dataclasses.replace(PortfolioConfig(), minimum_overlap_ratio=0.5)
+        assert config.minimum_overlap_ratio == 0.5
+        assert PortfolioConfig().minimum_overlap_ratio == 0.9
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

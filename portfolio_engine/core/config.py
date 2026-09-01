@@ -85,6 +85,9 @@ class PortfolioConfig:
     # Data window
     lookback_years: int = 5
 
+    # Alignment overlap guard (feat-037): ratio mínimo historia vs span común
+    minimum_overlap_ratio: float = 0.9
+
     # Annualization constant per market calendar (crypto uses 365, etc.)
     trading_days_per_year: int = 252
 
@@ -120,6 +123,11 @@ class PortfolioConfig:
         if not (1 <= self.trading_days_per_year <= 366):
             raise ValueError(
                 f"trading_days_per_year must be within [1, 366], got {self.trading_days_per_year}"
+            )
+
+        if not (0 < self.minimum_overlap_ratio <= 1.0):
+            raise ValueError(
+                f"minimum_overlap_ratio must be within (0, 1], got {self.minimum_overlap_ratio}"
             )
 
         if self.weight_allocation_method not in WEIGHT_ALLOCATION_METHODS:

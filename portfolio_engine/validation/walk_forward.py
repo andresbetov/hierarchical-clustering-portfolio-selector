@@ -217,7 +217,9 @@ def walk_forward_evaluate(
     rf = config.risk_free_rate if risk_free_rate is None else risk_free_rate
     report = WalkForwardReport()
 
-    aligned = align_prices_to_common_calendar(prices_by_ticker, dates_by_ticker)
+    aligned = align_prices_to_common_calendar(
+        prices_by_ticker, dates_by_ticker, config.minimum_overlap_ratio
+    )
     tickers = list(aligned.keys())
     matrix = np.column_stack([aligned[ticker] for ticker in tickers])
     n_rows = matrix.shape[0]

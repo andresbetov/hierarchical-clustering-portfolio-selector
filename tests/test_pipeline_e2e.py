@@ -286,5 +286,92 @@ class TestLegacyReportGeneration:
         assert set(returned_weights) == set(legacy_bundle["selected_tickers"])
 
 
+def _delisted_history_bundle_for_report():
+    """Bundle where C has 50% history (last 5 of 10 days) — chart 4 must not crash."""
+    base = np.datetime64("2024-01-01")
+    d_full = np.array(base + np.arange(10, dtype="timedelta64[D]"), dtype="datetime64[ns]")
+    d_half = d_full[5:]
+    p_full = 100.0 + np.arange(10, dtype=np.float64)
+    p_half = 105.0 + np.arange(5, dtype=np.float64)
+
+    # Metrics for 3 tickers (all healthy, Sharpe > threshold)
+    metrics = {}
+    for ticker, prices in [("A", p_full), ("B", p_full.copy()), ("C", p_half)]:
+        daily = compute_logarithmic_returns(prices)
+        metrics[ticker] = {
+            "daily_returns": daily,
+            "annual_return": float(calculate_annualized_return(daily)),
+            "annual_volatility": float(calculate_annualized_volatility(daily)),
+            "sharpe_ratio": calculate_sharpe_ratio(
+                float(calculate_annualized_return(daily)),
+                float(calculate_annualized_volatility(daily)),
+                0.045,
+            ),
+        }
+
+    # Historical prices with unequal lengths (the pre-037 crash condition)
+    historical_prices = {"A": p_full, "B": p_full.copy(), "C": p_half}
+    price_dates = {"A": d_full, "B": d_full, "C": d_half}
+
+    # Minimal filtered/optimal for main's return (HRP over A/B, C excluded by overlap guard later)
+    filtered_metrics = {k: metrics[k] for k in ["A", "B"]}
+    optimal_portfolio = dict(filtered_metrics)
+    portfolio_weights = {"A": 0.5, "B": 0.5}
+    # Cov/corr for A/B only (2x2)
+    returns_ab = construct_returns_matrix({"A": p_full, "B": p_full.copy()})
+    corr = calculate_correlation_matrix(returns_ab)
+    cov = calculate_covariance_matrix(returns_ab)
+
+    return {
+        "asset_metrics": metrics,
+        "filtered_metrics": filtered_metrics,
+        "optimal_portfolio": optimal_portfolio,
+        "portfolio_weights": portfolio_weights,
+        "corr_matrix": corr,
+        "cov_matrix": cov,
+        "historical_prices": historical_prices,
+        "price_dates": price_dates,
+    }
+
+
+class TestReportWithDelistedHistory:
+    def test_chart4_with_50_percent_history_does_not_crash(self, monkeypatch):
+        """feat-037: chart 4 full-universe must align (not crash on lengths differ)
+        and exclude the 50%-history ticker."""
+        bundle = _delisted_history_bundle_for_report()
+        captured: dict = {}
+
+        def fake_main(tickers, config):
+            return (
+                bundle["asset_metrics"],
+                bundle["filtered_metrics"],
+                bundle["optimal_portfolio"],
+                bundle["portfolio_weights"],
+                bundle["corr_matrix"],
+                bundle["cov_matrix"],
+                bundle["historical_prices"],
+                bundle["price_dates"],
+            )
+
+        original_plot = pipeline_module.plot_correlation_covariance_matrices
+
+        def spy(corr, cov, tickers, save_path=None, show_plot=True):
+            captured["tickers"] = list(tickers)
+            captured["corr_shape"] = corr.shape
+            return original_plot(corr, cov, tickers, save_path, show_plot)
+
+        monkeypatch.setattr(pipeline_module, "main", fake_main)
+        monkeypatch.setattr(pipeline_module, "plot_correlation_covariance_matrices", spy)
+
+        # Must not raise ValueError: lengths differ (pre-037 crash)
+        result = generate_complete_analysis_report(
+            ["A", "B", "C"], PortfolioConfig(), save_plots=False, show_plots=False
+        )
+
+        assert captured["tickers"] == ["A", "B"]  # C (50%) excluded by guard
+        assert captured["corr_shape"] == (2, 2)
+        assert result is not None
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

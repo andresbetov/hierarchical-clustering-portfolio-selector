@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - feat-033: `covariance_estimator ∈ {sample, ledoit_wolf, oas}` (ADR 005) — seam `estimate_covariance` consumida por el pipeline y el walk-forward; default `sample` (sin cambio silencioso), shrinkage con paridad sklearn a 1e-12; flip de default a `ledoit_wolf` diferido a v0.2.0 con evidencia walk-forward.
 - feat-034: `linkage_method ∈ {single, ward, average}` (ADR 006) — propagado a `scipy.cluster.hierarchy.linkage` desde config; default `single` (De Prado, snapshot-compatible); flip a `ward` candidato para v0.2.0.
 - feat-035: walk-forward con paridad productiva — filtros Sharpe/vol de producción aplicados por fold de train (universo ex-ante), benchmarks ex-ante `equal` (1/N) e `ivp` (inverse-volatility) sobre el mismo universo y los mismos retornos OOS, 6 medianas nuevas en `to_dict()`; guard NaN-blind corregido (folds con riesgo muestral degenerado/NaN quedan inválidos, nunca válidos-con-NaN); disciplina temporal documentada (embargo 5d dentro de la práctica 5-20d, purga implícita 1d).
+- feat-037: guard de solapamiento en alineación — `minimum_overlap_ratio=0.9` (config validado `(0,1]`), exclusión con warning nombrado (ticker + coverage) contra el span común, `1.0` bit-a-bit idéntico, `0` supervivientes `ValueError`; chart 4 full-universe alineado con mismo guard.
 
 ### Changed
 

@@ -3,15 +3,16 @@
 ## Current State
 
 **Last Updated:** 2026-08-31
-**Branch:** `feat/sharpe-convention` — DAG v0.1.0 en curso (feat-028..036 done, CP1 cerrado, CP2 en curso)
-**Active Feature:** feat-036 (cerrada en esta sesión); siguiente: feat-037
+**Branch:** `feat/alignment-overlap-guard` — DAG v0.1.0 en curso (feat-028..037 done, CP1 cerrado, CP2 en curso)
+**Active Feature:** feat-037 (cerrada en esta sesión); siguiente: feat-038
 
-Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · CP2 "Correcta" en curso: plataforma (032), cov estimator (033), linkage (034), walk-forward paridad+benchmarks (035) y convención Sharpe log (036, ADR 003 Addendum) cerrados; siguiente feat-037 (overlap guard). Suite 187 passed.
+Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · CP2 "Correcta" en curso: plataforma (032), cov estimator (033), linkage (034), walk-forward paridad+benchmarks (035), convención Sharpe log (036) y overlap guard (037) cerrados; siguiente Fase D (cache parquet). Suite 203 passed.
 
 ## Status
 
 ### What's Done (hito v0.1.0 — Fase A / CP1)
 
+- [x] **feat-037** (2026-08-31): guard de solapamiento — `minimum_overlap_ratio=0.9` validado (0,1], `align_prices_to_common_calendar` con post-DataFrame `notna().mean()` sobre unión, warning nombrado (ticker+ratio), `MIN_COMMON_ROWS` sobre supervivientes + `n==0` ValueError, chart 4 full-universe alineado con mismo guard; pipeline pruning de `filtered_metrics` para coherencia dimensional; 14 tests nuevos (50% excluido, 1.0 bit-identical, frontera 0.9, 1 survivor, 0 survivors, hueco, orden, warning) + validación config (0/1.0/1.0001) y revisión adversarial (3 ALTA: ruff walrus, pyright cast, chart 4 crash) corregidos; suite 187→203; specs `market-data-contract` + `configuration-contract` sincronizadas; change `2026-08-31-feat-alignment-overlap-guard` archivado
 - [x] **feat-036** (2026-08-31): coherencia logarítmica del Sharpe — `excess = return_log − ln(1+rf)` vía `math.log1p` en 6 call-sites y propiedad `risk_free_rate_log` (single source); `rf=0` invariante, `rf=0.045` pin `0.044016885416774`; pinnings migrados a `(ret-log1p(rf))/vol` rel 1e-12 + robustez `rf<=-1 → nan` y `VOL_FLOOR_EPS` unificado en `walk_forward._oos_metrics`; addendum ADR 003 2026-09-01 (Dykstra post-hoc euclídea vs varianza jerárquica, `n=5,max=0.30` cuantificado); suite 182→187; specs `numeric-correctness` + `quant-docs` sincronizadas; change `2026-08-31-fix-sharpe-convention` archivado
 - [x] **feat-035** (2026-08-28): walk-forward con paridad productiva — filtros de producción por fold de train (reuso literal de apply_asset_filters), benchmarks ex-ante equal/ivp sobre el mismo universo y los mismos retornos OOS (pesos auditable por fold), 6 medianas nuevas en to_dict; guard NaN-blind corregido tras revisión adversarial con subagente (+test de regresión test_rows=1); suite 177→182; spec `out-of-sample-validation` sincronizada (MODIFIED + ADDED); change `2026-08-28-feat-walk-forward-production-parity` archivado
 - [x] **feat-034** (2026-08-28): linkage parametrizable (ADR 006) — `linkage_method ∈ {single, ward, average}` validado en config; `calculate_hrp_weights(cov, linkage_method)` propaga a scipy (ValueError pre-scipy para desconocidos); default single snapshot-compatible; +7 tests (ward 3 bloques con adyacencia intra-bloque, average, snapshot bit a bit); suite 170→177; specs configuration-contract + numeric-correctness sincronizadas; change `2026-08-28-feat-linkage-parameter` archivado
@@ -32,8 +33,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's Next (DAG v0.1.0 — Fase B/D)
 
-1. feat-037 `feat/alignment-overlap-guard` (D1: reuso `align_prices…` + `minimum_overlap_ratio`)
-2. Fase D: feat-038 cache parquet → feat-039 CLI+dendrograma → feat-040 cobertura → feat-041 release v0.1.0
+1. Fase D: feat-038 cache parquet → feat-039 CLI+dendrograma → feat-040 cobertura → feat-041 release v0.1.0
 
 ## Process Deviations (transparencia)
 
@@ -42,18 +42,19 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ## Blockers / Risks
 
-- **Hallazgo feat-028 (fuera de scope, propuesto como feature nueva)**: `generate_complete_analysis_report` chart 4 re-cálcula matrices full-universe con `construct_returns_matrix` sobre `historical_prices` crudos (longitudes por-ticker propias); con datos reales yfinance cualquier ticker con calendario distinto (suspensión, IPO, delisting) lanza ValueError. Candidata: feature de alineación full-universe para charts (emparentada con feat-037; evaluar si se absorbe en feat-037 o se abre aparte).
 - pyright baja a `basic`: strict es progresión futura (registrar como feature dedicado si se quiere formalizar).
 - aviso cosmético Node20→24 en GitHub Actions (bump futuro).
 
 ## Evidence of Completion
 
+- feat-037: `openspec validate --specs` 12/12 (market-data-contract + configuration-contract) · guard post-DataFrame con `notna().mean()` sobre unión · `./init.sh` 203 passed · ruff/pyright/compileall verdes · revisión adversarial (2 subagentes) con 3 ALTA (ruff/pyright/chart4) corregidos
 - feat-036: `openspec validate --specs` 12/12 (`quant-docs` nueva) · `grep -rn log1p` 6+ call-sites migrados · `./init.sh` 187 passed · ruff/pyright/compileall verdes · revisión adversarial (3 subagentes) con 1 ALTA (F401) corregida
 - feat-031: `openspec validate --specs` 11/11 · `grep SHANL openspec/` = 0 · set de métodos en spec == enum código (6) · `./init.sh` exit 0 con 159 passed · CHANGELOG.md con formato Keep a Changelog
 - feat-028..030: evidencia completa por feature en `feature_list.json:evidence` (rojo TDD → verde → init.sh fresco → spec sincronizada → PR squash)
 
 ## Decisions Made
 
+- feat-037: guard post-DataFrame (B) con `notna().mean()` sobre unión; `minimum_overlap_ratio` en config (0.9) + param en función con default idéntico; chart 4 full-universe alineado con mismo guard (absorbe blocker progress.md:45)
 - feat-036: híbrida A+B sin ciclo — `config.risk_free_rate_log` usa `math.log1p` directo; helper `risk_free_log_rate` para float-only sites; duplicación intencional documentada en `design.md:D1`; addendum ADR 003 fechado 2026-09-01 (no supersede) cuantifica `n=5,max=0.30`
 - feat-031 declarado `skip_specs: true` (cambio puramente documental: las specs se corrigen para reflejar comportamiento YA implementado — precedente feat-025)
 - CHANGELOG arranca con `[Unreleased]` + placeholder `[0.1.0]` que feat-041 completará y fechará al tag
