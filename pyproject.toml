@@ -12,6 +12,7 @@ dependencies = [
     "scipy",
     "scikit-learn>=1.8",
     "pyyaml>=6.0",
+    "pyarrow>=14",
     "pytest>=9.0.3",
 ]
 

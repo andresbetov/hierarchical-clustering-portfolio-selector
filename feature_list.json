@@ -369,8 +369,8 @@
       "name": "Data cache parquet",
       "description": "Cache de datos local para confiabilidad operativa: rate-limiting de yfinance activo 2025-2026 (issues #2280, #2422, #2526; soluciones comunitarias yfinance-cache/requests_cache) hace que corridas repetidas fallen intermitentemente — sin cache, cada corrida del pipeline depende de red exitosa. Alcance: cache opcional data/cache/*.parquet en YFinanceProvider (key determinista: tickers + ventana resuelta + trading_days; invalidacion por cambio de key); flag --refresh-cache en CLI; data/cache/ en .gitignore; exclusion explicita de CI (que sigue offline). Aceptacion: segunda llamada con misma key NO invoca _fetch_batch (verificado con contador monkeypatcheado); --refresh-cache fuerza re-descarga; corrida sin red desde cache produce resultados identicos; suite offline verde sin tocar red.",
       "dependencies": [],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-31 sesion feat-038 (rama feat/data-cache-parquet): analisis extendido (2 subagentes: feeder cache + robustez) + busqueda 2025-2026 yfinance rate-limit #2422/#2526 + atomic parquet best practice; TDD rojo 9 tests (ModuleNotFound cache + contador 2) -> verde; implementado: cache.py CACHE_VERSION v1 sha256 16hex sorted upper + atomic mkstemp+snappy+os.replace + grace pyarrow/OSError/ArrowInvalid, provider use_cache+refresh_cache con key ventana resuelta, pipeline provider forward via inspect.signature, cli _build_parser --refresh-cache/--universe, data/cache/.gitkeep + .gitignore data/cache/* !.gitkeep, pyarrow 25.0.1; validacion 2 iteraciones (subagentes): 5 HIGH (gitkeep ignorado, use_cache divergencia, spec config vacio, CLI legacy, rama sin commit) corregidos + 2 cli tests; ./init.sh exit 0: 216 passed, ruff All checks passed!, pyright 0 errors, compileall OK, openspec validate 13/13, uv lock --check OK"
     },
     {
       "id": "feat-039",

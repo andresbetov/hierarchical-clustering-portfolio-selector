@@ -3,10 +3,9 @@
 ## Current State
 
 **Last Updated:** 2026-08-31
-**Branch:** `develop` — DAG v0.1.0 en curso (feat-028..037 done, CP1+CP2 cerrados)
-**Active Feature:** ninguna (siguiente: feat-038)
+**Branch:** `feat/data-cache-parquet` — DAG v0.1.0 (feat-038 poblado, CP1+CP2 cerrados)
 
-Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037): plataforma, cov estimator, linkage, walk-forward paridad+benchmarks, Sharpe log y overlap guard cerrados; siguiente Fase D (cache parquet). Suite 204 passed.
+Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037) · Fase D en curso: feat-038 caché parquet poblado, 216 passed (+12 feat-038: 10 cache +2 cli), `pyarrow 25.0.1` operativo. Suite `./init.sh` 216 passed, ruff/pyright/compileall verdes.
 
 ## Status
 
@@ -29,11 +28,11 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-- [ ] —
+- [x] **feat-038** (2026-08-31): cache parquet — `YFinanceProvider(cache_dir, refresh_cache, use_cache)` con key `sha256(sorted(upper)+start+end+trading_days+v1)` 16 hex, `data/cache/.gitkeep` + `.gitignore: data/cache/*` + `!data/cache/.gitkeep`, `pyarrow>=14` 25.0.1, `cache.py` helpers puros + escritura atómica `mkstemp+snappy+os.replace`, `pipeline provider` forward con `inspect.signature` fallback, `cli _build_parser` + `--refresh-cache`/`--universe`; tests `test_provider_cache` 10 + `test_cli` 2 nuevos; 204→216 passed (re-validación con 2 subagentes, 0 ALTA)
 
-### What's Next (DAG v0.1.0 — Fase B/D)
+### What's Next (DAG v0.1.0 — Fase D)
 
-1. Fase D: feat-038 cache parquet → feat-039 CLI+dendrograma → feat-040 cobertura → feat-041 release v0.1.0
+1. feat-039 CLI+dendrograma → feat-040 cobertura → feat-041 release v0.1.0
 
 ## Process Deviations (transparencia)
 
