@@ -3,15 +3,16 @@
 ## Current State
 
 **Last Updated:** 2026-08-28
-**Branch:** `feat/linkage-parameter` — DAG v0.1.0 en curso (feat-028..034 done, CP1 cerrado, CP2 en curso)
-**Active Feature:** feat-034 (cerrada en esta sesión); siguiente: feat-035
+**Branch:** `feat/walk-forward-production-parity` — DAG v0.1.0 en curso (feat-028..035 done, CP1 cerrado, CP2 en curso)
+**Active Feature:** feat-035 (cerrada en esta sesión); siguiente: feat-036
 
-Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · CP2 "Correcta" en curso: plataforma (032), cov estimator (033, ADR 005) y linkage (034, ADR 006) cerrados; siguiente feat-035 (walk-forward con paridad productiva + benchmarks). Suite 177 passed.
+Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · CP2 "Correcta" en curso: plataforma (032), cov estimator (033), linkage (034) y walk-forward con paridad productiva + benchmarks (035) cerrados; siguiente feat-036 (convención Sharpe). Suite 182 passed.
 
 ## Status
 
 ### What's Done (hito v0.1.0 — Fase A / CP1)
 
+- [x] **feat-035** (2026-08-28): walk-forward con paridad productiva — filtros de producción por fold de train (reuso literal de apply_asset_filters), benchmarks ex-ante equal/ivp sobre el mismo universo y los mismos retornos OOS (pesos auditable por fold), 6 medianas nuevas en to_dict; guard NaN-blind corregido tras revisión adversarial con subagente (+test de regresión test_rows=1); suite 177→182; spec `out-of-sample-validation` sincronizada (MODIFIED + ADDED); change `2026-08-28-feat-walk-forward-production-parity` archivado
 - [x] **feat-034** (2026-08-28): linkage parametrizable (ADR 006) — `linkage_method ∈ {single, ward, average}` validado en config; `calculate_hrp_weights(cov, linkage_method)` propaga a scipy (ValueError pre-scipy para desconocidos); default single snapshot-compatible; +7 tests (ward 3 bloques con adyacencia intra-bloque, average, snapshot bit a bit); suite 170→177; specs configuration-contract + numeric-correctness sincronizadas; change `2026-08-28-feat-linkage-parameter` archivado
 - [x] **feat-033** (2026-08-28): estimador de covarianza parametrizable (ADR 005) — `covariance_estimator ∈ {sample, ledoit_wolf, oas}` validado en config; seam `estimate_covariance` en core/metrics consumida por pipeline y walk-forward; sample bit a bit (red feat-021 intacta), shrinkage con paridad sklearn 1e-12; +11 tests + E2E offline ledoit_wolf; suite 159→170; specs configuration-contract + numeric-correctness sincronizadas; change `2026-08-28-feat-covariance-estimator` archivado
 - [x] **feat-032** (2026-08-28): breaking plataforma — `requires-python>=3.11` (drop 3.10, EOL 2026-10-31/SPEC 0) + `scikit-learn>=1.8` (para feat-033); CI matrix 3.11/3.12/3.13; uv.lock re-resuelto (sklearn 1.9.0, threadpoolctl, narwhals; scipy 1.15.3 fuera por resolución exclusiva 3.10); `uv sync --frozen` + import verificados; CHANGELOG breaking; change `2026-08-28-chore-python-floor-311-sklearn` archivado
@@ -30,7 +31,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's Next (DAG v0.1.0 — Fase B/D)
 
-1. feat-035 `feat/walk-forward-production-parity` (filtros por fold + benchmarks 1/N e IVP) → feat-036 `fix/sharpe-convention` → feat-037 `feat/alignment-overlap-guard`
+1. feat-036 `fix/sharpe-convention` → feat-037 `feat/alignment-overlap-guard`
 2. Fase D: feat-038 cache parquet → feat-039 CLI+dendrograma → feat-040 cobertura → feat-041 release v0.1.0
 
 ## Process Deviations (transparencia)

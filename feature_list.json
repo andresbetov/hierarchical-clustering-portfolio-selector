@@ -345,8 +345,8 @@
         "feat-033",
         "feat-034"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-035 (feature central de CP2, flujo extendido): busqueda de fuentes (skfolio/DeMiguel 2007: naive 1/N e IVP tienden a batir MVO OOS; bestfolio: benchmarks ex-ante creibles) + analisis de codigo con subagente explore. TDD rojo (3 tests nuevos fallan pre-impl). Implementado: _train_survivors reusa apply_asset_filters literal (paridad productiva real) por fold; _embed con ceros para excluidos (sin desalinear log_test); benchmarks equal/ivp ex-ante sobre supervivientes con mismos retornos OOS + pesos auditable en fold.benchmarks; 6 medianas nuevas en to_dict; docstring disciplina temporal (embargo 5d en practica 5-20d, purga implicita 1d). VALIDACION ITERATIVA: revision adversarial con subagente general — verifico cero fuga temporal (envenenamiento empirico test+embargo), alineacion de columnas correcta, edge cases n=1/embargo=0 seguros; cazo 1 defecto real accionable (guard NaN-blind en _oos_metrics: test_rows=1 producia folds 'validos' con metricas NaN — corregido con not(x>0) + test de regresion dedicado) + hardening isfinite en medianas + import muerto eliminado. Suite 177→182 passed (13/13 WF), gates verdes; asserts existentes intactos (solo 3 lineas de fixtures relajadas D6); spec out-of-sample-validation sincronizada (MODIFIED + ADDED, 2 scenarios nuevos); change archivado 2026-08-28-feat-walk-forward-production-parity; README + CHANGELOG actualizados."
     },
     {
       "id": "feat-036",

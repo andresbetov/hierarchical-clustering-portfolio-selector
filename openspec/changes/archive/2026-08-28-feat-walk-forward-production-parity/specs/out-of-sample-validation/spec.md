@@ -1,27 +1,10 @@
-# out-of-sample-validation Specification
-
-## Purpose
-Garantizar que las métricas de validación del motor provengan exclusivamente de información pasada: pesos fijados sobre ventanas de entrenamiento, evaluados sobre ventanas posteriores separadas por embargo, sin ninguna ruta de fuga temporal.
-
-## Requirements
-
-### Requirement: Ventanas walk-forward sin fuga
-
-El generador de ventanas SHALL producir pares (train, test) donde train precede estrictamente a test con un gap de `embargo_days` filas entre boundary, cubriendo la serie sin solapamientos internos y fallando ruidosamente si los parámetros no producen al menos una ventana completa.
-
-#### Scenario: embargo respetado
-- **WHEN** se generan ventanas con embargo_days=5
-- **THEN** ningún índice del slice de test aparece en el slice de entrenamiento ni en el margen
-
-#### Scenario: parámetros insuficientes
-- **WHEN** train+test+embargo exceden los datos disponibles
-- **THEN** ValueError descriptivo antes de iterar
+## MODIFIED Requirements
 
 ### Requirement: Evaluación OOS con pesos ex-ante
 
 Para cada ventana, los pesos SHALL derivarse exclusivamente del slice de entrenamiento (alineación→stats→filtros de producción→HRP) y aplicarse SIN recalculo sobre el slice de test; los retornos OOS combinan precios de test con esos pesos. La serie de retornos OOS de un fold SHALL cubrir todos los días de la ventana de test — exactamente `test_rows` retornos — donde el retorno del primer día de test SHALL calcularse contra el último precio previo a la ventana (información pasada); SHALL NOT usarse el truco de re-desplazamiento circular que omite ese primer retorno ni precios futuros de la propia ventana.
 
-El universo invertible de cada fold SHALL derivar exclusivamente de métricas del slice de entrenamiento: los filtros de Sharpe/volatilidad de producción (`apply_asset_filters` con los umbrales de config) se aplican por fold, los pesos cubren solo los supervivientes y los excluidos reciben peso exactamente 0 sin desalinear el cómputo de retornos. Un fold sin supervivientes SHALL marcarse inválido con warning nombrado. Un fold cuya serie OOS no permita riesgo muestral (menos de 2 retornos o desviación nula/NaN) SHALL marcarse inválido — nunca reportado como válido con métricas NaN.
+El universo invertible de cada fold SHALL derivar exclusivamente de métricas del slice de entrenamiento: los filtros de Sharpe/volatilidad de producción (`apply_asset_filters` con los umbrales de config) se aplican por fold, los pesos cubren solo los supervivientes y los excluidos reciben peso exactamente 0 sin desalinear el cómputo de retornos. Un fold sin supervivientes SHALL marcarse inválido con warning nombrado.
 
 #### Scenario: sin mirada al futuro
 - **WHEN** se evalúa cualquier fold
@@ -35,6 +18,8 @@ El universo invertible de cada fold SHALL derivar exclusivamente de métricas de
 - **WHEN** un activo no supera los filtros del slice de entrenamiento de un fold pero sí los de un fold posterior
 - **THEN** queda fuera de los pesos del primer fold y dentro de los del posterior, aunque su retorno de test del primer fold sea alto
 
+## ADDED Requirements
+
 ### Requirement: Benchmarks ex-ante comparables en el reporte
 
 El reporte SHALL exponer por fold benchmarks `equal` (1/N) e `ivp` (inverse-volatility) cuyos pesos se fijan exclusivamente con información de entrenamiento (conteo de supervivientes para equal; volatilidades de train para ivp) sobre el MISMO universo de supervivientes que el motor, aplicados congelados sobre los mismos retornos OOS del fold. `to_dict` SHALL añadir las medianas de retorno/volatilidad/Sharpe de ambos benchmarks, excluyendo folds inválidos igual que el motor.
@@ -46,11 +31,3 @@ El reporte SHALL exponer por fold benchmarks `equal` (1/N) e `ivp` (inverse-vola
 #### Scenario: pesos de benchmarks inmunes a mutación OOS
 - **WHEN** se muta el slice de test de un fold
 - **THEN** los pesos ex-ante de los benchmarks de ese fold no cambian (solo información de train los define); las métricas OOS sí reflejan la mutación — medir el test es su propósito
-
-### Requirement: Agregación transparente de folds
-
-El reporte SHALL exponer métricas por fold y agregados (mediana de retorno/vol anualizadas, Sharpe mediano, fracción de folds positivos), calculadas solo sobre folds completos válidos.
-
-#### Scenario: fold degenerado excluido
-- **WHEN** un fold produce varianza nula o universo vacío
-- **THEN** se marca inválido, se loggea y se excluye de los agregados
