@@ -69,7 +69,7 @@ report = walk_forward_evaluate(prices, dates, config, train_rows=250, test_rows=
 print(report.to_dict())
 ```
 
-Por ventana: pesos fijados solo con datos de entrenamiento (alineación → estadísticas → HRP), aplicados congelados sobre la ventana posterior separada por embargo. El reporte expone retorno/volatilidad/Sharpe OOS por fold y agregados por mediana. Sin costos ni turnover todavía — úsalo como contraste direccional, no como P&L esperado.
+Por ventana: pesos fijados solo con datos de entrenamiento (alineación → estadísticas → **filtros de producción** → HRP sobre supervivientes), aplicados congelados sobre la ventana posterior separada por embargo — paridad exacta con la estrategia productiva. El reporte expone retorno/volatilidad/Sharpe OOS por fold y agregados por mediana, junto a benchmarks ex-ante `equal` (1/N) e `ivp` (inverse-volatility) sobre el mismo universo y los mismos retornos OOS: si el motor no bate a 1/N en mediana, créelo (DeMiguel 2007). Disciplina temporal: embargo de 5 días (práctica 5-20 para estrategias diarias) y purga implícita de 1 día (horizonte de la etiqueta = retorno diario), que el embargo excede. Sin costos ni turnover todavía — úsalo como contraste direccional, no como P&L esperado.
 
 ## Gráficas del reporte
 
