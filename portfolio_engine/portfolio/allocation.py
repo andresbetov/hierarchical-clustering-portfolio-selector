@@ -4,7 +4,7 @@ import logging
 import numpy as np
 
 from ..core.config import PortfolioConfig
-from ..core.metrics import VOL_FLOOR_EPS
+from ..core.metrics import VOL_FLOOR_EPS, risk_free_log_rate
 from .hrp import calculate_hrp_weights
 
 logger = logging.getLogger(__name__)
@@ -150,7 +150,9 @@ def calculate_maximum_sharpe_weights(
     w ∝ Σ⁻¹(μ - rf) is computed as the solution of Σw = (μ - rf).
     """
     try:
-        excess_returns = np.asarray(expected_returns - risk_free_rate, dtype=np.float64)
+        excess_returns = np.asarray(
+            expected_returns - risk_free_log_rate(risk_free_rate), dtype=np.float64
+        )
         positive_definite_covariance = _ensure_positive_definite(np.asarray(covariance_matrix, dtype=np.float64))
 
         solved = np.linalg.solve(positive_definite_covariance, excess_returns)

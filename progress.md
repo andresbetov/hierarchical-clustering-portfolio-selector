@@ -2,16 +2,17 @@
 
 ## Current State
 
-**Last Updated:** 2026-08-28
-**Branch:** `feat/walk-forward-production-parity` — DAG v0.1.0 en curso (feat-028..035 done, CP1 cerrado, CP2 en curso)
-**Active Feature:** feat-035 (cerrada en esta sesión); siguiente: feat-036
+**Last Updated:** 2026-08-31
+**Branch:** `feat/sharpe-convention` — DAG v0.1.0 en curso (feat-028..036 done, CP1 cerrado, CP2 en curso)
+**Active Feature:** feat-036 (cerrada en esta sesión); siguiente: feat-037
 
-Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · CP2 "Correcta" en curso: plataforma (032), cov estimator (033), linkage (034) y walk-forward con paridad productiva + benchmarks (035) cerrados; siguiente feat-036 (convención Sharpe). Suite 182 passed.
+Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · CP2 "Correcta" en curso: plataforma (032), cov estimator (033), linkage (034), walk-forward paridad+benchmarks (035) y convención Sharpe log (036, ADR 003 Addendum) cerrados; siguiente feat-037 (overlap guard). Suite 187 passed.
 
 ## Status
 
 ### What's Done (hito v0.1.0 — Fase A / CP1)
 
+- [x] **feat-036** (2026-08-31): coherencia logarítmica del Sharpe — `excess = return_log − ln(1+rf)` vía `math.log1p` en 6 call-sites y propiedad `risk_free_rate_log` (single source); `rf=0` invariante, `rf=0.045` pin `0.044016885416774`; pinnings migrados a `(ret-log1p(rf))/vol` rel 1e-12 + robustez `rf<=-1 → nan` y `VOL_FLOOR_EPS` unificado en `walk_forward._oos_metrics`; addendum ADR 003 2026-09-01 (Dykstra post-hoc euclídea vs varianza jerárquica, `n=5,max=0.30` cuantificado); suite 182→187; specs `numeric-correctness` + `quant-docs` sincronizadas; change `2026-08-31-fix-sharpe-convention` archivado
 - [x] **feat-035** (2026-08-28): walk-forward con paridad productiva — filtros de producción por fold de train (reuso literal de apply_asset_filters), benchmarks ex-ante equal/ivp sobre el mismo universo y los mismos retornos OOS (pesos auditable por fold), 6 medianas nuevas en to_dict; guard NaN-blind corregido tras revisión adversarial con subagente (+test de regresión test_rows=1); suite 177→182; spec `out-of-sample-validation` sincronizada (MODIFIED + ADDED); change `2026-08-28-feat-walk-forward-production-parity` archivado
 - [x] **feat-034** (2026-08-28): linkage parametrizable (ADR 006) — `linkage_method ∈ {single, ward, average}` validado en config; `calculate_hrp_weights(cov, linkage_method)` propaga a scipy (ValueError pre-scipy para desconocidos); default single snapshot-compatible; +7 tests (ward 3 bloques con adyacencia intra-bloque, average, snapshot bit a bit); suite 170→177; specs configuration-contract + numeric-correctness sincronizadas; change `2026-08-28-feat-linkage-parameter` archivado
 - [x] **feat-033** (2026-08-28): estimador de covarianza parametrizable (ADR 005) — `covariance_estimator ∈ {sample, ledoit_wolf, oas}` validado en config; seam `estimate_covariance` en core/metrics consumida por pipeline y walk-forward; sample bit a bit (red feat-021 intacta), shrinkage con paridad sklearn 1e-12; +11 tests + E2E offline ledoit_wolf; suite 159→170; specs configuration-contract + numeric-correctness sincronizadas; change `2026-08-28-feat-covariance-estimator` archivado
@@ -31,7 +32,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's Next (DAG v0.1.0 — Fase B/D)
 
-1. feat-036 `fix/sharpe-convention` → feat-037 `feat/alignment-overlap-guard`
+1. feat-037 `feat/alignment-overlap-guard` (D1: reuso `align_prices…` + `minimum_overlap_ratio`)
 2. Fase D: feat-038 cache parquet → feat-039 CLI+dendrograma → feat-040 cobertura → feat-041 release v0.1.0
 
 ## Process Deviations (transparencia)
@@ -47,11 +48,13 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ## Evidence of Completion
 
+- feat-036: `openspec validate --specs` 12/12 (`quant-docs` nueva) · `grep -rn log1p` 6+ call-sites migrados · `./init.sh` 187 passed · ruff/pyright/compileall verdes · revisión adversarial (3 subagentes) con 1 ALTA (F401) corregida
 - feat-031: `openspec validate --specs` 11/11 · `grep SHANL openspec/` = 0 · set de métodos en spec == enum código (6) · `./init.sh` exit 0 con 159 passed · CHANGELOG.md con formato Keep a Changelog
 - feat-028..030: evidencia completa por feature en `feature_list.json:evidence` (rojo TDD → verde → init.sh fresco → spec sincronizada → PR squash)
 
 ## Decisions Made
 
+- feat-036: híbrida A+B sin ciclo — `config.risk_free_rate_log` usa `math.log1p` directo; helper `risk_free_log_rate` para float-only sites; duplicación intencional documentada en `design.md:D1`; addendum ADR 003 fechado 2026-09-01 (no supersede) cuantifica `n=5,max=0.30`
 - feat-031 declarado `skip_specs: true` (cambio puramente documental: las specs se corrigen para reflejar comportamiento YA implementado — precedente feat-025)
 - CHANGELOG arranca con `[Unreleased]` + placeholder `[0.1.0]` que feat-041 completará y fechará al tag
 - `project-packaging` actualizado a 3.11-3.13 en feat-031 para que feat-032 solo implemente lo que la spec ya declara

@@ -1,5 +1,7 @@
 """Core metrics unit tests."""
 
+import math
+
 import numpy as np
 import pytest
 
@@ -56,8 +58,39 @@ class TestAnnualizedMetrics:
         annual_vol = 0.15  # 15%
         risk_free = 0.02  # 2%
         sharpe = calculate_sharpe_ratio(annual_return, annual_vol, risk_free)
-        expected = (0.10 - 0.02) / 0.15
-        assert np.isclose(sharpe, expected)
+        expected = (0.10 - math.log1p(0.02)) / 0.15
+        assert sharpe == pytest.approx(expected, rel=1e-12)
+
+
+class TestRiskFreeLogConvention:
+    """Coherencia logarítmica rf_log = ln(1+rf) — single source, estable."""
+
+    def test_helper_zero_invariant(self):
+        from portfolio_engine.core.metrics import risk_free_log_rate
+
+        assert risk_free_log_rate(0.0) == 0.0
+
+    def test_helper_0045_pin(self):
+        from portfolio_engine.core.metrics import risk_free_log_rate
+
+        assert risk_free_log_rate(0.045) == pytest.approx(0.04401688541677432, rel=1e-12)
+
+    def test_config_property_delegates(self):
+        from portfolio_engine.core.config import PortfolioConfig
+
+        assert PortfolioConfig(risk_free_rate=0.045).risk_free_rate_log == pytest.approx(
+            math.log1p(0.045), rel=1e-12
+        )
+        assert PortfolioConfig(risk_free_rate=0.0).risk_free_rate_log == 0.0
+
+    def test_sharpe_rf_zero_invariant(self):
+        # rf=0 must be identical pre/post-fix (log1p(0)=0)
+        assert calculate_sharpe_ratio(0.10, 0.15, 0.0) == pytest.approx(0.10 / 0.15, rel=1e-12)
+
+    def test_sharpe_rf_0045_pin(self):
+        assert calculate_sharpe_ratio(0.10, 0.15, 0.045) == pytest.approx(
+            (0.10 - 0.04401688541677432) / 0.15, rel=1e-12
+        )
 
 
 class TestNumericGuards:

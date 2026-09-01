@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - feat-031: specs merged sincronizadas con el código (`hrp` en el set de métodos de `configuration-contract`, doble negación corregida en `numeric-correctness`, rango de Python 3.11-3.13 en `project-packaging`); CHANGELOG inicial; `progress.md` consolidado.
+- feat-036: coherencia logarítmica del Sharpe — **BREAKING si `risk_free_rate ≠ 0`**: exceso `return_log − ln(1+rf)` vía `math.log1p` en los 6 call-sites (`core/metrics`, `data/data_fetch` vía helper, `portfolio/allocation:max_sharpe`, `viz/reporting` resumen + línea visual, `validation/walk_forward` train y OOS) y propiedad `PortfolioConfig.risk_free_rate_log` (single source); ADR 003 Addendum 2026-09-01 (Dykstra post-hoc euclídea vs varianza jerárquica).
 
 ### Removed
 
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- feat-036: pinnings numéricos migrados a `(ret - log1p(rf))/vol` con `rf=0` invariante; `walk_forward._oos_metrics` unificado a `calculate_sharpe_ratio` + `VOL_FLOOR_EPS`.
 - feat-028: crash en la ruta legacy del reporte (métodos ≠ `hrp` con pruning M<N recibían la covarianza N×N sin rebanar; ahora el pipeline entrega la covarianza rebanada al portfolio seleccionado) — PR #32.
 - feat-029: el walk-forward omitía el retorno del primer día de la ventana de test (`np.roll` + `[1:]`); ahora cada fold produce exactamente `test_rows` retornos con el primero calculado contra el precio previo a la ventana (leak-free) — PR #33.
 - feat-030: los paneles sintéticos de tests dependían del salting de `PYTHONHASHSEED` (`hash(ticker)`); ahora usan `zlib.crc32` — el mismo commit produce fixtures byte-idénticos en cualquier proceso — PR #34.

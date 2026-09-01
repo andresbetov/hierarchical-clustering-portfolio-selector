@@ -5,12 +5,27 @@ Fully vectorized NumPy (feat-022 removed numba): at the project's scale
 gains, while the characterization suite pins exact semantics.
 """
 
+import math
+
 import numpy as np
 from sklearn.covariance import OAS, LedoitWolf
 
 # Floor for variance/std-like magnitudes: anything <= EPS is "no information"
 # and maps to NaN semantics rather than infinities (C3 contract).
 VOL_FLOOR_EPS = 1e-12
+
+
+def risk_free_log_rate(risk_free_rate: float) -> float:
+    """Continuously-compounded risk-free rate ln(1+rf), stable for rf << 1.
+
+    Returns NaN for non-finite rf or domain error (rf <= -1) to preserve
+    the "never inf" contract of calculate_sharpe_ratio.
+    """
+    if not np.isfinite(risk_free_rate):
+        return float("nan")
+    if risk_free_rate <= -1:
+        return float("nan")
+    return math.log1p(risk_free_rate)
 
 
 def compute_logarithmic_returns(price_series: np.ndarray) -> np.ndarray:
@@ -35,10 +50,17 @@ def calculate_annualized_volatility(daily_log_returns: np.ndarray, trading_days:
 
 
 def calculate_sharpe_ratio(annual_return: float, annual_volatility: float, risk_free_rate: float) -> float:
-    """Risk-adjusted excess return; NaN (never inf) when vol is degenerate."""
+    """Risk-adjusted excess return; NaN (never inf) when vol is degenerate.
+
+    Coherencia logarítmica: annual_return es log anualizado (mean(log)*252),
+    por lo que el exceso usa rf_log = ln(1+rf) (math.log1p, estable).
+    """
     if not np.isfinite(annual_volatility) or annual_volatility <= VOL_FLOOR_EPS:
         return float("nan")
-    return (annual_return - risk_free_rate) / annual_volatility
+    rf_log = risk_free_log_rate(risk_free_rate)
+    if not np.isfinite(rf_log) or not np.isfinite(annual_return):
+        return float("nan")
+    return (annual_return - rf_log) / annual_volatility
 
 
 def _validate_observations_matrix(returns_matrix: np.ndarray) -> tuple[np.ndarray, int, int]:

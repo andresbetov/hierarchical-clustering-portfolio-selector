@@ -7,7 +7,7 @@ import sys
 import matplotlib
 
 from ..core.config import PortfolioConfig
-from ..core.metrics import VOL_FLOOR_EPS
+from ..core.metrics import VOL_FLOOR_EPS, risk_free_log_rate
 
 logger = logging.getLogger(__name__)
 
@@ -136,10 +136,10 @@ def plot_risk_return_scatter(
         )
 
     plt.axhline(
-        y=config.risk_free_rate,
+        y=config.risk_free_rate_log,
         color="blue",
         linestyle="--",
-        label=f"Risk-free rate ({config.risk_free_rate:.1%})",
+        label=f"Risk-free rate log ({config.risk_free_rate_log:.2%})",
     )
     plt.axvline(
         x=config.maximum_volatility_threshold,
@@ -374,7 +374,7 @@ def _portfolio_summary_metrics(
         diagonal_risk = np.sqrt(sum((w * v) ** 2 for w, v in zip(weights, per_asset_volatilities or [])))
         portfolio_volatility = float(diagonal_risk)
 
-    excess_return = portfolio_return - risk_free_rate
+    excess_return = portfolio_return - risk_free_log_rate(risk_free_rate)
     sharpe_ratio = (
         float("nan")
         if portfolio_volatility <= VOL_FLOOR_EPS
@@ -448,8 +448,8 @@ def plot_optimal_portfolio_analysis(
     metrics_data = {
         "Portfolio Return": f"{summary['return']:.2%}",
         "Portfolio Volatility": f"{summary['volatility']:.2%}",
-        "Risk-free Rate": f"{config.risk_free_rate:.2%}",
-        "Excess Return": f"{summary['return'] - config.risk_free_rate:.2%}",
+        "Risk-free Rate": f"{config.risk_free_rate_log:.2%} (log)",
+        "Excess Return": f"{summary['return'] - config.risk_free_rate_log:.2%}",
         "Portfolio Sharpe": f"{summary['sharpe']:.2f}",
         "Number of Assets": str(len(tickers)),
         "Allocation Method": config.weight_allocation_method.replace("_", " ").title(),

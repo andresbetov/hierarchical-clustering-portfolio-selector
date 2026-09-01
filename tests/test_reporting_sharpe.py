@@ -1,6 +1,7 @@
 """A5 contract tests: reported portfolio Sharpe uses real covariance risk."""
 
 import logging
+import math
 
 import numpy as np
 import pytest
@@ -28,7 +29,7 @@ class TestSummaryMetrics:
         legacy_vol = np.sqrt((0.5 * 0.15) ** 2 + (0.5 * 0.15) ** 2)
         assert summary["volatility"] == pytest.approx(float(legacy_vol), rel=1e-12)
         assert summary["sharpe"] == pytest.approx(
-            (summary["return"] - RF) / legacy_vol, rel=1e-12
+            (summary["return"] - math.log1p(RF)) / legacy_vol, rel=1e-12
         )
 
     def test_high_correlation_increases_risk_decreases_sharpe(self):
@@ -66,7 +67,7 @@ class TestSummaryMetrics:
         summary = _portfolio_summary_metrics(weights, returns, cov, rf)
 
         manual_variance = float(np.asarray(weights) @ cov @ np.asarray(weights))
-        manual_sharpe = (np.dot(weights, returns) - rf) / np.sqrt(manual_variance)
+        manual_sharpe = (np.dot(weights, returns) - math.log1p(rf)) / np.sqrt(manual_variance)
         assert summary["volatility"] == pytest.approx(np.sqrt(manual_variance), rel=1e-12)
         assert summary["sharpe"] == pytest.approx(manual_sharpe, rel=1e-12)
 

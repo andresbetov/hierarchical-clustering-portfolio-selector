@@ -5,6 +5,7 @@ consumers keep working; construction is the single validated entry point
 and mutation afterwards is structurally impossible.
 """
 
+import math
 from dataclasses import dataclass
 
 # Executable documentation of the supported allocation strategies.
@@ -70,6 +71,11 @@ class PortfolioConfig:
     risk_free_rate: float = 0.045
     volatility_penalty_scale: float = 0.20
     max_volatility_penalty_multiplier: float = 3.0
+
+    @property
+    def risk_free_rate_log(self) -> float:
+        """Continuously-compounded risk-free rate ln(1+rf), single source."""
+        return math.log1p(self.risk_free_rate)
 
     # Weight allocation parameters
     weight_allocation_method: str = "hrp"

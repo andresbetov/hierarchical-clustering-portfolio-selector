@@ -353,8 +353,8 @@
       "name": "Sharpe convention unification",
       "description": "Fix consistencia estadistica: metrics.py:23-40 mezcla media de log-returns anualizada (numerador) con rf aritmetica (0.045) — convencion ambigua sin aproximacion log/aritmetica explicita. Fix: convertir rf a terminos logaritmicos (ln(1+rf)) coherente con los log-returns del pipeline, con constante derivada una sola vez desde PortfolioConfig. Ademas: addendum en ADR 003 documentando que la proyeccion Dykstra post-hoc (feat-014) altera el balance de riesgo HRP — eleccion de ingenieria consciente, no propiedad del metodo. Aceptacion: Sharpe con rf=0 invariante; rf=0.045 produce numerador con ln(1.045) (assert exacto); red feat-021 actualizada donde pine rf; cambio de contrato registrado en CHANGELOG Unreleased; ADR 003 con addendum firmado.",
       "dependencies": [],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-31 sesion feat-036: analisis extendido (2 subagentes general: flujo optimo 6 call-sites single-conversion + robustez edge cases rf<=-1/inf/NaN/VOL_FLOOR_EPS + 3 subagentes validacion: harness, flujo, best practices) + busqueda extendida (Sharpe log vs arithmetic: quant.stackexchange Lo 2002, HRP Dykstra Pfitzinger/Katzke). TDD: helper risk_free_log_rate + property risk_free_rate_log + 4 tests nuevos (rf=0 invariante, rf=0.045 pin 0.044016..., rf=0.045 Sharpe pin) + 3 pinnings migrados a log1p rel=1e-12 (rojo 3 failures -> verde). Implementacion: config math.log1p property, metrics helper con guard nan/domain, calculate_sharpe_ratio log, allocation 1 sitio, reporting 3 sitios (propiedad), walk_forward _oos_metrics unificado a calculate_sharpe_ratio (F401 corregido), ADR 003 Addendum 2026-09-01. Validacion iterativa: 3 subagentes post-impl cazaron 1 ALTA (F401 VOL_FLOOR_EPS), 1 MEDIA (rf domain), 1 BAJA (tolerancias) — corregidos + re-verificacion. ./init.sh: 187 passed, All checks passed!, pyright 0 errors, compileall OK. Specs: 12/12 (quant-docs nueva + numeric-correctness MOD)."
     },
     {
       "id": "feat-037",
