@@ -3,10 +3,10 @@
 ## Current State
 
 **Last Updated:** 2026-08-31
-**Branch:** `feat/alignment-overlap-guard` — DAG v0.1.0 en curso (feat-028..037 done, CP1 cerrado, CP2 en curso)
-**Active Feature:** feat-037 (cerrada en esta sesión); siguiente: feat-038
+**Branch:** `develop` — DAG v0.1.0 en curso (feat-028..037 done, CP1+CP2 cerrados)
+**Active Feature:** ninguna (siguiente: feat-038)
 
-Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · CP2 "Correcta" en curso: plataforma (032), cov estimator (033), linkage (034), walk-forward paridad+benchmarks (035), convención Sharpe log (036) y overlap guard (037) cerrados; siguiente Fase D (cache parquet). Suite 203 passed.
+Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037): plataforma, cov estimator, linkage, walk-forward paridad+benchmarks, Sharpe log y overlap guard cerrados; siguiente Fase D (cache parquet). Suite 204 passed.
 
 ## Status
 
