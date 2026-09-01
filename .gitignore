@@ -13,3 +13,5 @@ htmlcov/
 #charts/
 *.nbc
 *.nbi
+data/cache/*
+!data/cache/.gitkeep

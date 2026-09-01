@@ -1,33 +1,63 @@
-"""Console entrypoint for the standard portfolio analysis run.
+"""Console entrypoint for the standard portfolio analysis run."""
 
-CLI flags beyond --universe remain deferred to Phase 4; the universe itself
-is externalized to config/universe.yaml (B2) and loaded at runtime.
-"""
-
+import argparse
 import logging
+from pathlib import Path
 
 from .app.pipeline import generate_complete_analysis_report
 from .core.config import PortfolioConfig
 from .core.logging_utils import configure_logging
+from .data.provider import YFinanceProvider
 from .data.universe import DEFAULT_UNIVERSE_PATH, load_universe
 from .viz.reporting import print_portfolio_summary
 
 logger = logging.getLogger(__name__)
 
 
-def main(universe_path: str | None = None) -> None:
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Hierarchical clustering portfolio selector")
+    parser.add_argument(
+        "--universe",
+        type=str,
+        default=str(DEFAULT_UNIVERSE_PATH),
+        help="Path to YAML universe file (default: config/universe.yaml)",
+    )
+    parser.add_argument(
+        "--refresh-cache",
+        action="store_true",
+        default=False,
+        help="Ignore parquet cache and force re-download",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None, universe_path: str | None = None) -> None:
     """Run the standard configured analysis over the YAML universe.
 
-    `universe_path` defaults to config/universe.yaml (B2 externalization).
+    `universe_path` explicit param is legacy; prefer --universe flag.
+    `argv` allows test injection without sys.argv side-effect.
     """
+    if universe_path is not None:
+        resolved_universe = universe_path
+        refresh = False
+    else:
+        args = _build_parser().parse_args(argv)
+        resolved_universe = args.universe
+        refresh = bool(args.refresh_cache)
+
     configure_logging()
 
     portfolio_config = PortfolioConfig()
-    universe = load_universe(universe_path or DEFAULT_UNIVERSE_PATH)
+    universe = load_universe(resolved_universe)
 
     logger.warning(
         "Universe restricted to Yahoo Finance tickers: tickers=%d",
         len(universe),
+    )
+
+    provider = YFinanceProvider(
+        cache_dir=Path("data/cache"),
+        refresh_cache=refresh,
     )
 
     (
@@ -40,6 +70,7 @@ def main(universe_path: str | None = None) -> None:
         portfolio_config,
         save_plots=True,
         show_plots=False,
+        provider=provider,
     )
 
     print_portfolio_summary(optimal_portfolio, portfolio_weights)

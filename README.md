@@ -99,9 +99,11 @@ Depende de datos de `yfinance`: los resultados cambian con fecha de consulta, un
 ```bash
 make lint    # ruff
 make types   # pyright
-make test    # pytest (204 tests)
+make test    # pytest (216 tests)
 ./init.sh    # los 4 gates completos
 ```
+
+Cache operativo (`data/cache/*.parquet`, `pyarrow`): `YFinanceProvider(cache_dir=Path("data/cache"))` guarda tras la primera descarga con key `sorted(upper(tickers))+ventana+trading_days+v1`; `cache_dir=None` (default `main()` sin provider) permanece offline (CI); `--refresh-cache` fuerza re-descarga.
 
 Determinismo: cerraduras versionadas (`uv.lock`), proveedor inyectable para tests offline, hypothesis derandomized en propiedades y semillas fijas en fixtures. Cada decisión metodológica tiene ADR; cada feature ejecutado, change OpenSpec archivado.
 

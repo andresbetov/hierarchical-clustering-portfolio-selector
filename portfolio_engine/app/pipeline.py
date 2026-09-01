@@ -1,5 +1,6 @@
 """Top-level orchestration of the portfolio analysis workflow."""
 
+import inspect
 import logging
 from pathlib import Path
 
@@ -169,12 +170,14 @@ def generate_complete_analysis_report(
     config: PortfolioConfig | None = None,
     save_plots: bool = False,
     show_plots: bool = False,
+    provider=None,
 ):
     """Run the pipeline and emit the standard 7-plot analysis report.
 
     Args:
         save_plots: when True, writes PNG files under `charts/` paths.
         show_plots: when True, opens plot windows after generating all figures.
+        provider: optional MarketDataProvider forwarded to main (feat-038 cache).
     """
 
     if config is None:
@@ -184,16 +187,30 @@ def generate_complete_analysis_report(
         Path("charts").mkdir(parents=True, exist_ok=True)
         logger.info("Charts directory ready: path=charts")
 
-    (
-        all_metrics,
-        filtered_metrics,
-        optimal_portfolio,
-        portfolio_weights,
-        corr_matrix,
-        covariance_matrix,
-        historical_prices,
-        price_dates,
-    ) = main(ticker_symbols, config)
+    # Forward provider when mocked mains accept it; fallback for legacy fakes.
+    sig = inspect.signature(main)
+    if "provider" in sig.parameters:
+        (
+            all_metrics,
+            filtered_metrics,
+            optimal_portfolio,
+            portfolio_weights,
+            corr_matrix,
+            covariance_matrix,
+            historical_prices,
+            price_dates,
+        ) = main(ticker_symbols, config, provider=provider)  # type: ignore[call-arg]
+    else:
+        (
+            all_metrics,
+            filtered_metrics,
+            optimal_portfolio,
+            portfolio_weights,
+            corr_matrix,
+            covariance_matrix,
+            historical_prices,
+            price_dates,
+        ) = main(ticker_symbols, config)  # type: ignore[call-arg]
 
     logger.info("Generating complete portfolio analysis report")
 
