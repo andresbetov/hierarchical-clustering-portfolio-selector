@@ -103,7 +103,20 @@ def main(
 
     # A3: multivariate stats must run on the common calendar (inner join),
     # otherwise rows of different trading days get compared silently.
-    aligned_prices = align_prices_to_common_calendar(filtered_prices, price_dates)
+    # Overlap guard (feat-037): low-coverage tickers excluded before stats.
+    aligned_prices = align_prices_to_common_calendar(
+        filtered_prices, price_dates, config.minimum_overlap_ratio
+    )
+    # Prune filtered_metrics to the alignment survivors for dimensional coherence
+    # (covariance MxM must match filtered_metrics keys). The guard already
+    # logged the excluded tickers with ratios.
+    if set(aligned_prices.keys()) != set(filtered_prices.keys()):
+        excluded = sorted(set(filtered_prices.keys()) - set(aligned_prices.keys()))
+        logger.warning(
+            "Pipeline pruned filtered universe by calendar overlap: excluded=%s",
+            excluded,
+        )
+        filtered_metrics = {t: filtered_metrics[t] for t in aligned_prices}
     aligned_rows = len(next(iter(aligned_prices.values()))) if aligned_prices else 0
     logger.info(
         "Calendar alignment: tickers=%d common_rows=%d input_rows(first)=%d",
@@ -209,20 +222,31 @@ def generate_complete_analysis_report(
 
     logger.info("Rendering chart: correlation and covariance matrices")
     all_tickers = list(all_metrics.keys())
-    # Rebuild the full-universe matrices here so the report can compare the original asset set,
-    # not only the filtered subset used for selection.
-    all_prices_dict = {ticker: historical_prices[ticker] for ticker in all_tickers if ticker in historical_prices}
-    all_returns_matrix = construct_returns_matrix(all_prices_dict)
-    all_corr_matrix = calculate_correlation_matrix(all_returns_matrix)
-    all_cov_matrix = calculate_covariance_matrix(all_returns_matrix)
+    # Full-universe matrices on common calendar (same overlap guard, coherent
+    # with pipeline and without ValueError on delisted/IPO tickers — feat-037
+    # absorbs progress.md:45 blocker). Survivors define the chart universe.
+    all_prices_raw = {ticker: historical_prices[ticker] for ticker in all_tickers if ticker in historical_prices}
+    try:
+        aligned_full = align_prices_to_common_calendar(
+            all_prices_raw, price_dates, config.minimum_overlap_ratio
+        )
+    except ValueError as exc:
+        logger.warning("Chart 4 skipped: calendar overlap left no survivors: %s", exc)
+        aligned_full = {}
+        aligned_full_tickers: list[str] = []
+    else:
+        aligned_full_tickers = list(aligned_full.keys())
+        all_returns_matrix = construct_returns_matrix(aligned_full)
+        all_corr_matrix = calculate_correlation_matrix(all_returns_matrix)
+        all_cov_matrix = calculate_covariance_matrix(all_returns_matrix)
 
-    plot_correlation_covariance_matrices(
-        all_corr_matrix,
-        all_cov_matrix,
-        all_tickers,
-        f"charts/{CHART_FILENAMES['correlation_covariance_matrices']}" if save_plots else None,
-        show_plot=show_plots,
-    )
+        plot_correlation_covariance_matrices(
+            all_corr_matrix,
+            all_cov_matrix,
+            aligned_full_tickers,
+            f"charts/{CHART_FILENAMES['correlation_covariance_matrices']}" if save_plots else None,
+            show_plot=show_plots,
+        )
 
     logger.info("Rendering chart: filtering analysis")
     plot_filtering_analysis(

@@ -361,8 +361,8 @@
       "name": "Alignment overlap guard",
       "description": "Guard de solapamiento en alineacion: align_prices_to_common_calendar (metrics.py:127-168) hace inner join — un ticker delisted/IPO a mitad de ventana trunca la historia de TODOS los demas al overlap, corrupcion silenciosa del calendario comun (impacto bajo con 12 large-caps, alto en universos amplios). Alcance: PortfolioConfig.minimum_overlap_ratio (default 0.9, rango (0,1]); la alineacion excluye con warning nombrado a tickers cuya historia solapa menos que el ratio contra el span comun, preservando la historia del resto; manejo por-ticker completo (union + forward-fill por politica) queda explicitamente diferido a v0.2.0. Aceptacion: ticker con historia 50% mas corta es excluido y NO trunca a los demas; sin delistings el comportamiento es bit a bit identico al actual (invariancia); config rechaza ratio fuera de (0,1].",
       "dependencies": [],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-08-31 sesion feat-037: analisis extendido (2 subagentes: alineacion + config/contract + busqueda survivorship bias / yfinance delistings y pandas join best practice) + TDD 14 tests fallan pre-impl (TypeError minimum_overlap_ratio). Implementado: config minimum_overlap_ratio=0.9 validado (0,1], metrics guard post-DataFrame con notna().mean() sobre union, warning nombrado, MIN_COMMON_ROWS sobre supervivientes + n==0 ValueError, chart 4 alineado con mismo guard (try/except 0 survivors). Validacion 1 (2 subagentes): 3 ALTA (ruff walrus/E501, pyright cast, chart 4 crash) corregidos, 203 passed. Re-validacion 2 (2 subagentes post-fix): MEDIA chart 4 test rojo->verde faltante anadido (test_report_with_ipo_history_50_percent, ValueError lengths differ pre-fix -> verde 2x2, C excluido), 204 passed; ruff/pyright verdes. Specs 12/12."
     },
     {
       "id": "feat-038",

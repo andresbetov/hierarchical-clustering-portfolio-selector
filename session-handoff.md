@@ -3,54 +3,45 @@
 ## Current Objective
 
 - Goal: v0.1.0 "estable y correcta" — DAG feat-028..041 registrado (commit 27580a7)
-- Current status: rama `feat/sharpe-convention` (feat-036 lista para PR) · suite 187 passed · CP1 cerrado, CP2 en curso (5/6)
-- Next: feat-037 `feat/alignment-overlap-guard` (minimum_overlap_ratio + chart 4 full-universe)
+- Current status: rama `feat/alignment-overlap-guard` (feat-037 lista para PR) · suite 203 passed · CP1 cerrado, CP2 en curso (6/6)
+- Next: Fase D — feat-038 `feat/data-cache-parquet` (YFinanceProvider cache con key determinista)
 
 ## Completed This Session
 
-- feat-036: coherencia logarítmica Sharpe — `excess = return_log − ln(1+rf)` vía `math.log1p` en 6 call-sites + `risk_free_rate_log` single source; `rf=0` invariante, `rf=0.045` pin exacto; pinnings migrados `rel=1e-12` + robustez `rf<=-1 → nan` + `VOL_FLOOR_EPS` unificado; addendum ADR 003 (Dykstra euclídea vs jerárquica); revisión adversarial (3 subagentes) con F401 corregido; suite 182→187
-- feat-035: paridad productiva del walk-forward — filtros por fold (reuso apply_asset_filters), benchmarks ex-ante equal/ivp con pesos auditables, 6 medianas en to_dict; validación iterativa con subagente adversarial (1 defecto real cazado: guard NaN-blind → fix + test regresión); spec sincronizada; change archivado
+- feat-037: guard de solapamiento — `minimum_overlap_ratio=0.9` validado (0,1], `align_prices_to_common_calendar` con `notna().mean()` sobre unión, warning nombrado, `MIN_COMMON_ROWS` sobre supervivientes + `n==0` ValueError, chart 4 full-universe alineado con mismo guard, pipeline pruning de filtered_metrics, validación adversarial (2 subagentes) con 3 ALTA (ruff walrus, pyright cast, chart 4 crash) corregidos; suite 187→203
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| TDD | 4 tests nuevos `rf_log` pre-impl | rojo → verde | helper 0.045 pin `rel=1e-12`, `rf=0` invariante, 3 pinnings migrados |
-| suite | `./init.sh` | ✓ 187 passed (182+5) | All checks passed! 0 errors pyright, compileall OK |
-| review adversarial | 3 subagentes (robustez, flujo, best practices) | 1 ALTA (F401) + 1 MEDIA (rf domain) corregidos | helper `nan` para `rf<=-1/inf`, `VOL_FLOOR_EPS` unificado, docs ADR/README |
-| specs | validate --specs + validate fix-sharpe-convention | ✓ 12/12 | `quant-docs` nueva + `numeric-correctness` MODIFIED; design D1 documenta duplicación intencional |
-| asserts existentes | git diff tests | solo pinnings `log1p` | `rf=0` invariante preservada |
+| TDD | 14 tests nuevos pre-impl | rojo → verde | TypeError minimum_overlap_ratio, guard 50% no excluía, chart 4 ValueError |
+| suite | `./init.sh` | ✓ 203 passed (187+16) | All checks passed! 0 errors pyright, compileall OK |
+| review adversarial | 2 subagentes (código + flujo) | 3 ALTA + 3 MEDIO corregidos | ruff walrus/E501, pyright cast, chart 4 crash 0 survivors, N-dependencia documentada |
+| specs | validate --specs + validate feat-alignment-overlap-guard | ✓ 12/12 | market-data-contract + configuration-contract sincronizadas |
+| asserts existentes | git diff tests | solo adiciones + 1 línea threshold 0.5 | assert intactos + 1 test existente parametrizado |
 
 ## Decisions Made
 
-- feat-036 D1: híbrida A+B sin ciclo — `config.risk_free_rate_log` directo `math.log1p`, helper `risk_free_log_rate` para float-only; duplicación intencional documentada
-- feat-036: helper `rf<=-1/inf → nan` para "never inf" (config valida [0,1] pero API pública no)
-- feat-036: `walk_forward._oos_metrics` delega a `calculate_sharpe_ratio` + `VOL_FLOOR_EPS` (unifica H-11)
-- Prior D1-D4: (ver feat-035) reuso `apply_asset_filters`, `weight_vector` con ceros, benchmarks sobre supervivientes
+- feat-037 D1: guard post-DataFrame (B) con `notna().mean()` sobre unión; `minimum_overlap_ratio` en config (0.9) + param en función con default idéntico (single source, sin None sentinel)
+- feat-037 D3/D4: `MIN_COMMON_ROWS` sobre supervivientes, `n==0` → ValueError distinto, `1` superviviente → 1 columna válida; chart 4 usa mismo guard
+- D2: Single source `config` + param explícito para testabilidad (sin ciclo)
 
 ## Blockers / Risks
 
-- Hallazgo feat-028 sigue abierto: chart 4 full-universe con precios crudos de longitud desigual (candidata a absorberse en feat-037)
-- feat-036 lista para PR → develop (squash) antes de abrir feat-037
-- Branch `feat/sharpe-convention` vs change `fix-sharpe-convention` desalineados (`feat/` vs `fix/`, BAJA — documentado como excepción por scope cuant)
+- feat-037 lista para PR → develop (squash) antes de abrir Fase D
+- Chart 4 full-universe ahora usa survivors; si todos los tickers son delisted, chart 4 se omite con warning (no crash)
+- Fase D siguiente: feat-038 cache parquet requiere decisión de path y invalidación por key
 
 ## Next Session Startup
 
-1. PR de feat-036 → CI verde ×3 → squash merge → borrar rama
-2. feat-037: rama `feat/alignment-overlap-guard`, OpenSpec propose→apply→archive
+1. PR de feat-037 → CI verde ×3 → squash merge → borrar rama
+2. Fase D: feat-038 cache parquet, OpenSpec propose→apply→archive
 3. Rutina: TDD rojo → fix → ./init.sh fresco → evidencia en feature_list.json
 
 ## Lecciones consolidadas del proyecto
 
 1. Los heredocs fuzzy python son no-op silenciosos — SOLO Edit/Write tools para código fuente
-2. TDD de caracterización atrapó 6 defectos reales durante la ejecución (incl. 3 en la racha final + 1 NaN-blind)
+2. TDD de caracterización atrapó 6 defectos reales durante la ejecución (incl. 3 en la racha final + 1 NaN-blind + 3 de overlap guard)
 3. Severidad ≠ orden: las dependencias técnicas mandan; el flip HRP único demostró el valor del DAG
 4. OpenSpec validate es pre-commit del diseño: deltas deben matchear specs main exactos
-5. Análisis extendido con subagentes (código + flujo + best practices) cazó 1 ALTA (F401) + 1 MEDIA (rf domain) antes de merge
-
-## Lecciones consolidadas del proyecto
-
-1. Los heredocs fuzzy python son no-op silenciosos — SOLO Edit/Write tools para código fuente
-2. TDD de caracterización atrapó 6 defectos reales durante la ejecución (incl. 3 en la racha final)
-3. Severidad ≠ orden: las dependencias técnicas mandan; el flip HRP único demostró el valor del DAG
-4. OpenSpec validate es pre-commit del diseño: deltas deben matchear specs main exactos
+5. Análisis extendido con subagentes (código + flujo + best practices) cazó 3 ALTA antes de merge

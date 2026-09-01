@@ -5,10 +5,14 @@ Fully vectorized NumPy (feat-022 removed numba): at the project's scale
 gains, while the characterization suite pins exact semantics.
 """
 
+import logging
 import math
+from typing import cast
 
 import numpy as np
 from sklearn.covariance import OAS, LedoitWolf
+
+logger = logging.getLogger(__name__)
 
 # Floor for variance/std-like magnitudes: anything <= EPS is "no information"
 # and maps to NaN semantics rather than infinities (C3 contract).
@@ -176,15 +180,28 @@ def construct_returns_matrix(prices_dictionary: dict) -> np.ndarray:
 MIN_COMMON_ROWS = 2
 
 
-def align_prices_to_common_calendar(prices_dictionary: dict, dates_dictionary: dict) -> dict:
+def align_prices_to_common_calendar(
+    prices_dictionary: dict,
+    dates_dictionary: dict,
+    minimum_overlap_ratio: float = 0.9,
+) -> dict:
     """Trim every price series to the common calendar (inner join on dates).
 
     Returns a dict with the same ticker order as `prices_dictionary`, where
     each value is the array trimmed to rows present for ALL tickers and sorted
     ascending. Raises ValueError when fewer than MIN_COMMON_ROWS common dates
     exist or when any series/index pair has mismatched lengths.
+
+    Overlap guard (feat-037): tickers whose coverage < minimum_overlap_ratio
+    against the union span are excluded with a named warning, preserving the
+    history of survivors (excluir ticker ruidoso >> truncar a todos).
     """
     import pandas as pd
+
+    if not (0 < minimum_overlap_ratio <= 1.0):
+        raise ValueError(
+            f"minimum_overlap_ratio must be within (0, 1], got {minimum_overlap_ratio}"
+        )
 
     # One-directional requirement: every PRICE series must have dates; extra
     # date entries are legitimate (e.g. tickers filtered out downstream still
@@ -203,12 +220,35 @@ def align_prices_to_common_calendar(prices_dictionary: dict, dates_dictionary: d
             )
         columns[ticker] = pd.Series(values.astype(np.float64), index=dates_index)
 
-    frame = pd.DataFrame(columns).sort_index()
-    frame = frame.dropna(how="any")
+    frame_before = pd.DataFrame(columns).sort_index()
+
+    # Overlap guard: exclude tickers with low coverage against the union span.
+    if minimum_overlap_ratio < 1.0 and len(columns) > 1:
+        ratios = {
+            t: float(cast(float, frame_before[t].notna().mean())) for t in frame_before.columns
+        }
+        excluded = [t for t, r in ratios.items() if r < minimum_overlap_ratio]
+        if excluded:
+            logger.warning(
+                "Calendar overlap guard excluded tickers: count=%d excluded=%s ratios=%s threshold=%s",
+                len(excluded),
+                excluded,
+                {k: f"{v:.3f}" for k, v in ratios.items() if k in excluded},
+                minimum_overlap_ratio,
+            )
+            frame_before = frame_before.drop(columns=excluded)
+
+    if len(frame_before.columns) == 0:
+        raise ValueError(
+            f"No tickers survive overlap filter (threshold={minimum_overlap_ratio}); "
+            f"all tickers below coverage — intersection too small"
+        )
+
+    frame = frame_before.dropna(how="any")
 
     if len(frame) < MIN_COMMON_ROWS:
-        tickers = list(prices_dictionary)
-        first, second = tickers[0], tickers[-1]
+        tickers = list(frame_before.columns)
+        first, second = tickers[0], tickers[-1] if len(tickers) > 1 else tickers[0]
         raise ValueError(
             f"Calendar intersection too small ({len(frame)} rows < {MIN_COMMON_ROWS}) "
             f"across tickers={tickers}; e.g. span {first}..{second}."
@@ -216,7 +256,7 @@ def align_prices_to_common_calendar(prices_dictionary: dict, dates_dictionary: d
 
     return {
         ticker: frame[ticker].to_numpy(dtype=np.float64)
-        for ticker in prices_dictionary
+        for ticker in frame.columns
     }
 
 
