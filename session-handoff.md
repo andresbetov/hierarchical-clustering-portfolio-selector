@@ -3,7 +3,7 @@
 ## Current Objective
 
 - Goal: v0.1.0 "estable y correcta" — DAG feat-028..041 registrado (commit 27580a7)
-- Current status: rama `feat/alignment-overlap-guard` (feat-037 lista para PR) · suite 203 passed · CP1 cerrado, CP2 en curso (6/6)
+- Current status: rama `develop` (feat-037 mergeada #41, 204 passed) · CP1+CP2 cerrados
 - Next: Fase D — feat-038 `feat/data-cache-parquet` (YFinanceProvider cache con key determinista)
 
 ## Completed This Session
