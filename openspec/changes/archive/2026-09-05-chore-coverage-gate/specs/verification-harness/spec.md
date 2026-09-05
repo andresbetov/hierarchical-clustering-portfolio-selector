@@ -7,13 +7,6 @@ El target `test` del Makefile SHALL ejecutar pytest **con cobertura** sobre la s
 - **WHEN** un desarrollador ejecuta `make test` en un entorno sincronizado (deps instaladas)
 - **THEN** pytest corre los tests de `tests/` con reporte de cobertura `TOTAL ... 85%` y el exit code refleja su resultado real (0 verde, distinto de 0 si fallan tests o cobertura <85)
 
-### Requirement: Harness local ejecuta todos los gates
-Cuando uv está disponible, `init.sh` SHALL ejecutar — además de sync, pytest y compileall — los gates lint y types; **pytest heredará `addopts` con cobertura** cuando `pytest-cov` esté instalado, de lo contrario degradará sin gate pero sin romper `compileall`.
-
-#### Scenario: sesión de agente con uv
-- **WHEN** un agente ejecuta `./init.sh` antes de marcar done
-- **THEN** ningún gate queda silenciosamente omitido si sus herramientas están instaladas por uv, y el reporte de cobertura aparece en el log de pytest si disponible
-
 ## ADDED Requirements
 
 ### Requirement: Artefactos de cobertura ignorados
