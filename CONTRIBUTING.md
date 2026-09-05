@@ -65,10 +65,6 @@ BREAKING CHANGE: runtime floor raised to python >= 3.11 (wheel matrix 3.11-3.13)
 
 SemVer mapping: `feat` → MINOR · `fix` → PATCH · `!` / `BREAKING CHANGE` → MAJOR.
 
-> Nota: a diferencia de `andresbetov-portfolio` (Node/pnpm + commitlint + husky),
-> este repo es Python/uv y aún no tiene hook de commitlint. La convención se
-> respeta manualmente hasta configurar validación automática.
-
 ## Decisiones metodológicas
 
 Las decisiones arquitectónicas o metodológicas (fuente de datos, optimizador,
