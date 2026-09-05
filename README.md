@@ -8,7 +8,7 @@ Pipeline cuantitativo para construir carteras de renta variable con enfoque de d
 
 Este proyecto resuelve un problema concreto: pasar de un universo amplio de activos a una cartera interpretable, reproducible y validada temporalmente sin decisiones discrecionales. El valor no es predecir precios sino estructurar una selección robusta donde activos redundantes pierden prioridad frente a fuentes de riesgo genuinamente distintas.
 
-El flujo termina en artefactos accionables: pesos por activo (todos los supervivientes del filtro con HRP), resumen ejecutivo con Sharpe calculado sobre covarianza real, siete gráficas de diagnóstico y un motor opcional de validación walk-forward out-of-sample.
+El flujo termina en artefactos accionables: pesos por activo (todos los supervivientes del filtro con HRP), resumen ejecutivo con Sharpe calculado sobre covarianza real, ocho gráficas de diagnóstico (incluye dendrograma HRP) y un motor opcional de validación walk-forward out-of-sample.
 
 ## Instalación y ejecución
 
@@ -83,6 +83,7 @@ Por ventana: pesos fijados solo con datos de entrenamiento (alineación → esta
 | 5 | Efecto del filtrado | impacto del embudo |
 | 6 | Correlación filtrada | qué queda tras el embudo |
 | 7 | Resumen de cartera óptima | lectura ejecutiva con Sharpe honesto (wᵀΣw) |
+| 8 | Dendrograma HRP | jerarquía real (linkage sobre distancia firmada, orden quasi-diagonal) |
 
 Ejemplos generados en `scripts/charts/`.
 
@@ -99,7 +100,7 @@ Depende de datos de `yfinance`: los resultados cambian con fecha de consulta, un
 ```bash
 make lint    # ruff
 make types   # pyright
-make test    # pytest (216 tests)
+make test    # pytest (230 tests)
 ./init.sh    # los 4 gates completos
 ```
 

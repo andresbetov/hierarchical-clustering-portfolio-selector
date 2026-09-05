@@ -43,7 +43,7 @@ from .portfolio.allocation import (
     calculate_risk_parity_weights,
     create_portfolio_covariance_matrix,
 )
-from .portfolio.hrp import calculate_hrp_weights
+from .portfolio.hrp import build_hrp_linkage, calculate_hrp_weights
 from .portfolio.selection import (
     apply_asset_filters,
     perform_hierarchical_clustering,
@@ -56,6 +56,7 @@ from .viz.reporting import (
     plot_correlation_heatmap,
     plot_filtering_analysis,
     plot_historical_prices,
+    plot_hrp_dendrogram,
     plot_optimal_portfolio_analysis,
     plot_risk_return_scatter,
     print_correlation_matrix,
@@ -95,6 +96,7 @@ __all__ = [
     "calculate_optimal_portfolio_weights",
     "calculate_optimal_portfolio_weights_hrp",
     "calculate_hrp_weights",
+    "build_hrp_linkage",
     "walk_forward_evaluate",
     "WalkForwardReport",
     "plot_historical_prices",
@@ -104,6 +106,7 @@ __all__ = [
     "plot_asset_metrics_comparison",
     "plot_filtering_analysis",
     "plot_optimal_portfolio_analysis",
+    "plot_hrp_dendrogram",
     "print_correlation_matrix",
     "print_covariance_matrix",
     "print_portfolio_summary",

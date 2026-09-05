@@ -2,10 +2,10 @@
 
 ## Current State
 
-**Last Updated:** 2026-08-31
-**Branch:** `feat/data-cache-parquet` — DAG v0.1.0 (feat-038 poblado, CP1+CP2 cerrados)
+**Last Updated:** 2026-09-04
+**Branch:** `feat/cli-dendrogram` — DAG v0.1.0 (feat-039 poblado, CP1+CP2 cerrados, Fase D 8/8 charts)
 
-Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037) · Fase D en curso: feat-038 caché parquet poblado, 216 passed (+12 feat-038: 10 cache +2 cli), `pyarrow 25.0.1` operativo. Suite `./init.sh` 216 passed, ruff/pyright/compileall verdes.
+Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037) · **Fase D CLI+dendrograma COMPLETO**: feat-039 poblado, 230 passed (+14: 7 CLI +7 dendrograma), `pyarrow 25.0.1` operativo, 8 charts (`hrp_dendrogram.png` + leaf order quasi-diagonal verificado). Suite `./init.sh` 230 passed, ruff/pyright/compileall verdes, `openspec validate --all` 13/13.
 
 ## Status
 
@@ -26,13 +26,17 @@ Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO**
 
 Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquitectura por capas con provider seam (feat-023), universo YAML (feat-024), ADRs 001-004, specs OpenSpec 11 capacidades, CI 4 gates, 154 tests. Detalle por feature en `feature_list.json:evidence`. Auditoría original: `docs/auditoria-tecnica.md` (histórico).
 
+### What's Done (Fase D — CLI + Dendrograma)
+
+- [x] **feat-039** (2026-09-04): CLI operativo completo — `_build_parser` con `--method` (choices 6, dest `weight_allocation_method` default `hrp`), `--covariance-estimator` (3, `sample`), `--linkage/--linkage-method` (3, `single`), `--save/--no-save` (`BooleanOptionalAction` True), `--show/--no-show` (False), `--universe` metavar PATH, `--refresh-cache`; `main(argv, universe_path)` propaga a `PortfolioConfig` + `generate_complete_analysis_report(save_plots, show_plots, provider)` con legacy `universe_path` warning + bypass; **seam** `build_hrp_linkage` en `hrp.py` (single source distancia firmada `sqrt(0.5*(1-corr))`, valida `LINKAGE_METHODS` pre-scipy, `n<2` ValueError) y refactor `calculate_hrp_weights` snapshot bit-identical; **viz** `plot_hrp_dendrogram` en `reporting.py` (headless `Agg` + `_finalize_plot`, `n=0/1/2` guards, `tickers/cov` mismatch guard, `width capped 40`, `WAYLAND_DISPLAY` headless fix, iterative `_leaf_order` sin recursion limit); **pipeline** `CHART_FILENAMES["hrp_dendrogram"]` + `plot_hrp_dendrogram` tras `optimal_portfolio_analysis` en `try/except` warning, log `plots=8`; **exports** `build_hrp_linkage`+`plot_hrp_dendrogram` en `__init__.py` + `__all__`; tests `test_cli.py` +7 (method/cov/linkage/save_show/help/propagate/defaults) + `test_dendrogram.py` +7 (importable, linkage valid, guard n1, leaf order, 12-block quasi-diagonal, n1/n2/no-crash, pipeline E2E 8º PNG); **validación**: `./init.sh` 230 passed (216+14), `All checks passed!`, `pyright 0 errors`, `compileall OK`, `openspec validate --all` 13/13 (package-interface + runtime-diagnostics), 2 iteraciones revisión subagentes (5 HIGH + 3 MEDIUM corregidos: mismatch guard, legacy argv warning, leaf recursion, width cap, WAYLAND); `README` 7→8, `CHANGELOG` Added, `tasks.md` 9/9.
+
 ### What's In Progress
 
-- [x] **feat-038** (2026-08-31): cache parquet — `YFinanceProvider(cache_dir, refresh_cache, use_cache)` con key `sha256(sorted(upper)+start+end+trading_days+v1)` 16 hex, `data/cache/.gitkeep` + `.gitignore: data/cache/*` + `!data/cache/.gitkeep`, `pyarrow>=14` 25.0.1, `cache.py` helpers puros + escritura atómica `mkstemp+snappy+os.replace`, `pipeline provider` forward con `inspect.signature` fallback, `cli _build_parser` + `--refresh-cache`/`--universe`; tests `test_provider_cache` 10 + `test_cli` 2 nuevos; 204→216 passed (re-validación con 2 subagentes, 0 ALTA)
+- [ ] **feat-040** cobertura + higiene `pytest` runtime → dev (siguiente, depende de 039 estable)
 
-### What's Next (DAG v0.1.0 — Fase D)
+### What's Next (DAG v0.1.0 — Fase D cierre)
 
-1. feat-039 CLI+dendrograma → feat-040 cobertura → feat-041 release v0.1.0
+1. feat-040 cobertura (umbral ~85%, medir baseline post-039) → feat-041 release v0.1.0 (CHANGELOG [0.1.0] fechado, README Limitaciones, tag)
 
 ## Process Deviations (transparencia)
 
@@ -46,6 +50,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ## Evidence of Completion
 
+- feat-039: `openspec validate --all` 13/13 (package-interface CLI + runtime-diagnostics dendrograma) · `./init.sh` exit 0 230 passed (216+14: 7 CLI +7 dendrograma) + `All checks passed!` + `pyright 0 errors` + `compileall OK` · branch `feat/cli-dendrogram` · revisión 2 subagentes (5 HIGH corregidos: mismatch, legacy, recursion, width, WAYLAND) + evidencia fresca 2026-09-04 · `tasks.md` 9/9 · `README` 7→8 + `CHANGELOG` Added
 - feat-037: `openspec validate --specs` 12/12 (market-data-contract + configuration-contract) · guard post-DataFrame con `notna().mean()` sobre unión · `./init.sh` 203 passed · ruff/pyright/compileall verdes · revisión adversarial (2 subagentes) con 3 ALTA (ruff/pyright/chart4) corregidos
 - feat-036: `openspec validate --specs` 12/12 (`quant-docs` nueva) · `grep -rn log1p` 6+ call-sites migrados · `./init.sh` 187 passed · ruff/pyright/compileall verdes · revisión adversarial (3 subagentes) con 1 ALTA (F401) corregida
 - feat-031: `openspec validate --specs` 11/11 · `grep SHANL openspec/` = 0 · set de métodos en spec == enum código (6) · `./init.sh` exit 0 con 159 passed · CHANGELOG.md con formato Keep a Changelog
@@ -53,6 +58,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ## Decisions Made
 
+- feat-039: `BooleanOptionalAction` para `--save/--no-save` y `--show/--no-show` (defaults `True`/`False` reproduciendo `pipeline.py:193`); `--linkage/--linkage-method` alias mismo `dest` (compat tracker + best-practice); `build_hrp_linkage` single-source distancia/pasarela (evita drift), `_leaf_order` iterativo (sin recursion limit 1e3), width capped 40, `WAYLAND_DISPLAY` headless, tickers/cov mismatch guard en dendrograma.
 - feat-037: guard post-DataFrame (B) con `notna().mean()` sobre unión; `minimum_overlap_ratio` en config (0.9) + param en función con default idéntico; chart 4 full-universe alineado con mismo guard (absorbe blocker progress.md:45)
 - feat-036: híbrida A+B sin ciclo — `config.risk_free_rate_log` usa `math.log1p` directo; helper `risk_free_log_rate` para float-only sites; duplicación intencional documentada en `design.md:D1`; addendum ADR 003 fechado 2026-09-01 (no supersede) cuantifica `n=5,max=0.30`
 - feat-031 declarado `skip_specs: true` (cambio puramente documental: las specs se corrigen para reflejar comportamiento YA implementado — precedente feat-025)

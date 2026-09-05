@@ -381,8 +381,8 @@
         "feat-034",
         "feat-038"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-09-04 feat/cli-dendrogram ./init.sh exit 0 230 passed (216+14: 7 CLI flags +7 dendrograma) All checks passed! pyright 0 errors compileall OK openspec validate --all 13/13 (package-interface + runtime-diagnostics) branch feat/cli-dendrogram. Revisión 2 subagentes: 5 HIGH corregidos (tickers/cov mismatch guard, legacy argv warning, _leaf_order iterativo, width cap 40, WAYLAND_DISPLAY). README 7->8, CHANGELOG Added, tasks.md 9/9."
     },
     {
       "id": "feat-040",
