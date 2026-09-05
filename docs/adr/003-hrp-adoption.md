@@ -9,7 +9,7 @@ La cartera histórica se construyó con greedy-threshold clustering + selección
 ## Opciones evaluadas
 
 1. **Implementación propia con scipy.linkage** ✅ — control total de los 3 pasos canónicos (linkage single → quasi-diagonalization → recursive bisection), ~150 líneas auditables, `scipy` pasa de dependencia fantasma a consumida. Universos objetivo (decenas–centenas) están lejos del threshold n≈400 donde Fast-HRP justificaría alternativas.
-2. **riskfolio-lib** — descartada por peso de dependencia y opacidad para aprendizaje/auditoría; puerta abierta si crece la escala (ver `docs/decision-log-feat001.md`).
+2. **riskfolio-lib** — descartada por peso de dependencia y opacidad para aprendizaje/auditoría; puerta abierta si crece la escala (histórico en `git log` `docs/decision-log-feat001.md` previo a eliminación).
 3. **Mantener greedy + risk_parity** — congela el gap metodológico crítico (C1).
 
 ## Decisión
