@@ -58,9 +58,9 @@ feat(portfolio): add risk parity weight constraints
 
 fix(metrics): correct annualized volatility scaling
 
-chore!: drop python 3.12 support
+chore!: drop python 3.11 support
 
-BREAKING CHANGE: runtime floor lowered to python >= 3.10 (wheel matrix extended)
+BREAKING CHANGE: runtime floor raised to python >= 3.11 (wheel matrix 3.11-3.13)
 ```
 
 SemVer mapping: `feat` → MINOR · `fix` → PATCH · `!` / `BREAKING CHANGE` → MAJOR.
@@ -77,14 +77,18 @@ distancia de clustering, dependencias pesadas) se versionan como ADRs en
 
 ## Setup y verificación
 
+**Prerrequisitos:** `python >=3.11` (`pyproject.toml:requires-python`, CI matrix `3.11/3.12/3.13`), `uv` (`astral-sh/setup-uv@v6`), opcional `pyarrow>=14` para cache `data/cache/*.parquet`.
+
 ```bash
-uv sync
-uv run pytest          # suite completa (offline) — equivalente a make test
+uv sync --frozen       # instalación reproducible desde uv.lock (dev incluye ruff/pyright/pytest/pytest-cov/hypothesis)
+uv run pytest          # suite completa (offline) — hereda --cov-fail-under=85 desde pyproject.toml (equivale a make test)
+make test              # gate explícito: -q --cov=portfolio_engine --cov-report=term-missing/html/xml --cov-branch --cov-fail-under=85 (85% branch / 87% line, 1509 stmts, 230 tests)
+make test-no-cov       # escape hatch rápido sin cobertura (--no-cov)
 make lint              # ruff static checks (también corre en ./init.sh)
 make types             # pyright type checks (también corre en ./init.sh)
 make run               # pipeline completo (requiere red, yfinance)
 ```
 
-Los cuatro gates (lint, types, test, compileall) corren automáticamente en CI
-(push a develop/main y PRs) y localmente vía `./init.sh`. Opcional: hooks de
+Los cinco gates (lint, types, test con cobertura 85% branch, `coverage report/html/xml`, compileall) corren automáticamente en CI
+(push a develop/main y PRs) y localmente vía `./init.sh`. CI publica resumen `coverage report --format=markdown` en `$GITHUB_STEP_SUMMARY` y artifact `htmlcov` por versión de Python. Fuente única del umbral: `pyproject.toml: [tool.coverage.report] fail_under = 85` espejado en `addopts` + `Makefile` + `ci.yml` (`branch = true`). Opcional: hooks de
 pre-commit con `uv tool install pre-commit && pre-commit install`.
