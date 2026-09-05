@@ -7,6 +7,13 @@ Un workflow GitHub Actions SHALL correr sobre push a develop/main y PRs hacia de
 - **WHEN** un PR introduce código que viola lint, types, tests o hace caer cobertura bajo 85% branch
 - **THEN** el check correspondiente falla y es visible como requerimiento del merge
 
+### Requirement: Harness local ejecuta todos los gates
+Cuando uv está disponible, `init.sh` SHALL ejecutar — además de sync, pytest y compileall — los gates lint y types; **pytest heredará `addopts` con cobertura** cuando `pytest-cov` esté instalado, de lo contrario degradará sin gate pero sin romper `compileall`.
+
+#### Scenario: sesión de agente con uv
+- **WHEN** un agente ejecuta `./init.sh` antes de marcar done
+- **THEN** ningún gate queda silenciosamente omitido si sus herramientas están instaladas por uv, y el reporte de cobertura aparece en el log de pytest si disponible
+
 ### Requirement: Toolchain pinned en el lock
 Las herramientas de gates (ruff, pyright, pytest, pytest-cov, hypothesis) SHALL vivir en `[dependency-groups] dev` con versión acotada, heredando la reproducibilidad del lockfile versionado.
 
