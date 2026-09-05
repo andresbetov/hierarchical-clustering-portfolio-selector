@@ -23,7 +23,7 @@ def _resolve_backend(env: dict[str, str], platform: str) -> str | None:
         return None
     if platform == "darwin":
         return None
-    if env.get("DISPLAY"):
+    if env.get("DISPLAY") or env.get("WAYLAND_DISPLAY"):
         return None
     return "Agg"
 
@@ -473,6 +473,140 @@ def plot_optimal_portfolio_analysis(
     # optimization objective or a covariance-aware portfolio performance model.
     plt.tight_layout()
 
+    _finalize_plot(save_path, show_plot)
+
+
+def plot_hrp_dendrogram(
+    covariance_matrix: np.ndarray,
+    linkage_method: str,
+    tickers: list[str],
+    save_path: str | None = None,
+    show_plot: bool = True,
+) -> None:
+    """Hierarchical dendrogram of the HRP linkage (diagnostic, not a weight model).
+
+    Reuses the exact signed distance / linkage construction via
+    ``build_hrp_linkage`` (single source with ``calculate_hrp_weights``).
+    Headless-safe: Agg backend via ``_apply_backend_guard`` + ``_finalize_plot``.
+    For ``n<2`` emits a warning and produces a minimal placeholder without
+    calling ``scipy.linkage``/``dendrogram``.
+    """
+    cov = np.asarray(covariance_matrix, dtype=np.float64)
+    n = cov.shape[0] if cov.ndim == 2 else 0
+
+    # Guard: tickers/cov dimensional mismatch (caller bug) — warn and align.
+    if n != len(tickers):
+        logger.warning(
+            "HRP dendrogram tickers/cov mismatch: n=%d tickers=%d — truncating/padding",
+            n,
+            len(tickers),
+        )
+        if len(tickers) > n:
+            tickers = tickers[:n]
+        elif len(tickers) < n:
+            tickers = tickers + [f"__{i}" for i in range(len(tickers), n)]
+
+    if n == 0 or len(tickers) == 0:
+        logger.warning("HRP dendrogram skipped: empty covariance or no tickers")
+        plt.figure(figsize=(6, 4))
+        plt.text(0.5, 0.5, "No assets for dendrogram", ha="center", va="center")
+        plt.axis("off")
+        plt.tight_layout()
+        _finalize_plot(save_path, show_plot)
+        return
+
+    if n == 1:
+        logger.warning(
+            "HRP dendrogram: single asset (%s) — no linkage", tickers[0] if tickers else "unknown"
+        )
+        plt.figure(figsize=(6, 4))
+        plt.bar(tickers, [1.0], color="skyblue")
+        plt.title(f"HRP Dendrogram ({linkage_method}) — single asset", fontweight="bold")
+        plt.ylabel("Weight")
+        plt.tight_layout()
+        _finalize_plot(save_path, show_plot)
+        return
+
+    if n == 2:
+        # Use the single HRP linkage for two assets so leaves remain quasi-diagonal
+        from ..portfolio.hrp import build_hrp_linkage
+
+        try:
+            linkage_matrix = build_hrp_linkage(cov, linkage_method=linkage_method)
+        except Exception as exc:
+            logger.warning("HRP dendrogram skipped (linkage failed n=2): %s", exc)
+            plt.figure(figsize=(6, 4))
+            plt.bar(tickers, [0.5, 0.5], color="skyblue")
+            plt.title(f"HRP Dendrogram ({linkage_method}) — n=2 fallback", fontweight="bold")
+            plt.tight_layout()
+            _finalize_plot(save_path, show_plot)
+            return
+        width = min(40, max(12, int(0.6 * n) + 8))
+        plt.figure(figsize=(width, 6))
+        try:
+            from scipy.cluster.hierarchy import dendrogram
+
+            dendrogram(
+                linkage_matrix,
+                labels=tickers,
+                leaf_rotation=90,
+                leaf_font_size=max(8, 10 - int(n * 0.2)),
+            )
+        except Exception as exc:
+            logger.warning("HRP dendrogram render failed n=2: %s", exc)
+            plt.close()
+            plt.figure(figsize=(width, 6))
+            plt.bar(tickers, [0.5, 0.5], color="skyblue")
+            plt.title(f"HRP Dendrogram ({linkage_method}) — fallback", fontweight="bold")
+            plt.tight_layout()
+            _finalize_plot(save_path, show_plot)
+            return
+        plt.title(f"HRP Dendrogram ({linkage_method})", fontsize=14, fontweight="bold")
+        plt.xlabel("Assets", fontsize=12)
+        plt.ylabel("Distance", fontsize=12)
+        plt.tight_layout()
+        _finalize_plot(save_path, show_plot)
+        return
+
+    # n >= 3 — standard hierarchical dendrogram via the HRP linkage seam
+    from ..portfolio.hrp import build_hrp_linkage
+
+    try:
+        linkage_matrix = build_hrp_linkage(cov, linkage_method=linkage_method)
+    except Exception as exc:
+        logger.warning("HRP dendrogram skipped (linkage failed): %s", exc)
+        plt.figure(figsize=(6, 4))
+        plt.text(0.5, 0.5, f"Linkage failed: {exc}", ha="center", va="center", wrap=True)
+        plt.axis("off")
+        plt.tight_layout()
+        _finalize_plot(save_path, show_plot)
+        return
+
+    width = min(40, max(12, int(0.6 * n) + 8))
+    plt.figure(figsize=(width, 6))
+    try:
+        from scipy.cluster.hierarchy import dendrogram
+
+        dendrogram(
+            linkage_matrix,
+            labels=tickers,
+            leaf_rotation=90,
+            leaf_font_size=max(8, 10 - int(n * 0.2)),
+        )
+    except Exception as exc:
+        logger.warning("HRP dendrogram render failed: %s", exc)
+        plt.close()
+        plt.figure(figsize=(width, 6))
+        plt.text(0.5, 0.5, f"Dendrogram failed: {exc}", ha="center", va="center", wrap=True)
+        plt.axis("off")
+        plt.tight_layout()
+        _finalize_plot(save_path, show_plot)
+        return
+
+    plt.title(f"HRP Dendrogram ({linkage_method})", fontsize=14, fontweight="bold")
+    plt.xlabel("Assets", fontsize=12)
+    plt.ylabel("Distance", fontsize=12)
+    plt.tight_layout()
     _finalize_plot(save_path, show_plot)
 
 

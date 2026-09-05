@@ -27,6 +27,7 @@ from ..viz.reporting import (
     plot_correlation_heatmap,
     plot_filtering_analysis,
     plot_historical_prices,
+    plot_hrp_dendrogram,
     plot_optimal_portfolio_analysis,
     plot_risk_return_scatter,
 )
@@ -42,6 +43,7 @@ CHART_FILENAMES = {
     "filtering_analysis": "asset_filtering_effects.png",
     "filtered_correlation_heatmap": "filtered_assets_correlation_heatmap.png",
     "optimal_portfolio_analysis": "optimal_portfolio_allocation_summary.png",
+    "hrp_dendrogram": "hrp_dendrogram.png",
 }
 
 
@@ -172,7 +174,7 @@ def generate_complete_analysis_report(
     show_plots: bool = False,
     provider=None,
 ):
-    """Run the pipeline and emit the standard 7-plot analysis report.
+    """Run the pipeline and emit the standard 8-plot analysis report.
 
     Args:
         save_plots: when True, writes PNG files under `charts/` paths.
@@ -305,13 +307,30 @@ def generate_complete_analysis_report(
     else:
         logger.warning("Skipping optimal portfolio chart: no selected assets")
 
+    # Chart 8 — HRP dendrogram (hierarchical diagnostic, always from filtered covariance)
+    try:
+        logger.info("Rendering chart: HRP dendrogram")
+        dendro_tickers = list(filtered_metrics.keys())
+        if len(dendro_tickers) >= 1 and covariance_matrix.size > 0:
+            plot_hrp_dendrogram(
+                covariance_matrix,
+                config.linkage_method,
+                dendro_tickers,
+                f"charts/{CHART_FILENAMES['hrp_dendrogram']}" if save_plots else None,
+                show_plot=show_plots,
+            )
+        else:
+            logger.warning("Skipping HRP dendrogram: no filtered assets/covariance")
+    except Exception as exc:  # noqa: BLE001 — dendrogram is diagnostic, never break report
+        logger.warning("HRP dendrogram skipped: %s", exc)
+
     # Single lifecycle decision point: display interactively when requested
     # (and possible), otherwise close everything deterministically.
     finalize_report_show(show_plots)
 
     logger.info(
         "Report generated: plots=%d analyzed=%d filtered=%d final_portfolio=%d",
-        7,
+        8,
         len(all_tickers),
         len(filtered_tickers),
         len(optimal_portfolio),

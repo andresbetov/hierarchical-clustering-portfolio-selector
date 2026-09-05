@@ -21,19 +21,25 @@ LINKAGE_METHODS = ("single", "ward", "average")
 
 
 def _leaf_order(linkage_matrix: np.ndarray, number_of_leaves: int) -> list[int]:
-    """Expand the scipy linkage tree into its quasi-diagonal leaf order.
-
-    Recursion depth equals the worst-case chain length (~number_of_leaves);
-    adequate for universes up to ~1e3 assets.
-    """
-    def expand(cluster_id: int) -> list[int]:
-        if cluster_id < number_of_leaves:
-            return [cluster_id]
-        row = linkage_matrix[cluster_id - number_of_leaves]
-        return expand(int(row[0])) + expand(int(row[1]))
-
+    """Expand the scipy linkage tree into its quasi-diagonal leaf order (iterative)."""
+    if number_of_leaves <= 0:
+        return []
+    if number_of_leaves == 1:
+        return [0]
+    # Iterative DFS to avoid recursion limit on chain-like trees (~n depth).
     root = 2 * number_of_leaves - 2
-    return expand(root)
+    stack: list[int] = [root]
+    order: list[int] = []
+    while stack:
+        cluster_id = stack.pop()
+        if cluster_id < number_of_leaves:
+            order.append(cluster_id)
+        else:
+            row = linkage_matrix[cluster_id - number_of_leaves]
+            # Push right then left so left is processed first (preorder).
+            stack.append(int(row[1]))
+            stack.append(int(row[0]))
+    return order
 
 
 def _cluster_inverse_variance_portfolios(cov_slice: np.ndarray) -> float:
@@ -46,6 +52,42 @@ def _cluster_inverse_variance_portfolios(cov_slice: np.ndarray) -> float:
     inverse_variance_weights /= inverse_variance_weights.sum()
     variance = float(inverse_variance_weights @ cov_slice @ inverse_variance_weights)
     return variance
+
+
+def build_hrp_linkage(covariance_matrix: np.ndarray, linkage_method: str = "single") -> np.ndarray:
+    """Build HRP linkage matrix from covariance (single source of distance/linkage).
+
+    Reuses the signed distance ``sqrt(0.5*(1-corr))`` via ``_correlations_from_cov``.
+    Validates ``linkage_method`` before touching scipy and mirrors the guards of
+    ``calculate_hrp_weights`` (square, finite, symmetric, diag>0). Requires ``n>=2``.
+    """
+    cov = np.asarray(covariance_matrix, dtype=np.float64)
+
+    if linkage_method not in LINKAGE_METHODS:
+        raise ValueError(
+            f"Unknown linkage_method '{linkage_method}'; allowed: {list(LINKAGE_METHODS)}"
+        )
+
+    if cov.ndim != 2 or cov.shape[0] != cov.shape[1]:
+        raise ValueError(f"Covariance must be square, got shape {cov.shape}")
+    if not np.all(np.isfinite(cov)):
+        raise ValueError("Covariance contains non-finite entries; upstream guards failed")
+    if not np.allclose(cov, cov.T, atol=1e-10):
+        raise ValueError("Covariance is not symmetric")
+    if np.any(np.diag(cov) <= 0):
+        raise ValueError("Covariance has non-positive variance on the diagonal")
+
+    number_of_assets = cov.shape[0]
+    if number_of_assets < 2:
+        raise ValueError(f"Linkage requires at least 2 assets, got {number_of_assets}")
+
+    distance = np.sqrt(np.maximum(0.5 * (1.0 - _correlations_from_cov(cov)), 0.0))
+    np.fill_diagonal(distance, 0.0)
+
+    from scipy.spatial.distance import squareform
+
+    condensed = squareform(distance, checks=False)
+    return linkage(condensed, method=linkage_method)
 
 
 def calculate_hrp_weights(covariance_matrix: np.ndarray, linkage_method: str = "single") -> np.ndarray:
@@ -87,13 +129,7 @@ def calculate_hrp_weights(covariance_matrix: np.ndarray, linkage_method: str = "
         weights = np.array([variances[1], variances[0]]) / variances.sum()
         return weights
 
-    distance = np.sqrt(np.maximum(0.5 * (1.0 - _correlations_from_cov(cov)), 0.0))
-    np.fill_diagonal(distance, 0.0)
-
-    from scipy.spatial.distance import squareform
-
-    condensed = squareform(distance, checks=False)
-    linkage_matrix = linkage(condensed, method=linkage_method)
+    linkage_matrix = build_hrp_linkage(cov, linkage_method=linkage_method)
 
     sort_index = _leaf_order(linkage_matrix, number_of_assets)
     sorted_tickers_cov = cov[np.ix_(sort_index, sort_index)]

@@ -2,46 +2,48 @@
 
 ## Current Objective
 
-- Goal: v0.1.0 "estable y correcta" — DAG feat-028..041 registrado (commit 27580a7)
-- Current status: rama `develop` (feat-037 mergeada #41, 204 passed) · CP1+CP2 cerrados
-- Next: Fase D — feat-038 `feat/data-cache-parquet` (YFinanceProvider cache con key determinista)
+- Goal: v0.1.0 "estable y correcta" — DAG feat-028..041 (CP1+CP2 cerrados, Fase D 8/8 charts)
+- Current status: rama `feat/cli-dendrogram` (feat-039 poblado, 230 passed, 13/13 specs) · develop @ f6dda9e
+- Next: feat-040 cobertura gate (~85%) → feat-041 release v0.1.0
 
 ## Completed This Session
 
-- feat-037: guard de solapamiento — `minimum_overlap_ratio=0.9` validado (0,1], `align_prices_to_common_calendar` con `notna().mean()` sobre unión, warning nombrado, `MIN_COMMON_ROWS` sobre supervivientes + `n==0` ValueError, chart 4 full-universe alineado con mismo guard, pipeline pruning de filtered_metrics, validación adversarial (2 subagentes) con 3 ALTA (ruff walrus, pyright cast, chart 4 crash) corregidos; suite 187→203
+- feat-039 CLI+dendrograma — `_build_parser` con `--method` (6 choices, dest `weight_allocation_method` hrp), `--covariance-estimator` (3, sample), `--linkage/--linkage-method` (3, single, alias), `--save/--no-save` (True), `--show/--no-show` (False, `BooleanOptionalAction`), `--universe` PATH, `--refresh-cache` + `main(argv, universe_path)` legacy warning + propagación a `PortfolioConfig`/`provider`/`save_plots-show_plots`; seam `build_hrp_linkage` single-source + refactor `calculate_hrp_weights` snapshot intacto + iterativo `_leaf_order`; `plot_hrp_dendrogram` headless Agg (n=0/1/2 guards, mismatch guard, width capped 40, WAYLAND_DISPLAY); pipeline 8 charts (`hrp_dendrogram.png`) con try/except; exports `build_hrp_linkage`+`plot_hrp_dendrogram` en `__init__.py`; tests `test_cli.py` +7 y `test_dendrogram.py` +7 (230 passed); validación 2 subagentes (5 HIGH corregidos); `openspec validate --all` 13/13.
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| TDD | 14 tests nuevos pre-impl | rojo → verde | TypeError minimum_overlap_ratio, guard 50% no excluía, chart 4 ValueError |
-| suite | `./init.sh` | ✓ 203 passed (187+16) | All checks passed! 0 errors pyright, compileall OK |
-| review adversarial | 2 subagentes (código + flujo) | 3 ALTA + 3 MEDIO corregidos | ruff walrus/E501, pyright cast, chart 4 crash 0 survivors, N-dependencia documentada |
-| specs | validate --specs + validate feat-alignment-overlap-guard | ✓ 12/12 | market-data-contract + configuration-contract sincronizadas |
-| asserts existentes | git diff tests | solo adiciones + 1 línea threshold 0.5 | assert intactos + 1 test existente parametrizado |
+| TDD | 8 tests rojo pre-impl | rojo → verde | AttributeError dest/ImportError dendrogram → verde 8/8 |
+| suite | `./init.sh` | ✓ 230 passed (216+14) | All checks passed! 0 errors pyright, compileall OK |
+| lint/types | `make lint` / `make types` | ✓ 0 errors | ruff E501/I001 corregidos, pyright 0 |
+| specs | `openspec validate --all` | ✓ 13/13 | package-interface CLI + runtime-diagnostics dendrograma |
+| review 1 | subagente harness (HIGH 5) | 5 HIGH corregidos | mismatch, legacy warning, _leaf_order iterativo, width cap, WAYLAND |
+| review 2 | subagente flow (HIGH 3 process) | corregidos | feature_list done, tasks 9/9, git clean pendiente commit |
+| asserts existentes | `git diff tests` solo adiciones | intactos | `test_hrp` snapshot single bit-identical, red feat-021 diff 0 |
 
 ## Decisions Made
 
-- feat-037 D1: guard post-DataFrame (B) con `notna().mean()` sobre unión; `minimum_overlap_ratio` en config (0.9) + param en función con default idéntico (single source, sin None sentinel)
-- feat-037 D3/D4: `MIN_COMMON_ROWS` sobre supervivientes, `n==0` → ValueError distinto, `1` superviviente → 1 columna válida; chart 4 usa mismo guard
-- D2: Single source `config` + param explícito para testabilidad (sin ciclo)
+- feat-039 D1: `BooleanOptionalAction` para save/show (defaults reproducen pipeline), `--linkage/--linkage-method` alias mismo dest (compat tracker + best-practice), `build_hrp_linkage` single-source evita drift, `_leaf_order` iterativo sin recursion limit, width capped 40, WAYLAND_DISPLAY headless, tickers/cov mismatch guard.
+- Pipeline 8 charts log `plots=8` (intencionado total, no dynamic rendered count).
+- `tasks.md` 9/9, `feature_list.json:done` con evidencia fresca 2026-09-04.
 
 ## Blockers / Risks
 
-- feat-037 lista para PR → develop (squash) antes de abrir Fase D
-- Chart 4 full-universe ahora usa survivors; si todos los tickers son delisted, chart 4 se omite con warning (no crash)
-- Fase D siguiente: feat-038 cache parquet requiere decisión de path y invalidación por key
+- PR de feat-039 pendiente squash → develop antes de feat-040 (dependencia directa).
+- Feat-040 debe medir baseline cobertura post-039 antes de fijar umbral (~85%); pytest aún en `dependencies` runtime (higiene pendiente).
+- `seaborn` `PendingDeprecationWarning` set_bad global (no bloqueante, 6 warnings).
 
 ## Next Session Startup
 
-1. PR de feat-037 → CI verde ×3 → squash merge → borrar rama
-2. Fase D: feat-038 cache parquet, OpenSpec propose→apply→archive
-3. Rutina: TDD rojo → fix → ./init.sh fresco → evidencia en feature_list.json
+1. Commit `feat(cli): expose --method/--covariance-estimator/--linkage and HRP dendrogram (feat-039)` en `feat/cli-dendrogram`, push, PR → develop squash, delete branch.
+2. `git checkout develop && git pull`, branch `chore/coverage-gate` para feat-040: medir `pytest --cov`, mover pytest a dev group, addopts fail-under.
+3. Rutina: TDD rojo → fix → `./init.sh` fresco → evidencia en feature_list.json.
 
 ## Lecciones consolidadas del proyecto
 
-1. Los heredocs fuzzy python son no-op silenciosos — SOLO Edit/Write tools para código fuente
-2. TDD de caracterización atrapó 6 defectos reales durante la ejecución (incl. 3 en la racha final + 1 NaN-blind + 3 de overlap guard)
-3. Severidad ≠ orden: las dependencias técnicas mandan; el flip HRP único demostró el valor del DAG
-4. OpenSpec validate es pre-commit del diseño: deltas deben matchear specs main exactos
-5. Análisis extendido con subagentes (código + flujo + best practices) cazó 3 ALTA antes de merge
+1. Los heredocs fuzzy python son no-op silenciosos — SOLO Edit/Write tools para código fuente.
+2. TDD de caracterización atrapó 6+3 defectos reales (feat-039: HIGH mismatch, legacy argv, recursion, width, WAYLAND).
+3. Severidad ≠ orden: dependencias mandatarios; CLI/dendrograma van al final porque consumen config/cov/linkage/cache.
+4. OpenSpec validate es pre-commit del diseño: MODIFIED requiere copiar scenarios.
+5. Análisis extendido con 2 subagentes (harness+flow) cazó 8 HIGH antes de merge (process + código).
