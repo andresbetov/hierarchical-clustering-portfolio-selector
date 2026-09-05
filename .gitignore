@@ -10,6 +10,8 @@ build/
 .pytest_cache/
 .coverage
 htmlcov/
+coverage.xml
+coverage.json
 #charts/
 *.nbc
 *.nbi

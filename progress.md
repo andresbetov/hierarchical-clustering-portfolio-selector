@@ -2,10 +2,10 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-04
-**Branch:** `feat/cli-dendrogram` — DAG v0.1.0 (feat-039 poblado, CP1+CP2 cerrados, Fase D 8/8 charts)
+**Last Updated:** 2026-09-05
+**Branch:** `chore/coverage-gate` — DAG v0.1.0 (feat-040 poblado, 85% branch gate)
 
-Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037) · **Fase D CLI+dendrograma COMPLETO**: feat-039 poblado, 230 passed (+14: 7 CLI +7 dendrograma), `pyarrow 25.0.1` operativo, 8 charts (`hrp_dendrogram.png` + leaf order quasi-diagonal verificado). Suite `./init.sh` 230 passed, ruff/pyright/compileall verdes, `openspec validate --all` 13/13.
+Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037) · **Fase D CLI+dendrograma COMPLETO** · **feat-040 cobertura COMPLETO**: higiene `pytest`→dev + `pytest-cov` 85% branch (87% line), `TOTAL 1509 stmts 85.37%` con 230 tests, `pyarrow 25.0.1` operativo, 8 charts. Suite `./init.sh` 230 passed + cobertura 85.4% `All checks passed!` `pyright 0` `openspec validate --all` 14/14.
 
 ## Status
 
@@ -30,13 +30,17 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 - [x] **feat-039** (2026-09-04): CLI operativo completo — `_build_parser` con `--method` (choices 6, dest `weight_allocation_method` default `hrp`), `--covariance-estimator` (3, `sample`), `--linkage/--linkage-method` (3, `single`), `--save/--no-save` (`BooleanOptionalAction` True), `--show/--no-show` (False), `--universe` metavar PATH, `--refresh-cache`; `main(argv, universe_path)` propaga a `PortfolioConfig` + `generate_complete_analysis_report(save_plots, show_plots, provider)` con legacy `universe_path` warning + bypass; **seam** `build_hrp_linkage` en `hrp.py` (single source distancia firmada `sqrt(0.5*(1-corr))`, valida `LINKAGE_METHODS` pre-scipy, `n<2` ValueError) y refactor `calculate_hrp_weights` snapshot bit-identical; **viz** `plot_hrp_dendrogram` en `reporting.py` (headless `Agg` + `_finalize_plot`, `n=0/1/2` guards, `tickers/cov` mismatch guard, `width capped 40`, `WAYLAND_DISPLAY` headless fix, iterative `_leaf_order` sin recursion limit); **pipeline** `CHART_FILENAMES["hrp_dendrogram"]` + `plot_hrp_dendrogram` tras `optimal_portfolio_analysis` en `try/except` warning, log `plots=8`; **exports** `build_hrp_linkage`+`plot_hrp_dendrogram` en `__init__.py` + `__all__`; tests `test_cli.py` +7 (method/cov/linkage/save_show/help/propagate/defaults) + `test_dendrogram.py` +7 (importable, linkage valid, guard n1, leaf order, 12-block quasi-diagonal, n1/n2/no-crash, pipeline E2E 8º PNG); **validación**: `./init.sh` 230 passed (216+14), `All checks passed!`, `pyright 0 errors`, `compileall OK`, `openspec validate --all` 13/13 (package-interface + runtime-diagnostics), 2 iteraciones revisión subagentes (5 HIGH + 3 MEDIUM corregidos: mismatch guard, legacy argv warning, leaf recursion, width cap, WAYLAND); `README` 7→8, `CHANGELOG` Added, `tasks.md` 9/9.
 
+### What's Done (Fase D — Cobertura)
+
+- [x] **feat-040** (2026-09-05): higiene dev + gate 85% branch — `pyproject.toml` mover `pytest>=9.0.3` de `[project.dependencies]` a `[dependency-groups].dev` + `pytest-cov>=6.0` (`coverage 7.16.0`), `[tool.coverage.run]` `branch = true` + `source = ["portfolio_engine"]` + `omit tests`, `[tool.coverage.report]` `fail_under = 85` + `addopts` `--cov=portfolio_engine --cov-report=term-missing --cov-report=html --cov-report=xml --cov-branch --cov-fail-under=85`; `Makefile:test` gate explícito `-q --cov ... --cov-branch --cov-fail-under=85` + `test-no-cov` escape hatch + `clean` `htmlcov/.coverage/coverage.xml`; `.github/workflows/ci.yml` `Test suite with coverage gate` + `Publish coverage` + `upload-artifact htmlcov` en matrix 3.11-3.13 con `uv sync --frozen`; `.gitignore` `coverage.xml`; baseline medido 2026-09-05: `TOTAL 1509 stmts 85.37% branch / 87% line (230 tests)`; `uv lock --check` OK; `make test` gate activo (85 pass / 90 fail); `openspec` 14/14 (project-packaging + quality-gates + verification-harness).
+
 ### What's In Progress
 
-- [ ] **feat-040** cobertura + higiene `pytest` runtime → dev (siguiente, depende de 039 estable)
+- [ ] **feat-041** release v0.1.0 (siguiente, depende de 040)
 
-### What's Next (DAG v0.1.0 — Fase D cierre)
+### What's Next (DAG v0.1.0 — cierre)
 
-1. feat-040 cobertura (umbral ~85%, medir baseline post-039) → feat-041 release v0.1.0 (CHANGELOG [0.1.0] fechado, README Limitaciones, tag)
+1. feat-041 release v0.1.0 (CHANGELOG [0.1.0] fechado, README Limitaciones conocidas, tag v0.1.0, session-handoff final)
 
 ## Process Deviations (transparencia)
 
@@ -50,6 +54,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ## Evidence of Completion
 
+- feat-040: `openspec validate --all` 14/14 (project-packaging + quality-gates + verification-harness) · `./init.sh` exit 0 230 passed 85.37% branch (87% line) `TOTAL 1509 stmts` + `All checks passed!` + `pyright 0` + `compileall OK` · `make test` gate 85 pass / 90 fail · `uv lock --check` OK · branch `chore/coverage-gate`
 - feat-039: `openspec validate --all` 13/13 (package-interface CLI + runtime-diagnostics dendrograma) · `./init.sh` exit 0 230 passed (216+14: 7 CLI +7 dendrograma) + `All checks passed!` + `pyright 0 errors` + `compileall OK` · branch `feat/cli-dendrogram` · revisión 2 subagentes (5 HIGH corregidos: mismatch, legacy, recursion, width, WAYLAND) + evidencia fresca 2026-09-04 · `tasks.md` 9/9 · `README` 7→8 + `CHANGELOG` Added
 - feat-037: `openspec validate --specs` 12/12 (market-data-contract + configuration-contract) · guard post-DataFrame con `notna().mean()` sobre unión · `./init.sh` 203 passed · ruff/pyright/compileall verdes · revisión adversarial (2 subagentes) con 3 ALTA (ruff/pyright/chart4) corregidos
 - feat-036: `openspec validate --specs` 12/12 (`quant-docs` nueva) · `grep -rn log1p` 6+ call-sites migrados · `./init.sh` 187 passed · ruff/pyright/compileall verdes · revisión adversarial (3 subagentes) con 1 ALTA (F401) corregida
@@ -58,6 +63,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ## Decisions Made
 
+- feat-040: `fail_under = 85` branch (87 line) baseline 2026-09-05: `85.37% branch` deja 0.37% slack branch, 2% slack line; `branch = true` captura else no testeados; `pytest` solo en dev (PEP 735 flat dev, `uv sync --frozen` default-groups), gate cuádruple (`pyproject addopts` + `tool.coverage.report` + `Makefile` + `CI`) documentado como single source `85` en `pyproject.toml:65`.
 - feat-039: `BooleanOptionalAction` para `--save/--no-save` y `--show/--no-show` (defaults `True`/`False` reproduciendo `pipeline.py:193`); `--linkage/--linkage-method` alias mismo `dest` (compat tracker + best-practice); `build_hrp_linkage` single-source distancia/pasarela (evita drift), `_leaf_order` iterativo (sin recursion limit 1e3), width capped 40, `WAYLAND_DISPLAY` headless, tickers/cov mismatch guard en dendrograma.
 - feat-037: guard post-DataFrame (B) con `notna().mean()` sobre unión; `minimum_overlap_ratio` en config (0.9) + param en función con default idéntico; chart 4 full-universe alineado con mismo guard (absorbe blocker progress.md:45)
 - feat-036: híbrida A+B sin ciclo — `config.risk_free_rate_log` usa `math.log1p` directo; helper `risk_free_log_rate` para float-only sites; duplicación intencional documentada en `design.md:D1`; addendum ADR 003 fechado 2026-09-01 (no supersede) cuantifica `n=5,max=0.30`
