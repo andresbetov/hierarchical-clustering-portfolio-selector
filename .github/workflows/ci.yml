@@ -30,8 +30,20 @@ jobs:
       - name: Type check (pyright)
         run: uv run pyright
 
-      - name: Test suite (pytest)
-        run: uv run python -m pytest
+      - name: Test suite with coverage gate (pytest)
+        run: uv run python -m pytest --cov=portfolio_engine --cov-report=term-missing --cov-report=html --cov-report=xml --cov-branch --cov-fail-under=85
+
+      - name: Publish coverage summary
+        if: always()
+        run: uv run coverage report --format=markdown >> $GITHUB_STEP_SUMMARY 2>&1 || uv run coverage report >> $GITHUB_STEP_SUMMARY 2>&1 || true
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html-${{ matrix.python-version }}
+          path: htmlcov
+          if-no-files-found: warn
 
       - name: Syntax check (compileall)
         run: uv run python -m compileall -q -x '(^|/)(\.?venv|env|node_modules|build|dist|__pycache__)(/|$)' .

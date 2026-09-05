@@ -391,8 +391,8 @@
       "dependencies": [
         "feat-039"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-09-05 chore/coverage-gate ./init.sh exit 0 230 passed 85.37% branch (87% line) TOTAL 1509 stmts All checks passed! pyright 0 errors compileall OK make test --cov-fail-under=85 pass / --cov-fail-under=90 fail (gate activo) uv lock --check OK uv sync --frozen OK openspec validate --all 14/14 (project-packaging + quality-gates + verification-harness) branch chore/coverage-gate. Higiene: pytest 0 en runtime, pytest+pytest-cov en dev."
     },
     {
       "id": "feat-041",
