@@ -1,6 +1,6 @@
 ## Context
 
-Ver `proposal.md` (Why) para la motivación y la evidencia walk-forward. Estado actual: `PortfolioConfig` fija `minimum_sharpe_threshold=0.5` y `maximum_volatility_threshold=0.25` (`portfolio_engine/core/config.py:52-53`); `pipeline.main` y `walk_forward_evaluate` consumen ambos valores dinámicamente desde el config, y `reporting.py` los lee para las líneas de referencia de las gráficas. Restricción: el CLI no expone parámetros estructurales por diseño (scope bloqueado en solo-defaults).
+Ver `proposal.md` (Why) para la motivación y la evidencia walk-forward. Estado pre-change: `PortfolioConfig` fijaba `minimum_sharpe_threshold=0.5` y `maximum_volatility_threshold=0.25` (`portfolio_engine/core/config.py:52-53`); `pipeline.main` y `walk_forward_evaluate` consumen ambos valores dinámicamente desde el config, y `reporting.py` los lee para las líneas de referencia de las gráficas. Restricción: el CLI no expone parámetros estructurales por diseño (scope bloqueado en solo-defaults).
 
 ## Goals / Non-Goals
 

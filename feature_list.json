@@ -423,8 +423,8 @@
       "dependencies": [
         "feat-041"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-09-09 sesion feat-042 (rama feat/threshold-recalibration): TDD rojo registrado (pin 0.5==0.3, relaxed 1==0 bajo defaults antiguos); implementado config 0.3/0.27 + README/CHANGELOG + pins feat-042 + test contrato + regresion WF sintetica seed-9 (rel 0, medN 5, HRP 1.995>=EQ 1.948; legacy rel 1); ./init.sh FRESCO exit 0 (233 passed =230+3, cobertura 85.37%>=85, ruff OK, pyright 0, compileall OK); openspec validate change valid + --all 13/13; ADR-007 Aceptado; diff tests solo justificado; commit en rama SIN push (veto usuario pendiente validacion)."
     }
   ]
 }

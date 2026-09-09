@@ -39,8 +39,8 @@ Las decisiones metodológicas están versionadas como ADRs en [docs/adr/](docs/a
 
 | Grupo | Parámetro | Valor |
 | --- | --- | --- |
-| Filtrado | `minimum_sharpe_threshold` | `0.5` |
-| Filtrado | `maximum_volatility_threshold` | `0.25` |
+| Filtrado | `minimum_sharpe_threshold` | `0.3` |
+| Filtrado | `maximum_volatility_threshold` | `0.27` |
 | Clustering | `maximum_correlation_threshold` | `0.65` |
 | Clustering | `distance_metric` | `signed` |
 | Clustering | `covariance_estimator` | `sample` (`ledoit_wolf`, `oas` disponibles — ADR 005) |

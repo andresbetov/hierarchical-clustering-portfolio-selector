@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: hito v0.1.0 CERRADO — feat-041 done local + remoto (PR #51, CI 3/3, tag, Release). Cero features abiertos.
-- Current status: `develop @ 633efa6` · tag `v0.1.0` pusheado · Release publicado · `./init.sh` verde
-- Next: feat-042 (thresholds 0.3/0.27 + ADR-007 + change OpenSpec) sobre el tag — rama nueva desde develop
+- Goal: feat-042 implementado 10/10 (único feature, done local). Sin push por veto explícito hasta validación del diff.
+- Current status: `feat/threshold-recalibration` (commits: propose + implement) · `./init.sh` verde 233 passed · `develop @ a70c783` intacto
+- Next: usuario valida diff → push → PR a develop → CI → squash → (tag NO: thresholds van al próximo release)
 
 ## Completed This Session
 

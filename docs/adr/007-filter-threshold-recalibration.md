@@ -1,6 +1,6 @@
 # ADR 007 — Recalibración de thresholds del filtro (Sharpe 0.5→0.3, vol 0.25→0.27)
 
-**Estado:** Propuesto · **Fecha:** 2026-09-09 · **Feature:** feat-042 (sobre tag v0.1.0)
+**Estado:** Aceptado · **Fecha:** 2026-09-09 · **Feature:** feat-042 (sobre tag v0.1.0)
 
 ## Contexto
 

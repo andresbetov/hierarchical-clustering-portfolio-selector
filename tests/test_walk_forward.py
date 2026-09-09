@@ -297,5 +297,50 @@ class TestBenchmarks:
         )
 
 
+def _recalibration_panel(seed=9, n_rows=500):
+    """Six-asset three-block panel (feat-042/ADR 007): block A (3x, Sharpe high),
+    block B (2x, Sharpe ~0.4) and diversifier C (Sharpe ~0.4), so recalibrated
+    defaults (0.3/0.27) keep N>=4 on every fold while legacy defaults (0.5/0.25)
+    relax the mandate. Plain seeded rng: deterministic across processes."""
+    rng = np.random.default_rng(seed)
+    market = rng.normal(loc=0.0003, scale=0.008, size=n_rows)
+    factor_a = rng.normal(scale=0.009, size=n_rows)
+    factor_b = rng.normal(scale=0.006, size=n_rows)
+    rets = {
+        "A0": 0.00050 + 0.9 * market + 0.35 * factor_a + rng.normal(scale=0.004, size=n_rows),
+        "A1": 0.00050 + 0.9 * market + 0.35 * factor_a + rng.normal(scale=0.004, size=n_rows),
+        "A2": 0.00050 + 0.9 * market + 0.35 * factor_a + rng.normal(scale=0.004, size=n_rows),
+        "B0": 0.00010 + 0.5 * market + 0.60 * factor_b + rng.normal(scale=0.004, size=n_rows),
+        "B1": 0.00010 + 0.5 * market + 0.60 * factor_b + rng.normal(scale=0.004, size=n_rows),
+        "C0": 0.00030 + 0.1 * market + rng.normal(scale=0.0105, size=n_rows),
+    }
+    base = np.datetime64("2023-01-02", "ns") + np.arange(n_rows, dtype="timedelta64[ns]")
+    prices, dates = {}, {}
+    for ticker, series in rets.items():
+        prices[ticker] = (100.0 * np.exp(np.cumsum(series))).astype(np.float64)
+        dates[ticker] = base.copy()
+    return prices, dates
+
+
+class TestThresholdRecalibration:
+    def test_recalibrated_defaults_keep_folds_unrelaxed_and_hrp_ahead(self):
+        prices, dates = _recalibration_panel()
+        report = walk_forward_evaluate(prices, dates, PortfolioConfig(), train_rows=200, test_rows=50, embargo_days=5)
+        summary = report.to_dict()
+        assert summary["valid_folds"] == summary["n_folds"]
+        assert summary["relaxed_folds"] == 0
+        median_survivors = float(np.median([len(fold.weights) for fold in report.folds]))
+        assert median_survivors >= 5
+        assert summary["median_oos_sharpe"] >= summary["median_oos_sharpe_equal"]
+
+    def test_legacy_defaults_relax_mandate_on_same_panel(self):
+        """Characterization (green pre/post fix): legacy thresholds drop the
+        marginal blocks, forcing mandate relaxation — the mechanism feat-042 fixes."""
+        prices, dates = _recalibration_panel()
+        legacy = PortfolioConfig(minimum_sharpe_threshold=0.5, maximum_volatility_threshold=0.25)
+        summary = walk_forward_evaluate(prices, dates, legacy, train_rows=200, test_rows=50, embargo_days=5).to_dict()
+        assert summary["relaxed_folds"] > 0
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
