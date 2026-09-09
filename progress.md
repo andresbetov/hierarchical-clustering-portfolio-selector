@@ -36,7 +36,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-- [ ] **feat-042** candidata (recalibración thresholds 0.3/0.27, evidencia WF vía A: gap HRP−EQ +0.070 único positivo) — desbloqueada tras 041; requiere ADR-007 + change OpenSpec antes de implementar
+- [ ] **feat-042** recalibrar thresholds (propose completo 2026-09-09: change + ADR-007 listos para revisión; scope 0.3/0.27 solo-defaults; sin push hasta validación) — en espera de revisión de artefactos para entrar a apply
 
 ### What's Next (post-hito)
 
