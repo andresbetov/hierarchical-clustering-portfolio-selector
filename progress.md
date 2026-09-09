@@ -3,7 +3,7 @@
 ## Current State
 
 **Last Updated:** 2026-09-09
-**Branch:** `feat/release-v0-1-0` — feat-041 release v0.1.0 en curso (feat-040 mergeado a develop en #46, docs #47-50)
+**Branch:** `develop @ 633efa6` — hito v0.1.0 CERRADO (PR #51 mergeado, CI 3/3 verde, tag `v0.1.0` pusheado, Release publicado). feat-040 mergeado en #46, docs #47-50.
 
 Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037) · **Fase D CLI+dendrograma COMPLETO** · **feat-040 cobertura COMPLETO**: higiene `pytest`→dev + `pytest-cov` 85% branch (87% line), `TOTAL 1509 stmts 85.37%` con 230 tests, `pyarrow 25.0.1` operativo, 8 charts. Suite `./init.sh` 230 passed + cobertura 85.4% `All checks passed!` `pyright 0` `openspec validate --all` 14/14.
 
@@ -36,7 +36,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-- [ ] **feat-041** release v0.1.0 (en curso, rama `feat/release-v0-1-0`): `charts/` baseline trackeado (8 PNG paso-2, decisión usuario), CHANGELOG `[0.1.0] - 2026-09-09` (contenido `Unreleased` movido + `Unreleased` fresco + links compare/tag, estándar Keep a Changelog 2.0), README `Limitaciones conocidas` (no-inversión hasta v0.2.0, survivorship bias, yfinance + disclaimer de facto quant); pendiente: `./init.sh` fresco, commit, tag anotado `v0.1.0` local, PR → develop
+- [ ] **feat-042** candidata (recalibración thresholds 0.3/0.27, evidencia WF vía A: gap HRP−EQ +0.070 único positivo) — desbloqueada tras 041; requiere ADR-007 + change OpenSpec antes de implementar
 
 ### What's Next (post-hito)
 
@@ -55,6 +55,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ## Evidence of Completion
 
+- feat-041: hito CERRADO 2026-09-09 · local `./init.sh` exit 0 (230 passed, 85.37% branch, ruff/pyright verdes) · PR #51 squash-mergeado a develop (633efa6) con CI verde matriz 3.11/3.12/3.13 · tag `v0.1.0` → 633efa6 pusheado · GitHub Release publicado · `charts/` baseline 8 PNG trackeado
 - feat-040: `openspec validate --all` 14/14 (project-packaging + quality-gates + verification-harness) · `./init.sh` exit 0 230 passed 85.37% branch (87% line) `TOTAL 1509 stmts` + `All checks passed!` + `pyright 0` + `compileall OK` · `make test` gate 85 pass / 90 fail · `uv lock --check` OK · branch `chore/coverage-gate`
 - feat-039: `openspec validate --all` 13/13 (package-interface CLI + runtime-diagnostics dendrograma) · `./init.sh` exit 0 230 passed (216+14: 7 CLI +7 dendrograma) + `All checks passed!` + `pyright 0 errors` + `compileall OK` · branch `feat/cli-dendrogram` · revisión 2 subagentes (5 HIGH corregidos: mismatch, legacy, recursion, width, WAYLAND) + evidencia fresca 2026-09-04 · `tasks.md` 9/9 · `README` 7→8 + `CHANGELOG` Added
 - feat-037: `openspec validate --specs` 12/12 (market-data-contract + configuration-contract) · guard post-DataFrame con `notna().mean()` sobre unión · `./init.sh` 203 passed · ruff/pyright/compileall verdes · revisión adversarial (2 subagentes) con 3 ALTA (ruff/pyright/chart4) corregidos
@@ -69,5 +70,6 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 - feat-037: guard post-DataFrame (B) con `notna().mean()` sobre unión; `minimum_overlap_ratio` en config (0.9) + param en función con default idéntico; chart 4 full-universe alineado con mismo guard (absorbe blocker progress.md:45)
 - feat-036: híbrida A+B sin ciclo — `config.risk_free_rate_log` usa `math.log1p` directo; helper `risk_free_log_rate` para float-only sites; duplicación intencional documentada en `design.md:D1`; addendum ADR 003 fechado 2026-09-01 (no supersede) cuantifica `n=5,max=0.30`
 - feat-031 declarado `skip_specs: true` (cambio puramente documental: las specs se corrigen para reflejar comportamiento YA implementado — precedente feat-025)
-- CHANGELOG arranca con `[Unreleased]` + placeholder `[0.1.0]` que feat-041 completará y fechará al tag
+- feat-041 declarado sin change OpenSpec por el mismo precedente (mecánica de release docs-only); CHANGELOG `[0.1.0] - 2026-09-09` con links compare/tag; `develop → main` pendiente de indicación del usuario
+- CHANGELOG `[0.1.0] - 2026-09-09` publicado por feat-041 (contenido `Unreleased` movido + `Unreleased` fresco + links); placeholder previo eliminado
 - `project-packaging` actualizado a 3.11-3.13 en feat-031 para que feat-032 solo implemente lo que la spec ya declara

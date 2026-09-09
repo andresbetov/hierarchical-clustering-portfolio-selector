@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: v0.1.0 "estable y correcta" — cerrar feat-041 release (único feature abierto; 040 mergeado a develop en #46)
-- Current status: rama `feat/release-v0-1-0` (feat-041 en curso) · baseline `./init.sh` verde en develop 2026-09-09 (230 passed, 85.37% branch)
-- Next: `./init.sh` fresco → commit → tag anotado `v0.1.0` local → PR a develop (push + CI + GitHub Release: acción usuario)
+- Goal: hito v0.1.0 CERRADO — feat-041 done local + remoto (PR #51, CI 3/3, tag, Release). Cero features abiertos.
+- Current status: `develop @ 633efa6` · tag `v0.1.0` pusheado · Release publicado · `./init.sh` verde
+- Next: feat-042 (thresholds 0.3/0.27 + ADR-007 + change OpenSpec) sobre el tag — rama nueva desde develop
 
 ## Completed This Session
 
@@ -31,8 +31,8 @@
 
 ## Blockers / Risks
 
-- PR `feat/release-v0-1-0` → `develop` + push + CI verde + `git push origin v0.1.0` + GitHub Release opcional: acción del usuario (sin autorización de remoto en esta sesión).
-- Tras el squash-merge el SHA cambia: el tag debe quedar sobre el HEAD de develop post-merge (comando en evidencia de feat-041).
+- Ninguno abierto: PR #51 mergeado (squash, rama borrada), tag `v0.1.0` → 633efa6 pusheado, Release publicado.
+- `develop → main`: solo cuando lo indique el usuario (regla CONTRIBUTING) — pendiente explícito, no blocker.
 - `seaborn` `PendingDeprecationWarning` set_bad global (6 warnings, no bloqueante, heredado).
 - Histórico feat-040 (cerrado #46): PR squash hecho; umbral 85 branch deja 0.37 slack — añadir código sin tests lo tumba (ratchet intencionado).
 
