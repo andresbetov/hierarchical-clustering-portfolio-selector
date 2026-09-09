@@ -2,8 +2,8 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-05
-**Branch:** `chore/coverage-gate` — DAG v0.1.0 (feat-040 poblado, 85% branch gate)
+**Last Updated:** 2026-09-09
+**Branch:** `feat/release-v0-1-0` — feat-041 release v0.1.0 en curso (feat-040 mergeado a develop en #46, docs #47-50)
 
 Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037) · **Fase D CLI+dendrograma COMPLETO** · **feat-040 cobertura COMPLETO**: higiene `pytest`→dev + `pytest-cov` 85% branch (87% line), `TOTAL 1509 stmts 85.37%` con 230 tests, `pyarrow 25.0.1` operativo, 8 charts. Suite `./init.sh` 230 passed + cobertura 85.4% `All checks passed!` `pyright 0` `openspec validate --all` 14/14.
 
@@ -36,11 +36,12 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-- [ ] **feat-041** release v0.1.0 (siguiente, depende de 040)
+- [ ] **feat-041** release v0.1.0 (en curso, rama `feat/release-v0-1-0`): `charts/` baseline trackeado (8 PNG paso-2, decisión usuario), CHANGELOG `[0.1.0] - 2026-09-09` (contenido `Unreleased` movido + `Unreleased` fresco + links compare/tag, estándar Keep a Changelog 2.0), README `Limitaciones conocidas` (no-inversión hasta v0.2.0, survivorship bias, yfinance + disclaimer de facto quant); pendiente: `./init.sh` fresco, commit, tag anotado `v0.1.0` local, PR → develop
 
-### What's Next (DAG v0.1.0 — cierre)
+### What's Next (post-hito)
 
-1. feat-041 release v0.1.0 (CHANGELOG [0.1.0] fechado, README Limitaciones conocidas, tag v0.1.0, session-handoff final)
+1. feat-042 candidata (recalibración thresholds 0.3/0.27, evidencia WF vía A: gap HRP−EQ +0.070 único positivo) — bloqueada hasta cerrar 041; requiere ADR-007
+2. Backlog v0.2.0 en feat-041 (CPCV/DSR/PBO, costos+turnover, HERC, tearsheet, VaR/CVaR, flip LedoitWolf, pyright strict, delistings por-ticker)
 
 ## Process Deviations (transparencia)
 
