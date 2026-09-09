@@ -13,6 +13,12 @@ class TestDefaultsValid:
         assert config.weight_allocation_method == "hrp"
         assert config.lookback_years == 5
 
+    def test_recalibrated_filter_defaults_feat_042(self):
+        """feat-042 (ADR 007): recalibrated production filter defaults."""
+        config = PortfolioConfig()
+        assert config.minimum_sharpe_threshold == 0.3
+        assert config.maximum_volatility_threshold == 0.27
+
 
 class TestImmutability:
     def test_attribute_mutation_rejected(self):
@@ -24,7 +30,7 @@ class TestImmutability:
         original = PortfolioConfig()
         modified = dataclasses.replace(original, minimum_sharpe_threshold=-10.0)
         assert modified is not original
-        assert original.minimum_sharpe_threshold == 0.5  # untouched
+        assert original.minimum_sharpe_threshold == 0.3  # untouched (feat-042 default)
 
 
 class TestValidationRules:
@@ -73,8 +79,8 @@ class TestValidationRules:
     def test_replace_pattern_is_the_legal_override_route(self):
         loosened = dataclasses.replace(PortfolioConfig(), minimum_sharpe_threshold=-10.0)
         assert loosened.minimum_sharpe_threshold == -10.0
-        # Original untouched (immutability semantics):
-        assert PortfolioConfig().minimum_sharpe_threshold == 0.5
+        # Original untouched (immutability semantics, feat-042 default):
+        assert PortfolioConfig().minimum_sharpe_threshold == 0.3
 
     def test_default_covariance_estimator_is_sample(self):
         assert PortfolioConfig().covariance_estimator == "sample"

@@ -3,7 +3,7 @@
 ## Current State
 
 **Last Updated:** 2026-09-09
-**Branch:** `develop @ 633efa6` — hito v0.1.0 CERRADO (PR #51 mergeado, CI 3/3 verde, tag `v0.1.0` pusheado, Release publicado). feat-040 mergeado en #46, docs #47-50.
+**Branch:** `feat/threshold-recalibration` — feat-042 implementado 10/10 tasks, pendiente validación del usuario (veto push vigente). `develop @ a70c783` intacto.
 
 Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037) · **Fase D CLI+dendrograma COMPLETO** · **feat-040 cobertura COMPLETO**: higiene `pytest`→dev + `pytest-cov` 85% branch (87% line), `TOTAL 1509 stmts 85.37%` con 230 tests, `pyarrow 25.0.1` operativo, 8 charts. Suite `./init.sh` 230 passed + cobertura 85.4% `All checks passed!` `pyright 0` `openspec validate --all` 14/14.
 
@@ -36,7 +36,11 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-- [ ] **feat-042** candidata (recalibración thresholds 0.3/0.27, evidencia WF vía A: gap HRP−EQ +0.070 único positivo) — desbloqueada tras 041; requiere ADR-007 + change OpenSpec antes de implementar
+_Ningún feature abierto (feat-042 pendiente de validación para PR)._
+
+### What's Done (post-hito)
+
+- [x] **feat-042** recalibrar thresholds (10/10 tasks): config 0.3/0.27, ADR-007 Aceptado, 233 passed, change valid; commit en rama sin push por veto
 
 ### What's Next (post-hito)
 
@@ -55,6 +59,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ## Evidence of Completion
 
+- feat-042: TDD rojo (`0.5 == 0.3`, `relaxed 1 == 0`) → verde · `./init.sh` exit 0 233 passed (230+3: contrato + 2 WF) cobertura 85.37% · `openspec validate` change + `--all` 13/13 · ADR-007 Aceptado · rama `feat/threshold-recalibration` sin push (veto)
 - feat-041: hito CERRADO 2026-09-09 · local `./init.sh` exit 0 (230 passed, 85.37% branch, ruff/pyright verdes) · PR #51 squash-mergeado a develop (633efa6) con CI verde matriz 3.11/3.12/3.13 · tag `v0.1.0` → 633efa6 pusheado · GitHub Release publicado · `charts/` baseline 8 PNG trackeado
 - feat-040: `openspec validate --all` 14/14 (project-packaging + quality-gates + verification-harness) · `./init.sh` exit 0 230 passed 85.37% branch (87% line) `TOTAL 1509 stmts` + `All checks passed!` + `pyright 0` + `compileall OK` · `make test` gate 85 pass / 90 fail · `uv lock --check` OK · branch `chore/coverage-gate`
 - feat-039: `openspec validate --all` 13/13 (package-interface CLI + runtime-diagnostics dendrograma) · `./init.sh` exit 0 230 passed (216+14: 7 CLI +7 dendrograma) + `All checks passed!` + `pyright 0 errors` + `compileall OK` · branch `feat/cli-dendrogram` · revisión 2 subagentes (5 HIGH corregidos: mismatch, legacy, recursion, width, WAYLAND) + evidencia fresca 2026-09-04 · `tasks.md` 9/9 · `README` 7→8 + `CHANGELOG` Added

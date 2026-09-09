@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- feat-042: recalibración de thresholds del filtro (ADR 007) — `minimum_sharpe_threshold` 0.5→0.3, `maximum_volatility_threshold` 0.25→0.27; evidencia walk-forward (única configuración donde HRP bate a 1/N en mediana OOS); revierte en 2 líneas.
+
 ## [0.1.0] - 2026-09-09
 
 Primera versión estable y correcta del pipeline HRP: ingesta batch con caché, filtros de calidad, clustering con distancia firmada, asignación HRP con constraints verificados, 8 gráficas de diagnóstico y validación walk-forward out-of-sample.

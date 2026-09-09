@@ -415,6 +415,16 @@
       ],
       "status": "done",
       "evidence": "2026-09-09 sesion feat-041 (rama feat/release-v0-1-0): baseline ./init.sh exit 0 en develop pre-rama (230 passed, 85.37% branch); standards externos verificados (Keep a Changelog 2.0: Unreleased movido a [0.1.0] - 2026-09-09 + Unreleased fresco + links compare/tag; tags anotados con prefijo v semver; disclaimers de facto FinRL/QuantSphere/cpz-quant); cambios docs-only sin OpenSpec change (precedente skip_specs feat-025/031): CHANGELOG [0.1.0] fechado, README Limitaciones conocidas (no-inversion hasta v0.2.0, survivorship bias, yfinance + disclaimer), charts/ baseline 8 PNG trackeado (decision usuario, 3.5M); ./init.sh FRESCO post-edicion exit 0 (230 passed, ruff OK, pyright 0, compileall OK); commit + tag anotado v0.1.0 local. Cierre remoto 2026-09-09: PR #51 squash-mergeado a develop (633efa6), CI verde matriz 3.11/3.12/3.13, tag v0.1.0 re-apuntado a 633efa6 + push, GitHub Release publicado (releases/tag/v0.1.0)."
+    },
+    {
+      "id": "feat-042",
+      "name": "Filter threshold recalibration",
+      "description": "Recalibrar defaults de filtrado con ADR 007 (decision metodologica con evidencia walk-forward via A): minimum_sharpe_threshold 0.5->0.3 y maximum_volatility_threshold 0.25->0.27 en PortfolioConfig; actualizar tabla README, entrada Changed en CHANGELOG, pinnings test_config.py:27,77 y test de contrato de nuevos defaults; regresion walk-forward sintetica CI-safe (HRP >= equal). Scope bloqueado: solo defaults, sin flags CLI, sin cambio de universo. Aceptacion: N viable sin degenerar, ./init.sh verde, openspec validate verde, commit en rama feat/threshold-recalibration sin push hasta validacion del usuario.",
+      "dependencies": [
+        "feat-041"
+      ],
+      "status": "done",
+      "evidence": "2026-09-09 sesion feat-042 (rama feat/threshold-recalibration): TDD rojo registrado (pin 0.5==0.3, relaxed 1==0 bajo defaults antiguos); implementado config 0.3/0.27 + README/CHANGELOG + pins feat-042 + test contrato + regresion WF sintetica seed-9 (rel 0, medN 5, HRP 1.995>=EQ 1.948; legacy rel 1); ./init.sh FRESCO exit 0 (233 passed =230+3, cobertura 85.37%>=85, ruff OK, pyright 0, compileall OK); openspec validate change valid + --all 13/13; ADR-007 Aceptado; diff tests solo justificado; commit en rama SIN push (veto usuario pendiente validacion)."
     }
   ]
 }

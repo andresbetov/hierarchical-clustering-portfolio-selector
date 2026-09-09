@@ -48,9 +48,9 @@ class PortfolioConfig:
     mutating (mutation raises FrozenInstanceError by design).
     """
 
-    # Asset filtering parameters
-    minimum_sharpe_threshold: float = 0.5
-    maximum_volatility_threshold: float = 0.25
+    # Asset filtering parameters (feat-042/ADR 007: recalibrated 0.5->0.3, 0.25->0.27)
+    minimum_sharpe_threshold: float = 0.3
+    maximum_volatility_threshold: float = 0.27
     maximum_correlation_threshold: float = 0.65
 
     # Clustering distance metric (ADR 002): signed keeps diversifiers apart.
