@@ -95,6 +95,15 @@ Depende de datos de `yfinance`: los resultados cambian con fecha de consulta, un
 - **Pendiente**: costos de transacción, turnover control, modelado intraperíodo de pesos — diferidos explícitamente (decision-log).
 - El clustering legacy greedy sigue operativo para métodos no-HRP y reproducibilidad de composiciones previas.
 
+### Limitaciones conocidas
+
+Declaración explícita de alcance para v0.1.0 (estándar de facto en proyectos quant abiertos: investigación, no asesoría):
+
+- **No apta para decisiones de inversión hasta v0.2.0.** El walk-forward no modela costos de transacción ni controla turnover; sus medianas OOS son contraste direccional, no P&L esperado.
+- **Survivorship bias del universo fijo.** Los 12 tickers de `config/universe.yaml` son supervivientes a 2026; el backtest no representa el universo invertible ex-ante (quiebras, adquisiciones y delistings están ausentes).
+- **Dependencia de `yfinance`.** Fuente pública no institucional: disponibilidad, ajustes corporativos y cobertura cambian con la fecha de consulta; un re-run futuro puede dar resultados distintos.
+- Este proyecto es un instrumento de investigación y educación. Nada de lo que produce constituye recomendación de inversión; rentabilidades pasadas no garantizan resultados futuros; consulta a un profesional cualificado antes de operar.
+
 ## Reproducibilidad y verificación
 
 ```bash

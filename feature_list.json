@@ -413,8 +413,8 @@
         "feat-039",
         "feat-040"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-09-09 sesion feat-041 (rama feat/release-v0-1-0): baseline ./init.sh exit 0 en develop pre-rama (230 passed, 85.37% branch); standards externos verificados (Keep a Changelog 2.0: Unreleased movido a [0.1.0] - 2026-09-09 + Unreleased fresco + links compare/tag; tags anotados con prefijo v semver; disclaimers de facto FinRL/QuantSphere/cpz-quant); cambios docs-only sin OpenSpec change (precedente skip_specs feat-025/031): CHANGELOG [0.1.0] fechado, README Limitaciones conocidas (no-inversion hasta v0.2.0, survivorship bias, yfinance + disclaimer), charts/ baseline 8 PNG trackeado (decision usuario, 3.5M); ./init.sh FRESCO post-edicion exit 0 (230 passed, ruff OK, pyright 0, compileall OK); commit + tag anotado v0.1.0 local. Pendiente usuario (sin remoto en sesion): push rama, PR squash a develop, CI verde, re-tag sobre develop post-merge (SHA cambia con squash), git push origin v0.1.0, GitHub Release opcional."
     }
   ]
 }

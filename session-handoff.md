@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: v0.1.0 "estable y correcta" — DAG feat-028..041 (CP1+CP2 cerrados, Fase D 8/8 charts, cobertura 85%)
-- Current status: rama `chore/coverage-gate` (feat-040 poblado, 230 passed 85.37% branch, 14/14 specs) · develop @ 2a86aeb (feat-039)
-- Next: feat-041 release v0.1.0 (CHANGELOG [0.1.0] fechado, README Limitaciones, tag)
+- Goal: v0.1.0 "estable y correcta" — cerrar feat-041 release (único feature abierto; 040 mergeado a develop en #46)
+- Current status: rama `feat/release-v0-1-0` (feat-041 en curso) · baseline `./init.sh` verde en develop 2026-09-09 (230 passed, 85.37% branch)
+- Next: `./init.sh` fresco → commit → tag anotado `v0.1.0` local → PR a develop (push + CI + GitHub Release: acción usuario)
 
 ## Completed This Session
 
@@ -25,15 +25,16 @@
 
 ## Decisions Made
 
-- feat-040 D1: `fail_under = 85` branch (87 line) baseline 2026-09-05 85.37% deja 0.37% slack branch — inmediato gate; `branch = true` honesto; `pytest` solo dev (PEP 735 flat dev); gate cuádruple documentado single source `85` comentario.
-- feat-040 D2: `tool.coverage.run` + `addopts` + `Makefile` + `CI` espejean threshold; `.gitignore` `coverage.xml`.
-- `tasks.md` 9/9, `feature_list.json:040 done` con evidencia fresca 2026-09-05.
+- feat-041: sin change OpenSpec (mecánica de release docs-only, precedente skip_specs feat-025/031); Keep a Changelog 2.0 literal (mover `Unreleased` → `[0.1.0] - 2026-09-09` + `Unreleased` fresco + links compare/tag); tag anotado con prefijo `v` (estándar de facto semver); disclaimers con patrón FinRL/QuantSphere/cpz-quant (research-only, past-performance, profesional cualificado); `charts/` baseline trackeado por decisión explícita del usuario (precedente `scripts/charts/` versionados).
+- Orden: 041 antes que 042 (un-feature-a-la-vez; 042 nace sobre el tag).
+- feat-040 D1/D2 previos intactos (ver sección histórica abajo).
 
 ## Blockers / Risks
 
-- PR de feat-040 pendiente `chore/coverage-gate` → `develop` squash antes de feat-041.
-- Umbral 85 branch deja 0.37 slack — añadir código sin tests hará caer a 84 y gate rojo (intencionado ratchet).
-- `seaborn` `PendingDeprecationWarning` set_bad global (6 warnings, no bloqueante).
+- PR `feat/release-v0-1-0` → `develop` + push + CI verde + `git push origin v0.1.0` + GitHub Release opcional: acción del usuario (sin autorización de remoto en esta sesión).
+- Tras el squash-merge el SHA cambia: el tag debe quedar sobre el HEAD de develop post-merge (comando en evidencia de feat-041).
+- `seaborn` `PendingDeprecationWarning` set_bad global (6 warnings, no bloqueante, heredado).
+- Histórico feat-040 (cerrado #46): PR squash hecho; umbral 85 branch deja 0.37 slack — añadir código sin tests lo tumba (ratchet intencionado).
 
 ## Next Session Startup
 
