@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: **feat-050 done local en su rama** (bucle de validación con APPROVE final). Change `feat-report-assembler` valid (+1 ADDED a `technical-report`, 4 scenarios). MODO AUTÓNOMO: push→PR→CI→merge→archive sin esperar.
-- Current status: rama `feat/report-assembler-integration` · suite 358 passed, TOTAL 88.92% · core/portfolio/data/validation/viz diff cero · openspec validate 14/14 · feat-049 cerrado (PRs #71-72)
-- Next: cierre remoto feat-050 → feat-051 (CLI --walk-forward + docs de cierre del épico).
+- Goal: **feat-050 CERRADO end-to-end** (PR #74 feat + PR #75 archive, CI verde). Capability `technical-report` con 10 requirements. Cero changes activos. MODO AUTÓNOMO.
+- Current status: `develop` + archive feat-050 · suite 358 passed, TOTAL 88.92% · openspec validate 13/13
+- Next: feat-051 (CLI --walk-forward + docs de cierre del épico) ciclo completo autónomo.
 - Next: feat-046 (serie in-sample + Sortino/VaR/CVaR95 + maxDD/Calmar, re-align `minimum_overlap_ratio=1.0`) con la rutina completa: rama-primero → tracker in_progress en rama → propose → TDD → subagentes validadores pre-push → push → PR → merge → archive.
 
 ## Regla de flujo adoptada (2026-09-09, orden del usuario)
