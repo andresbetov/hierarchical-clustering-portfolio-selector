@@ -36,16 +36,24 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Ningún feature abierto (feat-042 pendiente de validación para PR)._
+_Ningún feature abierto: el épico "Reporte técnico JSON" está registrado como feat-043..051 (todos `not-started`); el siguiente ejecutable es **feat-043**._
 
 ### What's Done (post-hito)
 
-- [x] **feat-042** recalibrar thresholds (10/10 tasks): config 0.3/0.27, ADR-007 Aceptado, 233 passed, change valid; commit en rama sin push por veto
+- [x] **feat-042** recalibrar thresholds (10/10 tasks): config 0.3/0.27, ADR-007 Aceptado, 233 passed, change valid; PR #53 squash-mergeado a develop (d1b7da3), change archivado 2026-09-09-feat-threshold-recalibration + spec configuration-contract sincronizada
+- [x] **docs/diagnostics-catalog.md** (9 diagnósticos con file:line verificados) mergeado a develop (936dc5e)
+- [x] **Pre-gates del épico JSON** (2026-09-09): 0A merge catálogo + 0B archive de feat-042 (`openspec validate --all` 12/12)
 
-### What's Next (post-hito)
+### What's Next (épico Reporte técnico JSON — feat-043..051, registrado en feature_list.json)
 
-1. feat-042 candidata (recalibración thresholds 0.3/0.27, evidencia WF vía A: gap HRP−EQ +0.070 único positivo) — bloqueada hasta cerrar 041; requiere ADR-007
-2. Backlog v0.2.0 en feat-041 (CPCV/DSR/PBO, costos+turnover, HERC, tearsheet, VaR/CVaR, flip LedoitWolf, pyright strict, delistings por-ticker)
+Orquestación completa (2 oleadas + revisión hostil con cobertura real medida): el gate es el **total combinado** de coverage.py (85.37% = (1313+339)/(1509+426); branch-only real 79.58%; slack ≈ 7 unidades) — cada feature registra el TOTAL % en su evidencia.
+
+1. **feat-043** report_json core (sanitizador JSON-estricto, escritor single-file, fingerprint sha256, envelope `schema_version=1` ausente-tolerante; run_id derivado, uuid4 prohibido) — capability nueva `technical-report`
+2. **feat-044/045/046/048/049** (paralelizables tras 043, merge serial): rejections+distancias (firma con requested_tickers+closing_prices), HHI/DR/RC+raw-vs-constrained, serie in-sample+Sortino/VaR/CVaR+maxDD/Calmar (re-align con `minimum_overlap_ratio=1.0` — contraejemplo del guard 0.9 verificado), tree health, sección WF pura (consume to_dict, nunca lo modifica)
+3. **feat-050** ensamblador+integración (kwargs `report_path=None` default escribe nada; CLI pasa reports/technical-report.json; 3 fakes de test_cli.py:54,151,189 deben aceptar report_path; .gitignore reports/ + Makefile clean)
+4. **feat-051** flag `--walk-forward` opt-in + docs (incluye corrección terminológica del gate en CONTRIBUTING)
+
+Correcciones del reviewer incorporadas al tracker: feature 047 original absorbida por 046; arista 049→050 añadida; firma de 044 exige universo pedido; reason-slugs idénticos a selection.py:53-62; deuda preexistente documentada (cli.py:82, pipeline.py:252-255, reporting.py:498-507 — hits=0, fuera de scope).
 
 ## Process Deviations (transparencia)
 

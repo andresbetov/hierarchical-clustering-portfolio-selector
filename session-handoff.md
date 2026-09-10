@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: feat-042 implementado 10/10 (único feature, done local). Sin push por veto explícito hasta validación del diff.
-- Current status: `feat/threshold-recalibration` (commits: propose + implement) · `./init.sh` verde 233 passed · `develop @ a70c783` intacto
-- Next: usuario valida diff → push → PR a develop → CI → squash → (tag NO: thresholds van al próximo release)
+- Goal: épico "Reporte técnico JSON" registrado en feature_list.json como **feat-043..051** (8 features atómicas + 2 pre-gates ya ejecutados). Siguiente ejecutable: feat-043 (report_json core, deps: feat-042).
+- Current status: `develop @ <push>` (d1b7da3 feat-042 + 936dc5e catálogo + 1ca8184 archive) · `openspec validate --all` 12/12 · cero changes activos · `./init.sh` verde
+- Next: proponer change OpenSpec `feat-report-json-core` (capability técnica `technical-report`) y ejecutar feat-043 tarea por tarea; luego 044/045/046/048/049 (merge serial), 050, 051. Un feature a la vez; push/PR con validación del usuario.
 
 ## Completed This Session
 
