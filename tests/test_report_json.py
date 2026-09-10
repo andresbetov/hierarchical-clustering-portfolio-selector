@@ -776,6 +776,299 @@ class TestAllocationDiagnostics:
         assert hasattr(app, "allocation_diagnostics")
 
 
+class TestInsampleTailDrawdown:
+    """feat-046 contract: in-sample series, tail risk, drawdown (TDD red-first)."""
+
+    @staticmethod
+    def _tail(series, rf=0.045, trading_days=252):
+        from portfolio_engine.app.report_json import tail_risk_metrics
+
+        return tail_risk_metrics(series, rf, trading_days)
+
+    @staticmethod
+    def _dd(series, trading_days=252):
+        from portfolio_engine.app.report_json import drawdown_metrics
+
+        return drawdown_metrics(series, trading_days)
+
+    def test_prs_pin_log_diffs_dot_weights(self):
+        from portfolio_engine.app.report_json import portfolio_return_series
+
+        prices = {"A": [100.0, 101.0, 102.0], "B": [50.0, 49.0, 49.5]}
+        weights = {"A": 0.6, "B": 0.4}
+        series = portfolio_return_series(prices, weights)
+        assert isinstance(series, np.ndarray)
+        ra = np.log(np.array([101.0 / 100.0, 102.0 / 101.0]))
+        rb = np.log(np.array([49.0 / 50.0, 49.5 / 49.0]))
+        assert series == pytest.approx(0.6 * ra + 0.4 * rb, rel=1e-12)
+        assert len(series) == 2  # T prices -> T-1 returns
+
+    def test_prs_key_mismatch_named_error(self):
+        from portfolio_engine.app.report_json import portfolio_return_series
+
+        with pytest.raises(ValueError, match="without aligned prices"):
+            portfolio_return_series({"A": [1.0, 2.0]}, {"A": 0.5, "Z": 0.5})
+
+    def test_prs_price_without_weight_zero_embedded(self):
+        """Asymmetry (legacy M<N): price series without weight are embedded
+        at zero — only a WEIGHT without prices is uncomputable (raises)."""
+        from portfolio_engine.app.report_json import portfolio_return_series
+
+        series = portfolio_return_series(
+            {"A": [100.0, 101.0], "B": [50.0, 51.0]}, {"A": 1.0}
+        )
+        assert series == pytest.approx(np.log(np.array([101.0 / 100.0])), rel=1e-12)
+
+    def test_prs_legacy_zero_embed(self):
+        """M<N: subset weights zero-embedded over the aligned price universe."""
+        from portfolio_engine.app.report_json import portfolio_return_series
+
+        prices = {
+            "A": [100.0, 101.0, 102.0],
+            "B": [50.0, 49.0, 49.5],
+            "C": [10.0, 10.5, 10.2],
+        }
+        series = portfolio_return_series(prices, {"A": 0.7, "C": 0.3})
+        ra = np.log(np.array([101.0 / 100.0, 102.0 / 101.0]))
+        rc = np.log(np.array([10.5 / 10.0, 10.2 / 10.5]))
+        assert series == pytest.approx(0.7 * ra + 0.3 * rc, rel=1e-12)
+
+    def test_prs_realign_regression_ratio_one(self):
+        """Re-align contract: ratio=1.0 reproduces the intersection-dropna the
+        engine used (no survivor excluded); the series spans common-rows - 1."""
+        from portfolio_engine.app.report_json import portfolio_return_series
+        from portfolio_engine.core.metrics import align_prices_to_common_calendar
+
+        full_idx = [f"2020-01-0{d}" for d in range(1, 7)]
+        prices = {
+            # Gappy survivor: interior NaN is droppable, keeps 5 valid rows.
+            "KEEP": [100.0, 101.0, float("nan"), 103.0, 104.0, 105.0],
+            "FULL": [50.0, 51.0, 52.0, 53.0, 54.0, 55.0],
+        }
+        aligned = align_prices_to_common_calendar(
+            prices, {t: full_idx for t in prices}, 1.0
+        )
+        assert set(aligned) == {"KEEP", "FULL"}
+        n_common = len(next(iter(aligned.values())))
+        series = portfolio_return_series(aligned, {"KEEP": 0.5, "FULL": 0.5})
+        assert len(series) == n_common - 1
+
+    def test_prs_realign_point_nine_would_exclude_survivor(self):
+        """Counterexample leg: an 8/10-coverage survivor is EXCLUDED by the
+        0.9 guard but kept by 1.0 — callers must use 1.0 (feat-050 contract)."""
+        from portfolio_engine.app.report_json import portfolio_return_series
+        from portfolio_engine.core.metrics import align_prices_to_common_calendar
+
+        idx = [f"2020-02-{d:02d}" for d in range(1, 11)]
+        prices = {
+            "THIN": [100.0 + i for i in range(8)],
+            "FULL": [50.0 + i for i in range(10)],
+        }
+        dates = {"THIN": idx[:8], "FULL": idx}
+        pruned = align_prices_to_common_calendar(prices, dates, 0.9)
+        assert "THIN" not in pruned
+        kept = align_prices_to_common_calendar(prices, dates, 1.0)
+        assert set(kept) == {"THIN", "FULL"}
+        series = portfolio_return_series(kept, {"THIN": 0.5, "FULL": 0.5})
+        assert len(series) == len(next(iter(kept.values()))) - 1
+
+    def test_prs_empty_weights_named_error(self):
+        from portfolio_engine.app.report_json import portfolio_return_series
+
+        with pytest.raises(ValueError, match="empty weights"):
+            portfolio_return_series({"A": [1.0, 2.0]}, {})
+
+    def test_prs_ragged_lengths_named_error(self):
+        from portfolio_engine.app.report_json import portfolio_return_series
+
+        with pytest.raises(ValueError, match="ragged"):
+            portfolio_return_series(
+                {"A": [1.0, 2.0, 3.0], "B": [1.0, 2.0]}, {"A": 0.5, "B": 0.5}
+            )
+
+    def test_prs_no_sum_normalization(self):
+        """Leveraged weights are valid series input: no silent renormalization
+        (a w/=sum mutant would halve this series)."""
+        from portfolio_engine.app.report_json import portfolio_return_series
+
+        prices = {"A": [100.0, 101.0, 102.0], "B": [50.0, 49.0, 49.5]}
+        series = portfolio_return_series(prices, {"A": 1.2, "B": 0.8})
+        ra = np.log(np.array([101.0 / 100.0, 102.0 / 101.0]))
+        rb = np.log(np.array([49.0 / 50.0, 49.5 / 49.0]))
+        assert series == pytest.approx(1.2 * ra + 0.8 * rb, rel=1e-12)
+
+    def test_tail_constant_series_rf0045_uses_log_target(self):
+        """Analytic pin: constant series c BELOW the daily target,
+        rf=0.045 -> numerator uses ln(1.045) and daily target
+        ln(1.045)/252, rel 1e-12."""
+        c = 0.0001  # below td ~= 0.0001746: every day is a down day
+        n = 300
+        out = self._tail([c] * n)
+        t = math.log1p(0.045)
+        td = t / 252
+        dd = abs(min(0.0, c - td)) * math.sqrt(252)
+        assert out["downside_deviation_annual"] == pytest.approx(dd, rel=1e-12)
+        assert out["sortino_ratio"] == pytest.approx((c * 252 - t) / dd, rel=1e-12)
+        assert out["target_daily"] == pytest.approx(td, rel=1e-12)
+        assert out["n_obs"] == n
+        assert out["frequency"] == "daily"
+        assert out["sample"] == "in-sample"
+        assert out["costs"] == "no-costs"
+
+    def test_tail_len_lt2_none_with_reason(self):
+        for serie in ([], [0.01]):
+            out = self._tail(serie)
+            assert out["sortino_ratio"] is None
+            assert out["var_95_daily"] is None
+            assert out["cvar_95_daily"] is None
+            assert out["reason"]
+
+    def test_tail_nonfinite_all_none(self):
+        """Any non-finite observation -> whole section None+reason (no silent
+        trimming: dropping points would fabricate a cleaner sample)."""
+        out = self._tail([0.01, 0.02, float("nan"), 0.015] * 50)
+        assert out["sortino_ratio"] is None
+        assert out["var_95_daily"] is None
+        assert out["cvar_95_daily"] is None
+        assert out["reason"]
+        out = self._tail([0.01, float("inf"), 0.02] * 50)
+        assert out["sortino_ratio"] is None
+
+    def test_tail_no_downside_sortino_null_var_numeric(self):
+        out = self._tail([0.01] * 300)
+        assert out["sortino_ratio"] is None
+        assert out["downside_deviation_annual"] is None
+        assert out["reason"]
+        assert out["var_95_daily"] is not None
+        assert out["cvar_95_daily"] is not None
+        # Signed invariant (always): -mean(tail) >= -q05. The |VaR| form only
+        # holds when VaR >= 0 (genuine loss tail); here q05 > 0 by construction.
+        assert out["cvar_95_daily"] >= out["var_95_daily"] - 1e-15
+
+    def test_tail_mixed_downside_denominator_over_total_n(self):
+        """Kills the down-days-only denominator mutant: with 2 down of 4
+        days, total-N mean (0.000125) != down-only mean (0.00025)."""
+        serie = [0.01, -0.02, 0.03, -0.01]
+        out = self._tail(serie, rf=0.0)
+        dd = math.sqrt(0.000125) * math.sqrt(252)
+        assert out["downside_deviation_annual"] == pytest.approx(dd, rel=1e-12)
+        assert out["sortino_ratio"] == pytest.approx(0.0025 * 252 / dd, rel=1e-12)
+
+    def test_tail_point_mass_inclusive_tail(self):
+        """Kills the strict-< mutant: q05 lands exactly on the -0.02 mass;
+        inclusive <= keeps all 10 tail points (strict < would empty it)."""
+        serie = [0.05] * 10 + [-0.02] * 10
+        out = self._tail(serie, rf=0.0)
+        assert out["n_tail"] == 10
+        assert out["var_95_daily"] == pytest.approx(0.02, rel=1e-12)
+        assert out["cvar_95_daily"] == pytest.approx(0.02, rel=1e-12)
+
+    def test_tail_explicit_trading_days_pinned(self):
+        """Kills the hardcoded-252 mutant: T=126 re-derives target AND dev."""
+        c, n, t_days = 0.0001, 200, 126
+        out = self._tail([c] * n, trading_days=t_days)
+        target = math.log1p(0.045) / t_days
+        dd = abs(c - target) * math.sqrt(t_days)
+        assert out["downside_deviation_annual"] == pytest.approx(dd, rel=1e-12)
+        assert out["sortino_ratio"] == pytest.approx(
+            (c * t_days - math.log1p(0.045)) / dd, rel=1e-12
+        )
+
+    def test_tail_nonfinite_risk_free_all_none(self):
+        out = self._tail([0.01] * 100, rf=float("nan"))
+        assert out["sortino_ratio"] is None
+        assert out["var_95_daily"] is None
+        assert out["reason"] == "non-finite-risk-free-target"
+
+    def test_trading_days_non_positive_named_error(self):
+        from portfolio_engine.app.report_json import drawdown_metrics
+
+        with pytest.raises(ValueError, match="trading_days must be positive"):
+            self._tail([0.01] * 100, trading_days=0)
+        with pytest.raises(ValueError, match="trading_days must be positive"):
+            drawdown_metrics([0.01] * 100, trading_days=-1)
+
+    def test_drawdown_degenerate_none_with_reason(self):
+        out = self._dd([0.5])
+        assert out["max_drawdown"] is None
+        assert out["reason"] == "n_obs<2"
+        out = self._dd([0.01, float("nan"), 0.02] * 50)
+        assert out["max_drawdown"] is None
+        assert out["calmar_ratio"] is None
+        assert out["reason"] == "non-finite-observations"
+
+    def test_drawdown_overflow_null_without_warning(self):
+        """Pathological compounding (cumsum ~2000): exp overflows — null with
+        reason, never nan leakage nor RuntimeWarning."""
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            out = self._dd([10.0] * 200)
+        assert out["max_drawdown"] is None
+        assert out["calmar_ratio"] is None
+        assert out["reason"] == "wealth-overflow-non-finite"
+
+    def test_var_cvar_pins_linear_interpolation(self):
+        """VaR = -quantile(r, 0.05, method='linear'); CVaR = -mean(r | r<=q05)
+        inclusive tail; never sqrt-scaled."""
+        rng = np.random.default_rng(7)
+        serie = list(rng.normal(loc=0.0005, scale=0.01, size=300))
+        out = self._tail(serie)
+        arr = np.asarray(serie)
+        q05 = float(np.quantile(arr, 0.05, method="linear"))
+        assert out["var_95_daily"] == pytest.approx(-q05, rel=1e-12)
+        assert out["cvar_95_daily"] == pytest.approx(-float(arr[arr <= q05].mean()), rel=1e-12)
+        assert out["n_tail"] == int((arr <= q05).sum())
+        assert out["n_tail"] >= 1
+
+    def test_cvar_ge_var_seeded_random(self):
+        rng = np.random.default_rng(0)
+        serie = list(rng.normal(size=500))
+        out = self._tail(serie)
+        assert out["cvar_95_daily"] >= abs(out["var_95_daily"]) - 1e-15
+        # Daily horizon, never annualized with sqrt(252):
+        assert 0.0 < out["var_95_daily"] < 3.0
+
+    def test_drawdown_pin_and_calmar_mean_t(self):
+        serie = [0.01, 0.02, -0.05, 0.03, -0.01]
+        out = self._dd(serie)
+        arr = np.asarray(serie)
+        wealth = np.exp(np.cumsum(arr))
+        dd = wealth / np.maximum.accumulate(wealth) - 1.0
+        assert out["max_drawdown"] == pytest.approx(float(dd.min()), rel=1e-12)
+        assert out["max_drawdown"] <= 0.0
+        assert out["annualized_return"] == pytest.approx(float(arr.mean() * 252), rel=1e-12)
+        assert out["calmar_ratio"] == pytest.approx(
+            float(arr.mean() * 252) / abs(float(dd.min())), rel=1e-12
+        )
+
+    def test_drawdown_flat_none_never_inf(self):
+        out = self._dd([0.001] * 100)
+        assert out["max_drawdown"] == pytest.approx(0.0, abs=1e-15)
+        assert out["calmar_ratio"] is None
+        assert out["reason"]
+
+    def test_drawdown_negative_calmar_legal(self):
+        out = self._dd([-0.02] * 100)
+        assert out["max_drawdown"] < 0.0
+        assert out["calmar_ratio"] is not None
+        assert out["calmar_ratio"] < 0.0
+
+    def test_sections_survive_strict_json(self, tmp_path):
+        from portfolio_engine.app.report_json import dump_technical_report
+
+        tail = self._tail([0.001] * 100)
+        dd = self._dd([0.001] * 100)
+        target = tmp_path / "risk.json"
+        dump_technical_report({"tail": tail, "drawdown": dd}, target)
+        loaded = _strict_loads(target.read_text(encoding="utf-8"))
+        assert loaded["tail"]["sortino_ratio"] is None or isinstance(
+            loaded["tail"]["sortino_ratio"], float
+        )
+        assert loaded["drawdown"]["calmar_ratio"] is None
+
+
 class TestExportSurface:
     def test_compute_filter_rejections_exported(self):
         import portfolio_engine.app as app
