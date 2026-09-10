@@ -349,6 +349,281 @@ class TestFilterRejections:
         assert loaded["filtering"]["tickers"]["NANSHARPE"]["d_sharpe"] is None
 
 
+class TestAllocationDiagnostics:
+    """feat-045 contract: concentration, diversification and Dykstra telemetry."""
+
+    @staticmethod
+    def _pd_cov(spread=(0.04, 0.01)):
+        """Deterministic 2-block PD covariance via seeded rng."""
+        rng = np.random.default_rng(11)
+        n = 4
+        raw = rng.normal(scale=0.01, size=(n, n))
+        cov = raw @ raw.T + np.diag(spread[0] * np.ones(n) / n + spread[1] * np.ones(n) * 0.0)
+        return cov + np.eye(n) * 0.01
+
+    def _diag(self, weights, cov, cov_tickers, config=None, raw_weights=None):
+        from portfolio_engine.app.report_json import allocation_diagnostics
+        from portfolio_engine.core.config import PortfolioConfig
+
+        return allocation_diagnostics(
+            weights, cov, cov_tickers, config or PortfolioConfig(), raw_weights=raw_weights,
+        )
+
+    def test_equal_weights_four_assets_hhi(self):
+        cov = self._pd_cov()
+        report = self._diag({t: 0.25 for t in ("A", "B", "C", "D")}, cov, ["A", "B", "C", "D"])
+        assert report["method"] == "hrp"
+        assert report["hhi"] == pytest.approx(0.25)
+        assert report["n_effective"] == pytest.approx(4.0)
+        assert report["n_assets"] == 4
+
+    def test_single_asset_identity(self):
+        report = self._diag({"T": 1.0}, np.array([[0.04]]), ["T"])
+        assert report["hhi"] == pytest.approx(1.0)
+        assert report["n_effective"] == pytest.approx(1.0)
+        assert report["diversification_ratio"] == pytest.approx(1.0)
+        assert report["risk_contributions"] == {"T": pytest.approx(1.0)}
+        assert report["raw_vs_constrained"]["mandate_relaxed"] is True  # n=1 relaxes max
+        assert report["raw_vs_constrained"]["effective_bounds"]["max"] == pytest.approx(1.0)
+
+    def test_empty_universe_all_none(self):
+        report = self._diag({}, np.empty((0, 0)), [])
+        assert report["n_assets"] == 0
+        assert report["hhi"] is None
+        assert report["n_effective"] is None
+        assert report["diversification_ratio"] is None
+        assert report["risk_contributions"] is None
+        assert report["rc_spread"] is None
+        assert report["raw_vs_constrained"] is None
+
+    def test_weight_sum_violation_named_error(self):
+        from portfolio_engine.core.config import PortfolioConfig
+
+        with pytest.raises(ValueError, match="sum to 1"):
+            self._diag({"A": 0.6, "B": 0.6}, np.eye(2) * 0.04, ["A", "B"], PortfolioConfig())
+
+    def test_non_finite_weight_yields_nan_hhi_and_null_risk(self):
+        report = self._diag({"A": float("nan"), "B": 0.5}, np.eye(2) * 0.04, ["A", "B"])
+        assert math.isnan(report["hhi"])
+        assert report["diversification_ratio"] is None
+        assert report["risk_contributions"] is None
+
+    def test_covariance_slice_legacy_m_n_matches_direct(self):
+        rng = np.random.default_rng(5)
+        base = rng.normal(scale=0.01, size=(5, 5))
+        full = base @ base.T + np.eye(5) * 0.02
+        full_tickers = ["A", "B", "C", "D", "E"]
+        weights = {"B": 0.5, "E": 0.3, "A": 0.2}
+        report = self._diag(weights, full, full_tickers)
+        # Direct computation over the extracted 3x3 submatrix:
+        direct_cov = full[np.ix_([1, 4, 0], [1, 4, 0])]
+        direct_w = np.array([0.5, 0.3, 0.2])
+        direct_dr = (direct_w @ np.sqrt(np.diag(direct_cov))) / np.sqrt(direct_w @ direct_cov @ direct_w)
+        assert report["diversification_ratio"] == pytest.approx(direct_dr, rel=1e-12)
+        direct_rc = direct_w * (direct_cov @ direct_w) / (direct_w @ direct_cov @ direct_w)
+        assert list(report["risk_contributions"].values()) == pytest.approx(list(direct_rc), rel=1e-12)
+        assert sum(report["risk_contributions"].values()) == pytest.approx(1.0, abs=1e-9)
+        assert list(report["risk_contributions"]) == ["B", "E", "A"]
+
+    def test_order_invariance_permuted_weights(self):
+        cov = self._pd_cov()
+        tickers = ["A", "B", "C", "D"]
+        base = self._diag(dict(zip(tickers, [0.25] * 4)), cov, tickers)
+        permuted = self._diag(dict(zip(reversed(tickers), [0.25] * 4)), cov, tickers)
+        assert permuted["hhi"] == pytest.approx(base["hhi"])
+        assert permuted["diversification_ratio"] == pytest.approx(base["diversification_ratio"], rel=1e-12)
+        assert list(permuted["risk_contributions"]) == list(reversed(tickers))
+
+    def test_risk_contributions_sum_one_seeded(self):
+        rng = np.random.default_rng(9)
+        cov = rng.normal(scale=0.01, size=(4, 4)) @ rng.normal(scale=0.01, size=(4, 4)).T + np.eye(4) * 0.03
+        report = self._diag({t: 0.25 for t in ("A", "B", "C", "D")}, cov, ["A", "B", "C", "D"])
+        assert sum(report["risk_contributions"].values()) == pytest.approx(1.0, abs=1e-9)
+        spread = report["rc_spread"]
+        assert spread["std"] >= 0.0
+        assert spread["max_over_equal"] >= 1.0
+        assert spread["max_minus_min"] == pytest.approx(
+            max(report["risk_contributions"].values()) - min(report["risk_contributions"].values())
+        )
+
+    def test_raw_weights_provided_compute_l1_any_method(self):
+        from dataclasses import replace
+
+        from portfolio_engine.core.config import PortfolioConfig
+
+        cfg = replace(PortfolioConfig(), weight_allocation_method="equal")
+        report = self._diag(
+            {"A": 0.4, "B": 0.6}, np.eye(2) * 0.04, ["A", "B"], cfg,
+            raw_weights=np.array([0.5, 0.5]),
+        )
+        rvc = report["raw_vs_constrained"]
+        assert rvc["l1_raw_to_constrained"] == pytest.approx(0.2)
+        assert rvc["max_weight_drop"] == pytest.approx(0.1)
+        assert rvc["n_weights_changed"] == 2
+        assert rvc["mandate_relaxed"] is True  # n=2 always relaxes (2*0.30 < 1)
+        assert rvc["effective_bounds"]["max"] == pytest.approx(0.5)
+
+    def test_hrp_recompute_bit_identical_when_bounds_dont_bite(self):
+        """Equal diagonal variance -> HRP bisection yields exactly 1/N; the
+        recompute must match the engine bit-for-bit so l1 == 0 and the
+        constrained vector equals the raw one (Dykstra no-op at n=4)."""
+        cov = np.diag([0.04, 0.04, 0.04, 0.04])
+        report = self._diag({t: 0.25 for t in ("A", "B", "C", "D")}, cov, ["A", "B", "C", "D"])
+        rvc = report["raw_vs_constrained"]
+        assert rvc["l1_raw_to_constrained"] == pytest.approx(0.0, abs=1e-12)
+        assert rvc["n_weights_changed"] == 0
+        assert rvc["mandate_relaxed"] is False
+
+    def test_hrp_recompute_exposes_dystra_drift_when_cap_bites(self):
+        """diag(0.01,0.04): raw HRP = [0.8,0.2] analytically; n=2 relaxes max to
+        0.5, Dykstra caps A -> constrained [0.5,0.5]; the recomputed raw must
+        equal the analytic vector, exposing the flattening telemetry."""
+        cov = np.diag([0.01, 0.04])
+        report = self._diag({"A": 0.5, "B": 0.5}, cov, ["A", "B"])
+        rvc = report["raw_vs_constrained"]
+        assert rvc["l1_raw_to_constrained"] == pytest.approx(0.6)
+        assert rvc["max_weight_drop"] == pytest.approx(0.3)
+        assert rvc["n_weights_changed"] == 2
+        assert rvc["mandate_relaxed"] is True
+        assert rvc["effective_bounds"]["max"] == pytest.approx(0.5)
+
+    def test_degenerate_covariance_null_risk_but_hhi_stands(self):
+        report = self._diag({t: 0.25 for t in ("A", "B", "C", "D")}, np.zeros((4, 4)), ["A", "B", "C", "D"])
+        assert report["hhi"] == pytest.approx(0.25)
+        assert report["diversification_ratio"] is None
+        assert report["risk_contributions"] is None
+        assert report["rc_spread"] is None
+        assert report["raw_vs_constrained"] is None  # engine rejects zeros; no recompute
+
+    def test_engine_round_trip_bit_identity_patched_panel(self, patched_batch):
+        """MAJOR-2 pin (a): drive the REAL engine route (ingesta -> filtros ->
+        alineacion -> covarianza -> calculate_optimal_portfolio_weights_hrp)
+        over the conftest synthetic panel, then feed its weights + covariance
+        into the diagnostics recompute. Same deterministic inputs -> l1 == 0
+        when Dykstra does not bite (4 similar-vol assets -> ~1/N weights)."""
+        from portfolio_engine.core.config import PortfolioConfig
+        from portfolio_engine.core.metrics import (
+            align_prices_to_common_calendar,
+            construct_returns_matrix,
+            estimate_covariance,
+        )
+        from portfolio_engine.data.data_fetch import download_and_calculate_metrics
+        from portfolio_engine.portfolio.allocation import calculate_optimal_portfolio_weights_hrp
+        from portfolio_engine.portfolio.selection import apply_asset_filters
+
+        cfg = PortfolioConfig()
+        tickers = ["E1", "E2", "E3", "E4"]
+        patched_batch({t: {} for t in tickers}, rows=300)
+        metrics, prices, dates = download_and_calculate_metrics(
+            tickers, cfg.risk_free_rate, cfg.lookback_years, cfg.trading_days_per_year
+        )
+        filtered_metrics, filtered_prices = apply_asset_filters(
+            metrics, prices, cfg.minimum_sharpe_threshold, cfg.maximum_volatility_threshold
+        )
+        aligned = align_prices_to_common_calendar(filtered_prices, dates, cfg.minimum_overlap_ratio)
+        returns_matrix = construct_returns_matrix(aligned)
+        cov = estimate_covariance(returns_matrix, cfg.covariance_estimator)
+        engine_weights = calculate_optimal_portfolio_weights_hrp(filtered_metrics, cov, cfg)
+
+        # 3 survivors -> mandate relaxed to 1/3 (Dykstra bit); the diagnostics
+        # recompute must be BIT-IDENTICAL to the engine's own raw vector, so its
+        # reported l1 equals the independently computed Dykstra distance:
+        assert len(engine_weights) == 3
+        report = self._diag(engine_weights, cov, list(filtered_metrics.keys()), cfg)
+        rvc = report["raw_vs_constrained"]
+        assert rvc is not None
+        assert rvc["mandate_relaxed"] is True
+        assert rvc["effective_bounds"]["max"] == pytest.approx(1 / 3)
+        from portfolio_engine.portfolio.hrp import calculate_hrp_weights
+
+        independent_raw = calculate_hrp_weights(cov, linkage_method=cfg.linkage_method)
+        engine_order = list(filtered_metrics.keys())
+        independent_l1 = float(np.abs(independent_raw - np.array([engine_weights[t] for t in engine_order])).sum())
+        assert rvc["l1_raw_to_constrained"] == pytest.approx(independent_l1, abs=1e-15)
+        assert rvc["l1_raw_to_constrained"] > 0.0  # the cap bit
+        assert rvc["max_weight_drop"] == pytest.approx(
+            float(max(independent_raw - np.array([engine_weights[t] for t in engine_order]))), abs=1e-15
+        )
+
+    def test_three_assets_mandate_relaxed_pin(self):
+        """MAJOR-2 pin (b): n=3 with max=0.30 is mathematically infeasible
+        (3*0.30 < 1) -> effective max becomes 1/3 with mandate_relaxed True."""
+        report = self._diag(
+            {t: 1 / 3 for t in ("A", "B", "C")}, np.eye(3) * 0.04, ["A", "B", "C"]
+        )
+        rvc = report["raw_vs_constrained"]
+        assert rvc["mandate_relaxed"] is True
+        assert rvc["effective_bounds"]["max"] == pytest.approx(1 / 3)
+        assert rvc["effective_bounds"]["min"] == pytest.approx(0.05)
+
+    def test_negative_weights_named_error(self):
+        with pytest.raises(ValueError, match="Long-only mandate"):
+            self._diag({"A": 2.0, "B": -1.0}, np.eye(2) * 0.04, ["A", "B"])
+
+    def test_raw_weights_shape_mismatch_named_error(self):
+        with pytest.raises(ValueError, match="raw_weights shape"):
+            self._diag(
+                {"A": 0.5, "B": 0.5}, np.eye(2) * 0.04, ["A", "B"],
+                raw_weights=np.array([0.4, 0.4, 0.2]),
+            )
+
+    def test_nan_raw_weights_null_telemetry(self):
+        report = self._diag(
+            {"A": 0.5, "B": 0.5}, np.eye(2) * 0.04, ["A", "B"],
+            raw_weights=np.array([float("nan"), 0.5]),
+        )
+        assert report["raw_vs_constrained"] is None
+
+    def test_sub_threshold_diff_not_counted_as_changed(self):
+        """MINOR-3: diffs below 1e-12 are rounding noise, never 'changed' —
+        kills the 1e-12 -> 0.0 threshold mutant."""
+        report = self._diag(
+            {t: 0.25 for t in ("A", "B", "C", "D")}, np.diag([0.04] * 4), ["A", "B", "C", "D"],
+            raw_weights=np.array([0.25 + 1e-13, 0.25 - 1e-13, 0.25, 0.25]),
+        )
+        rvc = report["raw_vs_constrained"]
+        assert rvc["n_weights_changed"] == 0
+        assert rvc["l1_raw_to_constrained"] > 0.0
+
+    def test_max_over_equal_pinned_exactly(self):
+        report = self._diag({t: 0.25 for t in ("A", "B", "C", "D")}, self._pd_cov(), ["A", "B", "C", "D"])
+        rc = report["risk_contributions"]
+        assert report["rc_spread"]["max_over_equal"] == pytest.approx(max(rc.values()) * 4)
+
+    def test_covariance_ticker_count_mismatch_named(self):
+        with pytest.raises(ValueError, match="must match"):
+            self._diag({"A": 0.5, "B": 0.5}, np.eye(2) * 0.04, ["A", "B", "C"])
+
+    def test_non_hrp_method_raw_vs_constrained_null(self):
+        from dataclasses import replace
+
+        from portfolio_engine.core.config import PortfolioConfig
+
+        cfg = replace(PortfolioConfig(), weight_allocation_method="risk_parity")
+        report = self._diag({"A": 0.5, "B": 0.5}, np.eye(2) * 0.04, ["A", "B"], cfg)
+        assert report["method"] == "risk_parity"
+        assert report["raw_vs_constrained"] is None
+
+    def test_missing_weight_ticker_raises_named(self):
+        with pytest.raises(ValueError, match="not in covariance"):
+            self._diag({"Z": 1.0}, np.eye(1) * 0.04, ["A"])
+
+    def test_section_survives_strict_json_serialization(self, tmp_path):
+        from portfolio_engine.app.report_json import dump_technical_report
+
+        target = tmp_path / "r.json"
+        report = self._diag({"A": float("nan"), "B": 1.0}, np.eye(2) * 0.04, ["A", "B"])
+        dump_technical_report({"allocation": report}, target)
+        loaded = _strict_loads(target.read_text(encoding="utf-8"))
+        assert loaded["allocation"]["hhi"] is None
+        assert loaded["allocation"]["diversification_ratio"] is None
+
+    def test_export_surface_allocation_diagnostics(self):
+        import portfolio_engine.app as app
+
+        assert hasattr(app, "allocation_diagnostics")
+
+
 class TestExportSurface:
     def test_compute_filter_rejections_exported(self):
         import portfolio_engine.app as app

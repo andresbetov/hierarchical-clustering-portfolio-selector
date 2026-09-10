@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: **feat-044 CERRADO end-to-end** con la regla de validación pre-push aplicada (PR #57 feat con 3 MAJOR corregidos pre-push + PR #58 archive). Capability `technical-report` con 5 requirements.
-- Current status: `develop @ 3cf3441` · suite 262 passed, TOTAL 86.21% · `openspec validate --all` 14/14 · git status 0 · cero changes activos
-- Next: feat-045 (HHI/DR/RC + raw-vs-constrained) con la rutina completa: rama-primero → tracker in_progress en rama → propose → TDD → **subagentes validadores pre-push** → push → PR → merge → archive.
+- Goal: **feat-045 done local en su rama** con validación pre-push (2 subagentes: MAJOR-1/2 corregidos + 7 MINOR). Rama `feat/allocation-diagnostics` sin push.
+- Current status: change `feat-allocation-diagnostics` valid (+1 ADDED a `technical-report`, 6 requirements total) · suite 286 passed, TOTAL 86.91% · motor diff 0 · feat-043/044 cerrados (PRs #55-59)
+- Next: push → PR → CI → squash → archive vía rama chore → feat-046 (serie in-sample + Sortino/VaR/CVaR + maxDD/Calmar, re-align ratio 1.0).
 
 ## Regla de flujo adoptada (2026-09-09, orden del usuario)
 
