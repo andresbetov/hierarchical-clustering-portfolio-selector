@@ -64,6 +64,7 @@ Correcciones del reviewer incorporadas al tracker: feature 047 original absorbid
 
 - pyright baja a `basic`: strict es progresión futura (registrar como feature dedicado si se quiere formalizar).
 - aviso cosmético Node20→24 en GitHub Actions (bump futuro).
+- Terminología del gate corregida (PR #54): el umbral 85 compara contra el TOTAL combinado de coverage.py, no "85% branch" (historial feat-040 usa la etiqueta antigua — registro histórico, no corregido retroactivamente).
 
 ## Evidence of Completion
 
