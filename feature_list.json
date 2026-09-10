@@ -3,7 +3,7 @@
     {
       "id": "feat-001",
       "name": "Analisis de orden de resolucion del roadmap",
-      "description": "Define el orden en que se resolveran los 28 hallazgos de docs/auditoria-tecnica.md (§3): C1-C4, A1-A7, M1-M10, B1-B7. Construye el DAG de dependencias tecnicas verificadas con evidencia file:line, determina la causalidad causa-efecto entre hallazgos, ejecuta el ordenamiento topologico del grafo y desempata casos sin dependencia mutua con el criterio de trascendencia (validez de resultados > reproducibilidad > mantenibilidad > higiene). Entrega docs/orden-de-resolucion.md (grafo mermaid + secuencia justificada) y registra la secuencia aprobada como feat-002..feat-027 con dependencies explicitas. Metodo completo, deliverables y acceptance criteria: openspec/changes/feat-001-analisis-orden-resolucion/",
+      "description": "Define el orden en que se resolveran los 28 hallazgos de docs/auditoria-tecnica.md (§3): C1-C4, A1-A7, M1-M10, B1-B7. Construye el DAG de dependencias tecnicas verificadas con evidencia file:line, determina la causalidad causa-efecto entre hallazgos, ejecuta el ordenamiento topologico del grafo y desempata casos sin dependencia mutua con el criterio de trascendencia (validez de resultados > reproducibilidad > mantenibilidad > higiene). Entrega docs/orden-de-resolucion.md (grafo mermaid + secuencia justificada) y registra la secuencia aprobada como feat-002..feat-027 con dependencies explicitas. Metodo completo, deliverables y acceptance criteria: historia en git (change podado en #47; ver `docs/orden-de-resolucion.md`).",
       "dependencies": [],
       "status": "done",
       "evidence": "./init.sh exit 0 (2026-08-26, sesion feat-001): compileall OK; uv/pytest saltados por entorno sin uv (limitacion registrada en progress.md). OpenSpec validate: valid. Tracker machine-check: cobertura 28/28 hallazgos exacta, deps solo hacia anteriores, schema canonico 27 features."
@@ -151,7 +151,7 @@
     {
       "id": "feat-016",
       "name": "Correlation distance ADR",
-      "description": "Resuelve M2: ADR signed-vs-abs para distancia de clustering (metrics.py:141-152 usa 1-abs(corr)); expone distance_metric en config frozen; decision PREVIA obligatoria porque linkage la consume. Contexto y decisiones previas obligatorias antes de proponer: docs/decision-log-feat001.md + archive openspec feat-001.",
+      "description": "Resuelve M2: ADR signed-vs-abs para distancia de clustering (metrics.py:141-152 usa 1-abs(corr)); expone distance_metric en config frozen; decision PREVIA obligatoria porque linkage la consume. Contexto histórico en git (podado en #47: docs/decision-log-feat001.md + archive feat-001).",
       "dependencies": [
         "feat-013"
       ],
@@ -171,7 +171,7 @@
     {
       "id": "feat-018",
       "name": "Real HRP linkage recbipart",
-      "description": "Resuelve C1 (CRITICO keystone): scipy.cluster.hierarchy.linkage + quasi-diagonalization + recursive bisection (De Prado 2016/Palomar 12.3), cov_estimator parametrico. Va en posicion 19 NO en la 1: consume A3+C3+M1+M2+C2. Contexto y decisiones previas obligatorias antes de proponer: docs/decision-log-feat001.md + archive openspec feat-001.",
+      "description": "Resuelve C1 (CRITICO keystone): scipy.cluster.hierarchy.linkage + quasi-diagonalization + recursive bisection (De Prado 2016/Palomar 12.3), cov_estimator parametrico. Va en posicion 19 NO en la 1: consume A3+C3+M1+M2+C2. Contexto histórico en git (podado en #47: docs/decision-log-feat001.md + archive feat-001).",
       "dependencies": [
         "feat-008",
         "feat-009",
@@ -180,7 +180,7 @@
         "feat-016"
       ],
       "status": "done",
-      "evidence": "2026-08-26 sesion feat-018: HRP canónico implementado (linkage single sobre distancia firmada ADR002, quasi-diag recursivo, bisección inverse-variance SIN inversion de covarianza); default flip a hrp (ADR 003); ruta end-to-end pipeline sin pruning; analítico diag(0.01,0.04)->[0.80,0.20]; invarianza-permutación multiset; bloques contiguos quasi-diag; suite 105->116 passed — PR #22 mergeada con CI verde matriz."
+      "evidence": "2026-08-26 sesion feat-018: HRP canónico implementado (linkage single sobre distancia firmada ADR 002, quasi-diag recursivo, bisección inverse-variance SIN inversion de covarianza); default flip a hrp (ADR 003); ruta end-to-end pipeline sin pruning; analítico diag(0.01,0.04)->[0.80,0.20]; invarianza-permutación multiset; bloques contiguos quasi-diag; suite 105->116 passed — PR #22 mergeada con CI verde matriz."
     },
     {
       "id": "feat-019",
@@ -205,7 +205,7 @@
     {
       "id": "feat-021",
       "name": "Deep characterization suite",
-      "description": "Resuelve M8: tests de caracterizacion del estado FINAL (contratos C2/C4/C1 ya estables) con hypothesis+pytest-mock y fixtures de jerarquia HRP; backend headless requerido (feat-005). Red de seguridad para M6/M3. Contexto y decisiones previas obligatorias antes de proponer: docs/decision-log-feat001.md + archive openspec feat-001.",
+      "description": "Resuelve M8: tests de caracterizacion del estado FINAL (contratos C2/C4/C1 ya estables) con hypothesis+pytest-mock y fixtures de jerarquia HRP; backend headless requerido (feat-005). Red de seguridad para M6/M3. Contexto histórico en git (podado en #47: docs/decision-log-feat001.md + archive feat-001).",
       "dependencies": [
         "feat-005",
         "feat-012",
@@ -228,7 +228,7 @@
     {
       "id": "feat-023",
       "name": "Layered architecture strangler",
-      "description": "Resuelve M3: extraer DataProvider protocol + separar domain/app/viz bajo patron Strangler Fig, protegido por suite de caracterizacion (fan-in alto de pipeline.py/__init__.py exige red previa). Contexto y decisiones previas obligatorias antes de proponer: docs/decision-log-feat001.md + archive openspec feat-001.",
+      "description": "Resuelve M3: extraer DataProvider protocol + separar domain/app/viz bajo patron Strangler Fig, protegido por suite de caracterizacion (fan-in alto de pipeline.py/__init__.py exige red previa). Contexto histórico en git (podado en #47: docs/decision-log-feat001.md + archive feat-001).",
       "dependencies": [
         "feat-021"
       ],
@@ -527,8 +527,8 @@
       "name": "README showcase EN+ES con evidencia versionada",
       "description": "Reescritura del README orientada a reclutador tecnico (rama docs/readme-showcase): README.md EN recruiter-first (TL;DR, quickstart con salida real, tabla CLI, diagrama Mermaid, resultados IS/OOS con snapshot docs/results/technical-report-2026-09-10.json, seccion harness de agentes, limitaciones, autor) + README.es.md espejo; fix bug dimensional grafica 7 (_portfolio_summary_metrics anualiza wTSw con trading_days_per_year; Sharpe 14.84->0.94) + 2 regresiones en test_reporting_sharpe.py + sync spec numeric-correctness + CHANGELOG Fixed + banner historico docs/diagnostics-catalog.md; charts/ regenerados (8) con defaults vigentes + scripts/charts/ regenerados a 8; progress.md/session-handoff.md al dia. Verificacion: ./init.sh + 3 rondas de subagentes (hechos/codigo, best practices externas, honestidad adversarial, render/paridad) con fixes en bucle hasta contenido sin cifras falsas.",
       "dependencies": [],
-      "status": "in-progress",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-09-10 sesion feat-052 (rama docs/readme-showcase): README.md EN + README.es.md; snapshot docs/results/technical-report-2026-09-10.json; fix grafica 7 (cov diaria anualizada, Sharpe 14.84->0.94) + 2 regresiones + spec numeric-correctness + CHANGELOG; charts/ y scripts/charts/ regenerados (8); 3 rondas subagentes sin cifras falsas. ./init.sh FRESCO exit 0: 367 passed, TOTAL 89.18%; openspec validate --all 13/13. Cierre remoto: PR #80 squash-mergeado a develop (74b753b) con CI verde matriz 3.11/3.12/3.13."
     },
     {
       "id": "feat-053",
@@ -537,8 +537,8 @@
       "dependencies": [
         "feat-052"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "in-progress",
+      "evidence": "2026-09-10 sesion feat-053 (rama docs/spec-sync): rama-primero + in-progress ANTES de implementar; OpenSpec change docs-spec-sync (proposal+design+tasks+10 deltas: 8 MODIFIED + 2 ADDED) validado; Fase 1 docs de proceso aplicada (CONTRIBUTING/AGENTS/pyproject/Makefile/pre-commit/ADR index+addendum/catalogo 6 refs+mapeo/feature_list refs/README wording + init.sh uv sync --frozen). ./init.sh FRESCO exit 0: 367 passed, TOTAL 89.18%; openspec validate docs-spec-sync + --all verdes; greps anti-regresion limpios."
     }
   ]
 }

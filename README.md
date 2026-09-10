@@ -172,7 +172,7 @@ All eight charts are regenerated on every run into `charts/`; the copies in this
 ## Engineering & verification
 
 - **367 offline tests** (unit, property-based with Hypothesis, integration, end-to-end). CI runs fully offline: the data provider is injected and the network seam is monkeypatched.
-- **One-command local verification** — `./init.sh`: dependency sync from the committed lockfile (CI uses `uv sync --frozen`), pytest with an 85% combined coverage floor, `ruff`, `pyright`, and a compile check.
+- **One-command local verification** — `./init.sh`: dependency sync with `uv sync --frozen` (same as CI), pytest with an 85% combined coverage floor, `ruff`, `pyright`, and a compile check.
 - **CI matrix** on Python 3.11 / 3.12 / 3.13 using `uv sync --frozen` (lockfile committed), with coverage artifacts per version.
 - **Determinism**: seeded fixtures independent of `PYTHONHASHSEED`, no wall-clock in the report fingerprint, and pinned numeric conventions.
 - **Anti-leakage tests**: mutating the out-of-sample window does not change the frozen weights, and the first out-of-sample day is priced from the last close before the test window (the embargo row).

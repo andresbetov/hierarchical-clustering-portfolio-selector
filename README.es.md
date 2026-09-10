@@ -172,7 +172,7 @@ Las ocho gráficas se regeneran en cada corrida dentro de `charts/`; las copias 
 ## Ingeniería y verificación
 
 - **367 tests offline** (unitarios, propiedades con Hypothesis, integración y end-to-end). CI corre completamente sin red: el provider se inyecta y el seam de red está monkeypatcheado.
-- **Verificación local en un comando** — `./init.sh`: sync de dependencias desde el lockfile versionado (CI usa `uv sync --frozen`), pytest con umbral de cobertura combinada del 85%, `ruff`, `pyright` y chequeo de compilación.
+- **Verificación local en un comando** — `./init.sh`: sync de dependencias con `uv sync --frozen` (igual que CI), pytest con umbral de cobertura combinada del 85%, `ruff`, `pyright` y chequeo de compilación.
 - **Matriz CI** en Python 3.11 / 3.12 / 3.13 con `uv sync --frozen` (lockfile versionado) y artefactos de cobertura por versión.
 - **Determinismo**: fixtures con semillas independientes de `PYTHONHASHSEED`, fingerprint de reporte sin reloj de pared y convenciones numéricas fijadas.
 - **Tests anti-fuga**: mutar la ventana out-of-sample no cambia los pesos congelados y el primer día OOS se valora con el último cierre previo a la ventana de test (la fila del embargo).

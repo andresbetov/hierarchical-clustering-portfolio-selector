@@ -5,7 +5,7 @@ echo "=== Harness Initialization ==="
 
 if command -v uv >/dev/null 2>&1; then
   echo "=== Syncing dependencies with uv ==="
-  uv sync
+  uv sync --frozen
 else
   echo "=== uv not found — skipping uv sync (install uv to enable full sync) ==="
 fi

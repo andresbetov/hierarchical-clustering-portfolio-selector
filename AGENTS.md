@@ -27,7 +27,7 @@ Antes de escribir código:
 
 - `feature_list.json` — tracker de features (source of truth de estado)
 - `progress.md` — log de continuidad entre sesiones
-- `init.sh` — entrypoint único de verificación (tests + compile check)
+- `init.sh` — entrypoint único de verificación (sync + tests + lint + types + compile check)
 - `session-handoff.md` — handoff para sesiones largas (opcional)
 - `CONTRIBUTING.md` — workflow Git y Conventional Commits
 - `openspec/` — specs y changes cuando el feature requiere diseño previo
@@ -37,7 +37,7 @@ Antes de escribir código:
 Un feature está done solo cuando todo esto es cierto:
 
 - [ ] Comportamiento objetivo implementado y acotado al scope del feature
-- [ ] Verificación ejecutada **en esta sesión** y en verde: `./init.sh` (lint + types + pytest + compileall) — output registrado en `feature_list.json:evidence` o `progress.md`
+- [ ] Verificación ejecutada **en esta sesión** y en verde: `./init.sh` (sync + pytest + lint + types + compileall) — output registrado en `feature_list.json:evidence` o `progress.md`
 - [ ] `feature_list.json` actualizado a `done` con evidencia y sin dependencias pendientes
 - [ ] `progress.md` y `session-handoff.md` al día
 - [ ] Repo reiniciable: `git status` limpio salvo artefactos intencionales y `./init.sh` pasa de nuevo
@@ -61,7 +61,7 @@ Antes de cerrar:
 
 Checks que ejecuta `init.sh` (en este orden, fail-fast):
 
-- `uv sync` — sincroniza deps desde lock versionado
+- `uv sync --frozen` — sincroniza deps desde el lock versionado (falla si el lock está desactualizado)
 - `uv run python -m pytest || [ $? -eq 5 ]` — suite offline (exit 5 = sin tests, no es fallo)
 - `uv run ruff check .` — lint estático
 - `uv run pyright` — type-check básico
