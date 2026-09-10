@@ -483,8 +483,8 @@
       "dependencies": [
         "feat-043"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-09-10 sesion feat-049 (rama feat/walkforward-json-section, TODO en la rama): rama-primero + in-progress ANTES; 2 subagentes pre-analisis (entendimiento+mapeo con rulings + externo L1/GIPS/H&F-7/Perold); OpenSpec change feat-walkforward-json-section valid (proposal +1 ADDED 7 scenarios + design 8 decisiones + tasks); TDD rojo 11 ImportError -> verde 13 tests (1 integracion evaluate real); implementado append-only (walk_forward_section + helpers: agregados verbatim, filas, deriva con broken_pairs + label; walk_forward.py diff cero); bucle: code-CONDITIONAL (mutante median->mean MAJOR + deepcopy + reason-pins) + process-CONDITIONAL (design D6 + inf-Sharpe) -> 6 fixes -> final APPROVE; ./init.sh FRESCO exit 0: 348 passed (335+13), TOTAL 88.19%; openspec validate --all 14/14."
     },
     {
       "id": "feat-050",

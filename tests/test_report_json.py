@@ -1228,6 +1228,238 @@ class TestTreeDiagnostics:
         assert hasattr(app, "tree_diagnostics")
 
 
+class TestWalkForwardSection:
+    """feat-049 contract: walk-forward section with per-fold detail + drift."""
+
+    @staticmethod
+    def _fold(index, weights, tickers=("A", "B"), sharpe=0.5, ret=0.1, vol=0.2,
+              relaxed=False, benchmarks=None):
+        from portfolio_engine.validation.walk_forward import WalkForwardFold
+
+        return WalkForwardFold(
+            index=index,
+            train_positions=(index * 10, index * 10 + 30),
+            test_positions=(index * 10 + 35, index * 10 + 45),
+            tickers=list(tickers),
+            weights=dict(weights),
+            oos_return=ret,
+            oos_volatility=vol,
+            oos_sharpe=sharpe,
+            mandate_relaxed=relaxed,
+            benchmarks=benchmarks if benchmarks is not None else {
+                "equal": {"weights": {"A": 0.5, "B": 0.5}, "return": 0.09,
+                          "volatility": 0.19, "sharpe": 0.45},
+                "ivp": {"weights": {"A": 0.4, "B": 0.6}, "return": 0.095,
+                        "volatility": 0.195, "sharpe": 0.46},
+            },
+        )
+
+    @staticmethod
+    def _invalid_fold(index):
+        from portfolio_engine.validation.walk_forward import WalkForwardFold
+
+        return WalkForwardFold(
+            index=index,
+            train_positions=(index * 10, index * 10 + 30),
+            test_positions=(index * 10 + 35, index * 10 + 45),
+            tickers=["A", "B"],
+            weights={},
+            oos_return=None,
+            oos_volatility=None,
+            oos_sharpe=None,
+            mandate_relaxed=False,
+            benchmarks={},
+        )
+
+    @staticmethod
+    def _section(report):
+        from portfolio_engine.app.report_json import walk_forward_section
+
+        return walk_forward_section(report)
+
+    def test_aggregates_identity_with_to_dict(self):
+        from portfolio_engine.validation.walk_forward import WalkForwardReport
+
+        report = WalkForwardReport(folds=[
+            self._fold(0, {"A": 0.6, "B": 0.4}),
+            self._invalid_fold(1),
+            self._fold(2, {"A": 0.5, "B": 0.5}, relaxed=True),
+        ])
+        section = self._section(report)
+        assert section["aggregates"] == report.to_dict()
+        assert section["aggregates"]["n_folds"] == 3
+        assert section["aggregates"]["valid_folds"] == 2
+        assert section["aggregates"]["relaxed_folds"] == 1
+
+    def test_fold_detail_rows_verbatim(self):
+        from portfolio_engine.validation.walk_forward import WalkForwardReport
+
+        report = WalkForwardReport(folds=[self._fold(0, {"A": 0.6, "B": 0.4})])
+        (row,) = self._section(report)["folds"]
+        assert row["index"] == 0
+        assert row["train_positions"] == [0, 30]  # tuples -> lists
+        assert row["test_positions"] == [35, 45]
+        assert row["tickers"] == ["A", "B"]
+        assert row["weights"] == {"A": 0.6, "B": 0.4}
+        assert row["oos_sharpe"] == 0.5
+        assert row["mandate_relaxed"] is False
+        assert row["benchmarks"]["equal"]["sharpe"] == 0.45
+        bad = self._section(WalkForwardReport(folds=[self._invalid_fold(0)]))["folds"][0]
+        assert bad["weights"] == {}
+        assert bad["oos_sharpe"] is None
+        assert bad["benchmarks"] == {}
+
+    def test_drift_zero_identical_weights(self):
+        from portfolio_engine.validation.walk_forward import WalkForwardReport
+
+        report = WalkForwardReport(folds=[
+            self._fold(0, {"A": 0.6, "B": 0.4}),
+            self._fold(1, {"A": 0.6, "B": 0.4}),
+        ])
+        drift = self._section(report)["drift"]
+        assert drift["pairs_computed"] == 1
+        assert drift["pairs_possible"] == 1
+        assert drift["median_l1"] == pytest.approx(0.0)
+        assert drift["p90_l1"] == pytest.approx(0.0)
+        assert drift["label"] == "drift-not-turnover"
+
+    def test_drift_ten_points_is_zero_point_two(self):
+        """10 points A->B: exits 0.10, enters 0.10 -> L1 == 0.20 exact."""
+        from portfolio_engine.validation.walk_forward import WalkForwardReport
+
+        report = WalkForwardReport(folds=[
+            self._fold(0, {"A": 0.6, "B": 0.4}),
+            self._fold(1, {"A": 0.5, "B": 0.5}),
+        ])
+        drift = self._section(report)["drift"]
+        assert drift["median_l1"] == pytest.approx(0.2)
+        assert drift["p90_l1"] == pytest.approx(0.2)
+
+    def test_drift_churn_embeds_zero(self):
+        """Survivor churn: B exits (0.4->0), C enters (0->0.4) ->
+        0.1+0.4+0.4+0.1 = 1.0 over the union {A,B,C}."""
+        from portfolio_engine.validation.walk_forward import WalkForwardReport
+
+        report = WalkForwardReport(folds=[
+            self._fold(0, {"A": 0.6, "B": 0.4}, tickers=("A", "B")),
+            self._fold(1, {"A": 0.5, "C": 0.5}, tickers=("A", "C")),
+        ])
+        drift = self._section(report)["drift"]
+        assert drift["median_l1"] == pytest.approx(1.0)
+
+    def test_invalid_fold_breaks_chain(self):
+        from portfolio_engine.validation.walk_forward import WalkForwardReport
+
+        report = WalkForwardReport(folds=[
+            self._fold(0, {"A": 0.6, "B": 0.4}),
+            self._invalid_fold(1),
+            self._fold(2, {"A": 0.6, "B": 0.4}),
+        ])
+        drift = self._section(report)["drift"]
+        assert drift["pairs_computed"] == 0
+        assert drift["pairs_possible"] == 2
+        assert drift["median_l1"] is None
+        assert drift["broken_pairs"] == [[0, 1], [1, 2]]
+        assert drift["reason"] == "all-pairs-broken"
+
+    def test_single_fold_drift_none(self):
+        from portfolio_engine.validation.walk_forward import WalkForwardReport
+
+        drift = self._section(WalkForwardReport(
+            folds=[self._fold(0, {"A": 0.6, "B": 0.4})]))["drift"]
+        assert drift["median_l1"] is None
+        assert drift["p90_l1"] is None
+        assert drift["pairs_computed"] == 0
+        assert drift["pairs_possible"] == 0
+        assert drift["reason"] == "need-2-valid-folds"
+        empty = self._section(WalkForwardReport(folds=[]))["drift"]
+        assert empty["median_l1"] is None
+        assert empty["reason"] == "need-2-valid-folds"
+
+    def test_nonfinite_sharpe_fold_is_invalid(self):
+        """The isfinite conjunct: inf/nan Sharpe folds are invalid (break the
+        chain) even though to_dict counts is-not-None (engine never emits
+        them; hand-built folds must not diverge silently)."""
+        from portfolio_engine.validation.walk_forward import WalkForwardReport
+
+        report = WalkForwardReport(folds=[
+            self._fold(0, {"A": 0.6, "B": 0.4}),
+            self._fold(1, {"A": 0.6, "B": 0.4}, sharpe=float("inf")),
+            self._fold(2, {"A": 0.6, "B": 0.4}, sharpe=float("nan")),
+        ])
+        drift = self._section(report)["drift"]
+        assert drift["pairs_computed"] == 0
+        assert drift["pairs_possible"] == 2
+        assert drift["broken_pairs"] == [[0, 1], [1, 2]]
+        # Only 1 valid fold: inf/nan never counted valid (else pair (0,1)
+        # would have computed) -> need-2-valid-folds, not all-pairs-broken.
+        assert drift["reason"] == "need-2-valid-folds"
+
+    def test_benchmark_weights_deep_copied(self):
+        """Mutating the section must not mutate the live engine fold."""
+        from portfolio_engine.validation.walk_forward import WalkForwardReport
+
+        report = WalkForwardReport(folds=[self._fold(0, {"A": 0.6, "B": 0.4})])
+        section = self._section(report)
+        section["folds"][0]["benchmarks"]["equal"]["weights"]["A"] = 999.0
+        assert report.folds[0].benchmarks["equal"]["weights"] == {"A": 0.5, "B": 0.5}
+
+    def test_median_p90_over_three_pairs(self):
+        from portfolio_engine.validation.walk_forward import WalkForwardReport
+
+        report = WalkForwardReport(folds=[
+            self._fold(0, {"A": 1.0, "B": 0.0}),
+            self._fold(1, {"A": 0.9, "B": 0.1}),  # l1 0.2
+            self._fold(2, {"A": 0.9, "B": 0.1}),  # l1 0.0
+            self._fold(3, {"A": 0.65, "B": 0.35}),  # l1 0.5
+        ])
+        drift = self._section(report)["drift"]
+        assert drift["pairs_computed"] == 3
+        # mean would be 0.2333: the 0.2 pins MEDIAN (kills mean-mutant).
+        assert drift["median_l1"] == pytest.approx(0.2)
+        assert drift["p90_l1"] == pytest.approx(
+            float(np.quantile([0.2, 0.0, 0.5], 0.9, method="linear")))
+
+    def test_engine_evaluate_round_trip(self):
+        """Real walk_forward_evaluate (small windows, synthetic panels) feeds
+        the section: aggregates identical, folds detailed, drift computed."""
+        from portfolio_engine.core.config import PortfolioConfig
+        from portfolio_engine.validation.walk_forward import walk_forward_evaluate
+
+        rng = np.random.default_rng(3)
+        n_rows = 60
+        prices, dates = {}, {}
+        for t in ("E1", "E2", "E3", "E4"):
+            prices[t] = np.exp(np.cumsum(0.001 + rng.normal(scale=0.01, size=n_rows)))
+            dates[t] = np.arange(n_rows)
+        report = walk_forward_evaluate(
+            prices, dates, PortfolioConfig(), train_rows=30, test_rows=10, embargo_days=2,
+        )
+        section = self._section(report)
+        assert section["aggregates"] == report.to_dict()
+        assert len(section["folds"]) == report.to_dict()["n_folds"] >= 1
+        assert section["drift"]["pairs_possible"] == max(0, len(section["folds"]) - 1)
+
+    def test_section_survives_strict_json(self, tmp_path):
+        from portfolio_engine.app.report_json import dump_technical_report
+        from portfolio_engine.validation.walk_forward import WalkForwardReport
+
+        report = WalkForwardReport(folds=[
+            self._fold(0, {"A": 0.6, "B": 0.4}),
+            self._invalid_fold(1),
+        ])
+        target = tmp_path / "wf.json"
+        dump_technical_report({"walk_forward": self._section(report)}, target)
+        loaded = _strict_loads(target.read_text(encoding="utf-8"))
+        assert loaded["walk_forward"]["aggregates"]["n_folds"] == 2
+        assert loaded["walk_forward"]["folds"][1]["oos_sharpe"] is None
+
+    def test_export_surface_walk_forward_section(self):
+        import portfolio_engine.app as app
+
+        assert hasattr(app, "walk_forward_section")
+
+
 class TestExportSurface:
     def test_compute_filter_rejections_exported(self):
         import portfolio_engine.app as app
