@@ -2,8 +2,9 @@
 
 ## Current Objective
 
-- Goal: **fix-045a CERRADO end-to-end** (PR #63 feat-fix + CI verde, rama borrada). feat-045 + hardening en develop. Cero changes activos.
-- Current status: `develop @ 37385ac` · suite 296 passed, TOTAL 86.94% · git status 0 · openspec validate 13/13
+- Goal: **feat-046 done local en su rama** (bucle de validación con APPROVE final, sin push hasta validación del usuario). Change `feat-insample-tail-drawdown` valid (+1 ADDED a `technical-report`, 7 scenarios).
+- Current status: rama `feat/insample-tail-drawdown` · suite 322 passed, TOTAL 87.61% · motor diff 0 · openspec validate 14/14 · fix-045a cerrado (PRs #63-64)
+- Next: validación del usuario → push → PR → CI → squash → archive vía rama chore → feat-048 (salud del árbol: depth/chaining sobre linkage).
 - Next: feat-046 (serie in-sample + Sortino/VaR/CVaR95 + maxDD/Calmar, re-align `minimum_overlap_ratio=1.0`) con la rutina completa: rama-primero → tracker in_progress en rama → propose → TDD → subagentes validadores pre-push → push → PR → merge → archive.
 
 ## Regla de flujo adoptada (2026-09-09, orden del usuario)

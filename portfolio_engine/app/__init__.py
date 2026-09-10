@@ -6,8 +6,11 @@ from .report_json import (
     build_report_envelope,
     compute_filter_rejections,
     config_fingerprint,
+    drawdown_metrics,
     dump_technical_report,
+    portfolio_return_series,
     sanitize_json_payload,
+    tail_risk_metrics,
 )
 
 __all__ = [
@@ -16,6 +19,9 @@ __all__ = [
     "build_report_envelope",
     "compute_filter_rejections",
     "config_fingerprint",
+    "drawdown_metrics",
     "dump_technical_report",
+    "portfolio_return_series",
     "sanitize_json_payload",
+    "tail_risk_metrics",
 ]

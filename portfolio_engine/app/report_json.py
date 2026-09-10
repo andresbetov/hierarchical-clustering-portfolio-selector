@@ -331,6 +331,182 @@ def allocation_diagnostics(
     return base
 
 
+def portfolio_return_series(prices_alineados: dict, weights: dict) -> np.ndarray:
+    """In-sample daily log-return series of a fixed-weight portfolio (feat-046).
+
+    Per-asset log diffs via compute_logarithmic_returns stacked in
+    weights-dict key order, dotted with the weight vector in the same order
+    (walk_forward.py:262-264 pattern, in-sample). A weight ticker WITHOUT
+    aligned prices raises a named ValueError (uncomputable); aligned price
+    series WITHOUT weight are zero-embedded (legacy M<N route,
+    walk_forward.py:252-256 pattern) — key sets need not be equal, but every
+    weight must be covered by prices. T prices yield T-1 returns.
+    Callers MUST supply frames re-aligned with minimum_overlap_ratio=1.0
+    over the final weight keys (feat-050 contract): 1.0 skips the 0.9 guard
+    and reproduces the intersection-dropna the engine used, while 0.9 can
+    exclude survivors on pathological calendars.
+    """
+    from ..core.metrics import compute_logarithmic_returns
+
+    if not weights:
+        raise ValueError(
+            "empty weights — nothing to weight (feat-046; N=0 aborts upstream)"
+        )
+    missing = [t for t in weights if t not in prices_alineados]
+    if missing:
+        raise ValueError(
+            f"Weight tickers without aligned prices: {missing} — "
+            "every weighted ticker needs a price series (feat-046)"
+        )
+    ordered = list(weights)
+    lengths = {t: len(np.asarray(prices_alineados[t])) for t in ordered}
+    if len(set(lengths.values())) != 1:
+        raise ValueError(
+            f"ragged aligned price lengths: {lengths} — caller must re-align "
+            "with minimum_overlap_ratio=1.0 over the final keys (feat-046)"
+        )
+    matrix = np.column_stack(
+        [compute_logarithmic_returns(np.asarray(prices_alineados[t], dtype=np.float64)) for t in ordered]
+    )
+    weight_vector = np.array([weights[t] for t in ordered], dtype=np.float64)
+    return matrix @ weight_vector
+
+
+def tail_risk_metrics(
+    daily_series,
+    risk_free_rate: float,
+    trading_days: int = 252,
+) -> dict:
+    """In-sample tail risk: log-coherent Sortino + historical VaR/CVaR95 (feat-046).
+
+    Sortino = (mean(r)*T − ln(1+rf)) / downside_dev with the log-coherent
+    daily target T_daily = ln(1+rf)/T via risk_free_log_rate (feat-036 —
+    the tracker's rf/252 is recorded as errata, it mixes simple/log) and
+    downside_dev = sqrt(mean(min(0, r − T_daily)^2)) * sqrt(T) over the TOTAL
+    N (non-down days count as zero, Sortino-Forsey 1996). No down days ->
+    Sortino/DD None with reason while VaR/CVaR stay numeric. VaR_95_daily =
+    −quantile(r, 0.05, method="linear") pinned (NumPy 2.x; interpolation=
+    was removed in 2.0); CVaR_95_daily = −mean(r | r<=q05), inclusive tail so
+    it is never empty; cvar >= var (signed) ALWAYS, cvar >= |var| when VaR is
+    non-negative (genuine loss tail). VaR/CVaR are NEVER sqrt-scaled (catalog
+    §7 guard: tail is not Gaussian). len<2 or ANY non-finite observation ->
+    all None + reason (never 0/inf; trimming points would fabricate a
+    cleaner sample). Labels in-sample/daily/no-costs embedded.
+    """
+    from ..core.metrics import calculate_annualized_return, risk_free_log_rate
+
+    if trading_days <= 0:
+        raise ValueError(
+            f"trading_days must be positive, got {trading_days} (feat-046)"
+        )
+    base: dict = {
+        "sortino_ratio": None,
+        "downside_deviation_annual": None,
+        "var_95_daily": None,
+        "cvar_95_daily": None,
+        "target_daily": None,
+        "risk_free_rate": risk_free_rate,
+        "trading_days": trading_days,
+        "n_obs": 0,
+        "n_tail": 0,
+        "frequency": "daily",
+        "sample": "in-sample",
+        "costs": "no-costs",
+        "reason": None,
+    }
+    arr = np.asarray(daily_series, dtype=np.float64).ravel()
+    if arr.size < 2:
+        base["reason"] = "n_obs<2"
+        return base
+    if not np.all(np.isfinite(arr)):
+        base["reason"] = "non-finite-observations"
+        return base
+    target_annual = risk_free_log_rate(risk_free_rate)
+    if not np.isfinite(target_annual):
+        base["reason"] = "non-finite-risk-free-target"
+        return base
+    target_daily = target_annual / trading_days
+    base["target_daily"] = float(target_daily)
+    base["n_obs"] = int(arr.size)
+
+    shortfalls = np.minimum(0.0, arr - target_daily)
+    downside_variance = float(np.mean(shortfalls**2))
+    if downside_variance > 0.0:
+        downside_dev = math.sqrt(downside_variance) * math.sqrt(trading_days)
+        base["downside_deviation_annual"] = downside_dev
+        excess = calculate_annualized_return(arr, trading_days) - target_annual
+        base["sortino_ratio"] = excess / downside_dev
+    else:
+        base["reason"] = "no-downside-observations"
+
+    q05 = float(np.quantile(arr, 0.05, method="linear"))
+    # min(arr) <= q05 by monotonicity of correctly-rounded arithmetic, so the
+    # inclusive tail is provably non-empty (no 1-ulp escape possible).
+    tail = arr[arr <= q05]
+    base["var_95_daily"] = -q05
+    base["cvar_95_daily"] = float(-tail.mean())
+    base["n_tail"] = int(tail.size)
+    return base
+
+
+def drawdown_metrics(daily_series, trading_days: int = 252) -> dict:
+    """In-sample drawdown scalars from daily log returns (feat-046).
+
+    P_t = exp(cumsum(r_t)) (exact twin of cumprod(1+r_simple) for log
+    inputs — feeding log r into (1+r).cumprod would be wrong), DD_t =
+    P_t/running_max(P_t) − 1 <= 0, max_drawdown = min(DD) (<= 0 invariant),
+    calmar = mean(r)*T/|maxDD| (project convention: the same mean*T
+    annualizer as Sharpe/Sortino — documented deviation from the geometric
+    CAGR modern standard). |maxDD| <= VOL_FLOOR_EPS (flat series) ->
+    calmar None with reason, never inf; negative Calmar (negative ann
+    return) is legal and reported numeric. len<2 or ANY non-finite ->
+    all None + reason. The drawdown CURVE is not serialized (scalars only,
+    scope cut); labels in-sample/daily/no-costs embedded.
+    """
+    from ..core.metrics import VOL_FLOOR_EPS, calculate_annualized_return
+
+    if trading_days <= 0:
+        raise ValueError(
+            f"trading_days must be positive, got {trading_days} (feat-046)"
+        )
+    base: dict = {
+        "max_drawdown": None,
+        "calmar_ratio": None,
+        "annualized_return": None,
+        "trading_days": trading_days,
+        "n_obs": 0,
+        "frequency": "daily",
+        "sample": "in-sample",
+        "costs": "no-costs",
+        "reason": None,
+    }
+    arr = np.asarray(daily_series, dtype=np.float64).ravel()
+    if arr.size < 2:
+        base["reason"] = "n_obs<2"
+        return base
+    if not np.all(np.isfinite(arr)):
+        base["reason"] = "non-finite-observations"
+        return base
+    base["n_obs"] = int(arr.size)
+    with np.errstate(over="ignore"):  # overflow handled explicitly below
+        wealth = np.exp(np.cumsum(arr))
+    if not np.all(np.isfinite(wealth)):
+        # Pathological compounding (cumsum ~1e3): exp overflows to inf and
+        # inf/inf would leak nan + RuntimeWarning — report null, never nan.
+        base["reason"] = "wealth-overflow-non-finite"
+        return base
+    drawdown = wealth / np.maximum.accumulate(wealth) - 1.0
+    max_dd = float(drawdown.min())
+    base["max_drawdown"] = max_dd
+    ann_ret = calculate_annualized_return(arr, trading_days)
+    base["annualized_return"] = ann_ret
+    if abs(max_dd) <= VOL_FLOOR_EPS:
+        base["reason"] = "flat-series"
+        return base
+    base["calmar_ratio"] = ann_ret / abs(max_dd)
+    return base
+
+
 def build_report_envelope(
     tickers: list[str],
     config,
@@ -363,6 +539,9 @@ __all__ = [
     "allocation_diagnostics",
     "compute_filter_rejections",
     "config_fingerprint",
+    "drawdown_metrics",
     "dump_technical_report",
+    "portfolio_return_series",
     "sanitize_json_payload",
+    "tail_risk_metrics",
 ]
