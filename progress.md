@@ -36,7 +36,11 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Ningún feature abierto: el épico "Reporte técnico JSON" está registrado como feat-043..051 (todos `not-started`); el siguiente ejecutable es **feat-043**._
+_Ningún feature abierto: **feat-043 done local** (rama `feat/report-json-core`, sin push hasta validación del usuario). Siguiente ejecutable tras su merge: feat-044..049 (merge serial)._
+
+### What's Done (post-hito)
+
+- [x] **feat-043** report_json core (flujo OpenSpec completo, 4 artefactos valid): sanitizador JSON-estricto, escritor single-file, fingerprint sha256-16hex, envelope schema_version=1; TDD rojo 34 failures→verde 13 tests; suite 246 passed, cobertura TOTAL 85.60%; motor diff 0; gates cazaron ruff F841/I001 + pyright is_dataclass (2 iteraciones)
 
 ### What's Done (post-hito)
 

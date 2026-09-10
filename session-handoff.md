@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: épico "Reporte técnico JSON" registrado en feature_list.json como **feat-043..051** (8 features atómicas + 2 pre-gates ya ejecutados). Siguiente ejecutable: feat-043 (report_json core, deps: feat-042).
-- Current status: `develop @ <push>` (d1b7da3 feat-042 + 936dc5e catálogo + 1ca8184 archive) · `openspec validate --all` 12/12 · cero changes activos · `./init.sh` verde
-- Next: proponer change OpenSpec `feat-report-json-core` (capability técnica `technical-report`) y ejecutar feat-043 tarea por tarea; luego 044/045/046/048/049 (merge serial), 050, 051. Un feature a la vez; push/PR con validación del usuario.
+- Goal: **feat-043 done local** (primera feature del épico JSON, flujo OpenSpec completo). Rama `feat/report-json-core` sin push hasta validación del diff por el usuario.
+- Current status: change `feat-report-json-core` 4/4 artefactos valid, tasks 8/8 boxes · suite 246 passed, TOTAL cobertura 85.60% · motor diff 0 archivos
+- Next: usuario valida diff → push → PR a develop → CI → squash → archive del change → feat-044..049 (merge serial), luego 050 y 051.
 
 ## Completed This Session
 
