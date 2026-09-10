@@ -170,3 +170,80 @@ class TestCliWiring:
 
         assert hasattr(top, "build_technical_report")
         assert hasattr(top, "dump_technical_report")
+
+
+class TestWalkForwardOptIn:
+    def test_e2e_walkforward_long_bundle_section(self, tmp_path, monkeypatch, patched_batch):
+        """Long offline bundle + opt-in: real OOS section with aggregates,
+        fold rows and drift in the emitted JSON."""
+        from portfolio_engine.app.pipeline import generate_complete_analysis_report
+        from portfolio_engine.core.config import PortfolioConfig
+
+        tickers = ["W1", "W2", "W3", "W4"]
+        patched_batch({t: {} for t in tickers}, rows=800)
+        monkeypatch.chdir(tmp_path)
+        target = tmp_path / "wf.json"
+        generate_complete_analysis_report(
+            tickers, PortfolioConfig(), save_plots=False, show_plots=False,
+            report_path=target, run_walk_forward=True)
+        doc = _strict_loads(target.read_text(encoding="utf-8"))
+        section = doc["walk_forward"]
+        assert "skipped" not in section
+        assert section["aggregates"]["n_folds"] >= 1
+        assert len(section["folds"]) == section["aggregates"]["n_folds"]
+        assert section["aggregates"]["median_oos_sharpe"] is not None
+        assert section["drift"]["pairs_possible"] == max(
+            0, section["aggregates"]["n_folds"] - 1)
+
+    def test_short_bundle_skipped_with_reason(self, tmp_path, monkeypatch, patched_batch):
+        patched_batch({"S1": {}, "S2": {}}, rows=20)
+        monkeypatch.chdir(tmp_path)
+        target = tmp_path / "short.json"
+        from portfolio_engine.app.pipeline import generate_complete_analysis_report
+        from portfolio_engine.core.config import PortfolioConfig
+
+        result = generate_complete_analysis_report(
+            ["S1", "S2"], PortfolioConfig(), save_plots=False, show_plots=False,
+            report_path=target, run_walk_forward=True)
+        assert isinstance(result, tuple) and len(result) == 4
+        doc = _strict_loads(target.read_text(encoding="utf-8"))
+        assert isinstance(doc["walk_forward"], dict)
+        assert isinstance(doc["walk_forward"]["skipped"], str)
+        assert doc["walk_forward"]["skipped"]
+
+    def test_flat_long_panel_is_valid_section_not_skipped(
+            self, tmp_path, monkeypatch, patched_batch):
+        """Degenerate-but-long panel: real (empty) section, NOT skipped."""
+        patched_batch({"F1": {"flat": True}, "F2": {"flat": True}}, rows=400)
+        monkeypatch.chdir(tmp_path)
+        target = tmp_path / "flat.json"
+        from portfolio_engine.app.pipeline import generate_complete_analysis_report
+        from portfolio_engine.core.config import PortfolioConfig
+
+        generate_complete_analysis_report(
+            ["F1", "F2"], PortfolioConfig(), save_plots=False, show_plots=False,
+            report_path=target, run_walk_forward=True)
+        section = _strict_loads(target.read_text(encoding="utf-8"))["walk_forward"]
+        assert "skipped" not in section
+        assert section["aggregates"]["valid_folds"] == 0
+        assert section["drift"]["reason"] == "need-2-valid-folds"
+
+    def test_evaluate_raise_maps_to_skipped(self, panel4, tmp_path, monkeypatch, caplog):
+        import portfolio_engine.validation.walk_forward as wf_module
+
+        def _boom(*args, **kwargs):
+            raise RuntimeError("engine blew up")
+
+        monkeypatch.setattr(wf_module, "walk_forward_evaluate", _boom)
+        with caplog.at_level("WARNING", logger="portfolio_engine.app.pipeline"):
+            target = tmp_path / "boom.json"
+            from portfolio_engine.app.pipeline import generate_complete_analysis_report
+            from portfolio_engine.core.config import PortfolioConfig
+
+            result = generate_complete_analysis_report(
+                panel4, PortfolioConfig(), save_plots=False, show_plots=False,
+                report_path=target, run_walk_forward=True)
+        assert isinstance(result, tuple) and len(result) == 4
+        doc = _strict_loads(target.read_text(encoding="utf-8"))
+        assert doc["walk_forward"] == {"skipped": "engine blew up"}
+        assert any("Walk-forward skipped" in r.message for r in caplog.records)

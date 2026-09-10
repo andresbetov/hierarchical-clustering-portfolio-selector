@@ -139,6 +139,7 @@ def test_cli_help_documents_all_flags():
         "--save",
         "--show",
         "--refresh-cache",
+        "--walk-forward",
     ]
     for flag in expected:
         assert flag in text
@@ -204,6 +205,53 @@ def test_cli_defaults_propagate(monkeypatch):
     assert captured["config"].linkage_method == "single"
     assert captured["save_plots"] is True
     assert captured["show_plots"] is False
+
+
+def test_cli_walk_forward_flag_parsing():
+    from portfolio_engine.cli import _build_parser
+
+    parser = _build_parser()
+    assert parser.parse_args([]).walk_forward is False
+    assert parser.parse_args(["--walk-forward"]).walk_forward is True
+    assert "--walk-forward" in parser.format_help()
+
+
+def test_cli_walk_forward_propagates(monkeypatch):
+    from portfolio_engine import cli as cli_module
+
+    captured: dict = {}
+
+    def fake_report(universe, config, save_plots=True, show_plots=False, provider=None,
+                      report_path=None, run_walk_forward=False):
+        captured["run_walk_forward"] = run_walk_forward
+        return {}, {}, {}, {}
+
+    monkeypatch.setattr(cli_module, "generate_complete_analysis_report", fake_report)
+    monkeypatch.setattr(cli_module, "load_universe", lambda p: ["AAA"])
+
+    cli_module.main(argv=[])
+    assert captured["run_walk_forward"] is False
+    cli_module.main(argv=["--walk-forward"])
+    assert captured["run_walk_forward"] is True
+
+
+def test_cli_legacy_forces_walk_forward_off_and_warns_argv(monkeypatch, caplog):
+    """Legacy universe_path route: walk-forward forced off (refresh pattern)
+    + argv-ignored warning pinned (branch hits=0 until now)."""
+    from portfolio_engine import cli as cli_module
+
+    captured: dict = {}
+
+    def fake_report(universe, config, save_plots=True, show_plots=False, provider=None,
+                      report_path=None, run_walk_forward=False):
+        captured["run_walk_forward"] = run_walk_forward
+        return {}, {}, {}, {}
+
+    monkeypatch.setattr(cli_module, "generate_complete_analysis_report", fake_report)
+    with caplog.at_level("WARNING", logger="portfolio_engine.cli"):
+        cli_module.main(universe_path="config/universe.yaml", argv=["--walk-forward"])
+    assert captured["run_walk_forward"] is False
+    assert any("universe_path overrides" in r.message for r in caplog.records)
 
 
 if __name__ == "__main__":

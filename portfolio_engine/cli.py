@@ -68,6 +68,13 @@ def _build_parser() -> argparse.ArgumentParser:
         default=False,
         help="Ignore parquet cache and force re-download",
     )
+    parser.add_argument(
+        "--walk-forward",
+        action="store_true",
+        default=False,
+        help="Run walk-forward OOS validation into the JSON report "
+        "(opt-in, diagnostic-only: refits the pipeline per window)",
+    )
     return parser
 
 
@@ -82,6 +89,7 @@ def main(argv: list[str] | None = None, universe_path: str | None = None) -> Non
             logger.warning("universe_path overrides --universe/argv flags: argv=%s ignored", argv)
         resolved_universe = universe_path
         refresh = False
+        run_walk_forward = False
         # Legacy path preserves defaults for method/cov/linkage and save/show
         portfolio_config = PortfolioConfig()
         save_plots = True
@@ -97,6 +105,7 @@ def main(argv: list[str] | None = None, universe_path: str | None = None) -> Non
         )
         save_plots = bool(args.save)
         show_plots = bool(args.show)
+        run_walk_forward = bool(args.walk_forward)
 
     configure_logging()
 
@@ -124,6 +133,7 @@ def main(argv: list[str] | None = None, universe_path: str | None = None) -> Non
         show_plots=show_plots,
         provider=provider,
         report_path="reports/technical-report.json",
+        run_walk_forward=run_walk_forward,
     )
 
     print_portfolio_summary(optimal_portfolio, portfolio_weights)

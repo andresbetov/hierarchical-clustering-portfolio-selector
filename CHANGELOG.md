@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Reporte técnico JSON machine-readable (`reports/technical-report.json`, `schema_version: 1`, fingerprint determinista): núcleo estricto + envelope (feat-043), exclusiones con distancias (feat-044), asignación HHI/DR/RC + telemetría Dykstra (feat-045), riesgo in-sample serie/cola/drawdown (feat-046), salud del árbol depth-chaining (feat-048), sección walk-forward + deriva L1 (feat-049), ensamblador keystone con emisión fail-safe en el pipeline/CLI (feat-050) y opt-in `--walk-forward` (feat-051).
+
 ### Changed
 
 - feat-042: recalibración de thresholds del filtro (ADR 007) — `minimum_sharpe_threshold` 0.5→0.3, `maximum_volatility_threshold` 0.25→0.27; evidencia walk-forward (única configuración donde HRP bate a 1/N en mediana OOS); revierte en 2 líneas.

@@ -1,6 +1,7 @@
 # Catálogo de datos técnicos para el usuario — 9 diagnósticos
 
-> Estado: propuesta documental (no implementada). Define **qué** información debe recibir quien ejecuta el
+> Estado: implementado como reporte JSON (`reports/technical-report.json`, `schema_version: 1`;
+> épico feat-043..051 cerrado). Define **qué** información recibe quien ejecuta el
 > pipeline — pesos más expediente — **por qué** importa, **cómo** leerla y **de dónde** sale.
 > Alcance convergido tras bucle de validación: investigación externa (foros, tearsheets, literatura HRP) →
 > veto de factibilidad → veto de valor/duplicación → arbitraje → re-evaluación adversarial.
@@ -66,7 +67,7 @@ Existe en `portfolio_engine/validation/walk_forward.py`: ventanas en `45–78`; 
 `81–94`; medianas en `167–196` (`to_dict` en `179–196`); filtro ex-ante por fold en `107–141`; guard de
 riesgo degenerado en `144–164`; bucle fijar-en-train/puntuar-congelado en `199–312` (retornos del test con
 precio previo en `262–264`, benchmarks en `273–284`). Coste `O(F · (N·T + N²))`, determinista.
-El detalle por fold vive en `report.folds`; hoy solo se expone el agregado.
+El detalle por fold vive en `report.folds` y se expone en `walk_forward.folds` del JSON (`report_json.py`, `walk_forward_section`; feat-049).
 
 ### Guards y caveats
 
@@ -120,7 +121,7 @@ en 5 años de renta variable (error de datos, no excelencia).
 
 ### Origen y cómputo
 
-No existe hoy (verificado: cero coincidencias de `drawdown`/`calmar` en el paquete). Punto de inserción:
+Implementado en feat-046 (`drawdown_metrics` en `report_json.py`; serie `exp(cumsum)`, maxDD + Calmar). Origen que era punto de inserción:
 matriz de retornos `pipeline.py:131–133`, pesos `allocation.py:398–435`, serie `r_t` como en
 `walk_forward.py:262–266` pero in-sample alineada (`metrics.py:183–260`); Sharpe de referencia en
 `reporting.py:348–387`. Coste `O(T)`. Novena figura diagnóstica como máximo, nunca insumo de pesos.
@@ -231,7 +232,7 @@ walk-forward antes de operar.
 
 ### Origen y cómputo
 
-No emitido hoy. Lugar natural: junto a `_portfolio_summary_metrics` (`reporting.py:348–387`) y
+Emitido en feat-045 (`allocation_diagnostics` en `report_json.py`). Origen que era lugar natural: junto a `_portfolio_summary_metrics` (`reporting.py:348–387`) y
 `print_portfolio_summary` (`reporting.py:633–655`), desde `portfolio_weights` (`pipeline.py:139–154`).
 Coste $O(N)$. Legacy $M<N$: HHI sobre el subconjunto rebanado (`allocation.py:13–31`), como ya hace
 `pipeline.py:294–298`.
@@ -288,7 +289,7 @@ lock + commit con `./init.sh` verde. Degenerado: supervivientes $\le 1$, filas c
 ### Origen y cómputo
 
 Ensamblaje $O(1)$: universo `config/universe.yaml:4–16` vía `data/universe.py:13–46`; span
-`data_fetch.py:24–39` vía `provider.py:73,97`; hash **por construir** (`config.py:43–92`, patrón de
+`data_fetch.py:24–39` vía `provider.py:73,97`; hash en `config_fingerprint` (`report_json.py`, feat-043) desde (`config.py:43–92`, patrón de
 `_cache_key` en `data/cache.py:32–43`); versiones `pyproject.toml:3–16` + `uv.lock`; commit fuera del
 paquete (punto de emisión `cli.py:101–108`). La key de caché no sustituye a $h(\theta)$ (excluye
 thresholds/método/linkage); `rf` distinto comparte parquet pero debe diferir en $h(\theta)$.
@@ -409,7 +410,7 @@ Sano: `Sortino ≥ Sharpe`, `CVaR/|VaR| ∈ [1.0, 1.6]`, `CVaR_diario ≤ 1.5·v
 
 ### Origen y cómputo
 
-Inexistente hoy; inserción determinista: métricas `metrics.py:43–67`, resumen `reporting.py:348–387`,
+Implementado en feat-046 (`tail_risk_metrics` en `report_json.py`). Origen que era inserción: métricas `metrics.py:43–67`, resumen `reporting.py:348–387`,
 matriz alineada `pipeline.py:131–133` (`metrics.py:183–260`); serie = matriz·pesos constreñidos,
 `quantile`/`mean` NumPy + máscara `minimum(0,·)`: `O(T)`. Mostrar en gráfica 7 y consola
 (`reporting.py:633–654`), nunca en el optimizador.
@@ -434,8 +435,9 @@ Sharpe 1966/1994; Sortino–Price 1994; López de Prado cap. 7 (embargo/purga) y
 
 Intuitiva: ¿el dendrograma es un árbol equilibrado (grupos genuinos) o una cadena (un activo pelado a la
 vez)? Formal, sobre la matriz de linkage SciPy `Z` (`(n−1)×4`): `profundidad_max` = camino raíz→hoja
-más largo contando fusiones; `tasa_encadenamiento` = fusiones singleton-contra-resto / `(n−1)`
-(tamaños en columna 3 de `Z`); `bandera = (profundidad_max > techo) o (tasa > umbral)`,
+más largo contando fusiones; `tasa_encadenamiento` = fusiones con exactamente un hijo hoja / `(n−1)`
+(acreción-singleton por XOR sobre columnas 0–1 de `Z`; implementado así en feat-048 tras verificar
+que la lectura ≥1-hoja tiene piso 0.5); `bandera = (profundidad_max > techo) o (tasa > umbral)`,
 `techo ≈ ceil(log2(n)) + 2`. Excluidos: cofenética y balance por altura — HRP bisecta por conteo sobre
 el orden de hojas, la altura es causalmente irrelevante.
 
@@ -447,7 +449,7 @@ el orden de hojas, la altura es causalmente irrelevante.
 
 Bandera activa bajo `single` → re-ejecutar con `average`/`ward` y comparar medianas WF + escalar;
 inactiva → mantener `single` (snapshot-compatible). Ejemplo: con `n = 6`, equilibrado da
-`profundidad ≈ 3`, `tasa ≈ 0.0–0.2`; cadena pura da `5` y `1.0` — mismos 6 activos, pesos distintos
+`profundidad ≈ 3`, `tasa ≈ 0.0`; cadena pura da `5` y `4/5` — mismos 6 activos, pesos distintos
 solo por el orden. En `n = 1` no hay árbol que juzgar.
 
 ### Por qué es útil aquí
@@ -474,8 +476,8 @@ clustering (`hrp.py:122–123`), `n = 2` bisección directa (`hrp.py:125–130`)
 
 ### Guards y caveats
 
-`N = 0/1`: indefinido (`NaN` + motivo), no `0`. `n = 2`: profundidad 1, tasa 1.0 por construcción
-(no patológico). No comparar profundidades brutas entre distinto `n` sin normalizar por `log2(n)`.
+`N = 0/1`: indefinido (`NaN` + motivo), no `0`. `n = 2`: profundidad 1, tasa 0.0 (la única
+fusión es hoja-hoja: sin acreción posible), bandera falsa explícita (no patológico). No comparar profundidades brutas entre distinto `n` sin normalizar por `log2(n)`.
 `ward` en SciPy asume euclidiana: aplicado sobre distancia precomputada, documentar la aproximación.
 
 ### Referencias verificables
