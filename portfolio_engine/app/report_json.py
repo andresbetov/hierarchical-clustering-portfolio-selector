@@ -590,6 +590,99 @@ def tree_diagnostics(covariance_matrix, linkage_method: str = "single") -> dict:
     return base
 
 
+def walk_forward_section(report) -> dict:
+    """Walk-forward validation section: aggregates, per-fold detail, drift (feat-049).
+
+    Consumes WalkForwardReport.to_dict() VERBATIM for the aggregates (the
+    section medians are identical to the report's by construction; to_dict
+    is never modified). Per-fold rows expose index, train/test positions
+    (tuples become lists), tickers, weights, OOS return/volatility/sharpe,
+    mandate_relaxed and benchmarks exactly as the engine built them —
+    invalid folds (empty weights, None metrics, {} benchmarks) preserved,
+    never synthesized. Drift (§9 catalog): consecutive VALID folds ordered
+    by index (valid = oos_sharpe not None and finite), weights zero-embedded
+    over the pair's ticker union (entries/exits charged at face value),
+    l1 = sum|w_k − w_{k-1}| in [0,2] for fully-invested long-only books;
+    median_l1 (np.median), p90_l1 (quantile method="linear", H&F-7, VaR
+    precedent), pairs_computed/pairs_possible, broken_pairs, label
+    drift-not-turnover. An invalid fold BREAKS the chain (no interpolation,
+    GIPS-style: never link across a break). <2 valid folds -> drift None +
+    reason. Drift is stability telemetry, NEVER annualized nor multiplied
+    by bps (L1 = 2x one-way turnover-equiv; costs need prices/spreads per
+    Perold 1988, explicitly out of scope). Weight books are trusted engine
+    output (no sum-1 re-validation: L1 in [0,2] holds long-only).
+    """
+    folds = list(report.folds)
+    drift = _drift_section(folds)
+    return {
+        "aggregates": dict(report.to_dict()),
+        "folds": [_fold_row(fold) for fold in folds],
+        "drift": drift,
+    }
+
+
+def _fold_row(fold) -> dict:
+    """One audit row, verbatim engine values (positions serialized)."""
+    return {
+        "index": fold.index,
+        "train_positions": [fold.train_positions[0], fold.train_positions[1]],
+        "test_positions": [fold.test_positions[0], fold.test_positions[1]],
+        "tickers": list(fold.tickers),
+        "weights": dict(fold.weights),
+        "oos_return": fold.oos_return,
+        "oos_volatility": fold.oos_volatility,
+        "oos_sharpe": fold.oos_sharpe,
+        "mandate_relaxed": fold.mandate_relaxed,
+        # Deep-copy one level down: inner "weights" dicts must not alias the
+        # live WalkForwardFold (a consumer mutating the section must never
+        # mutate the engine report).
+        "benchmarks": {
+            name: {**entry, "weights": dict(entry.get("weights", {}))}
+            for name, entry in fold.benchmarks.items()
+        },
+    }
+
+
+def _drift_section(folds: list) -> dict:
+    """L1 drift over consecutive valid folds (see walk_forward_section)."""
+    base: dict = {
+        "median_l1": None,
+        "p90_l1": None,
+        "pairs_computed": 0,
+        "pairs_possible": max(0, len(folds) - 1),
+        "broken_pairs": [],
+        "label": "drift-not-turnover",
+        "reason": None,
+    }
+
+    def _valid(fold) -> bool:
+        return fold.oos_sharpe is not None and np.isfinite(fold.oos_sharpe)
+
+    computed = []
+    for prev, curr in zip(folds, folds[1:]):
+        if _valid(prev) and _valid(curr):
+            universe = sorted(set(prev.tickers) | set(curr.tickers))
+            l1 = float(
+                sum(abs(prev.weights.get(t, 0.0) - curr.weights.get(t, 0.0)) for t in universe)
+            )
+            computed.append(l1)
+        else:
+            base["broken_pairs"].append([prev.index, curr.index])
+    base["pairs_computed"] = len(computed)
+    if len(computed) < 1:
+        if sum(1 for fold in folds if _valid(fold)) < 2:
+            base["reason"] = "need-2-valid-folds"
+        else:
+            # Every adjacent pair broken (e.g. alternating valid/invalid):
+            # nothing computable, and the breakage itself is the signal.
+            base["reason"] = "all-pairs-broken"
+        return base
+    values = np.array(computed, dtype=np.float64)
+    base["median_l1"] = float(np.median(values))
+    base["p90_l1"] = float(np.quantile(values, 0.9, method="linear"))
+    return base
+
+
 def build_report_envelope(
     tickers: list[str],
     config,
@@ -628,4 +721,5 @@ __all__ = [
     "sanitize_json_payload",
     "tail_risk_metrics",
     "tree_diagnostics",
+    "walk_forward_section",
 ]

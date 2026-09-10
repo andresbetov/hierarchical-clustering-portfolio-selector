@@ -12,6 +12,7 @@ from .report_json import (
     sanitize_json_payload,
     tail_risk_metrics,
     tree_diagnostics,
+    walk_forward_section,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "sanitize_json_payload",
     "tail_risk_metrics",
     "tree_diagnostics",
+    "walk_forward_section",
 ]
