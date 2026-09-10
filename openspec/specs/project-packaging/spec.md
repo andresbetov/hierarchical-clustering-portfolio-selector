@@ -36,6 +36,6 @@ Cada dependencia de runtime SHALL corresponder a un uso actual del código o a u
 - **WHEN** se inspecciona `pyproject.toml` tras el change
 - **THEN** `pytest` y `pytest-cov` están en `[dependency-groups].dev` y no en `[project].dependencies`, y `uv sync --frozen` instala el proyecto + dev reproduciblemente
 
-#### Scenario: scipy en transición
-- **WHEN** se audita `dependencies` durante este change
-- **THEN** `scipy` permanece con su consumo previsto registrado (feat-018 HRP) — única excepción permitida hasta ese feature
+#### Scenario: sin dependencias fantasma
+- **WHEN** se audita `dependencies` tras el change
+- **THEN** cada dependencia de runtime corresponde a un uso actual del código (`scipy` consumida en `selection.py`/`hrp.py`; la excepción transitoria de feat-018 queda cerrada) y las herramientas dev viven solo en `[dependency-groups].dev`

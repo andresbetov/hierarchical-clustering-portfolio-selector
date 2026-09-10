@@ -59,7 +59,7 @@ Las contribuciones de riesgo en cada iteración SHALL tener piso épsilon y los 
 
 ### Requirement: Bounds de peso satisfechos simultáneamente en el resultado final
 
-`apply_weight_constraints` SHALL retornar pesos donde TODOS los activos cumplan min≤w≤max y la suma sea 1, aplicando fijación iterativa de violadores a su límite con redistribución proporcional entre los no fijados.
+`apply_weight_constraints` SHALL retornar pesos donde TODOS los activos cumplan min≤w≤max y la suma sea 1, mediante proyecciones cíclicas de Dykstra sobre el simplex y los semiespacios de bounds (con acumuladores por restricción) y una verificación final dura que lanza en vez de devolver un vector violado.
 
 #### Scenario: ejemplo canónico del audit
 - **WHEN** los pesos previos son [0.60, 0.10, 0.10, 0.10, 0.10] con min=0.05/max=0.30

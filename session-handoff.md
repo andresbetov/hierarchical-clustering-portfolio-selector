@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: feat-053 — docs y specs consistency sync (OpenSpec change `docs-spec-sync` + Fase 1 docs de proceso), en rama `docs/spec-sync`.
-- Current status: feat-052 done y mergeado (PR #80, 74b753b, CI verde matriz) · suite **367 passed, TOTAL 89.18%** · `openspec validate docs-spec-sync` + `--all` verdes · `init.sh` con `uv sync --frozen` en verde.
-- Next: commit + push + PR de `docs/spec-sync` a `develop`; tras merge, archive del change en rama `chore/archive-docs-spec-sync` (aplica deltas a specs vivas).
+- Goal: feat-053 — archive del change `docs-spec-sync` (deltas aplicados a las 10 specs vivas), en rama `chore/archive-docs-spec-sync`.
+- Current status: Fase 1 mergeada (PR #81, cd02d49, CI verde matriz) · suite **367 passed, TOTAL 89.18%** · `openspec validate docs-spec-sync` + `--all` verdes.
+- Next: commit + push + PR de `chore/archive-docs-spec-sync` a `develop`; tras merge, cierre de feat-053 (trackers done) y candidatos v0.2.0.
 
 ## Files Changed (working tree)
 
