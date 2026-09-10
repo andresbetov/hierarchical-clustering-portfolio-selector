@@ -11,6 +11,7 @@ from .report_json import (
     portfolio_return_series,
     sanitize_json_payload,
     tail_risk_metrics,
+    tree_diagnostics,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "portfolio_return_series",
     "sanitize_json_payload",
     "tail_risk_metrics",
+    "tree_diagnostics",
 ]

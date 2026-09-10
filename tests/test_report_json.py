@@ -1069,6 +1069,165 @@ class TestInsampleTailDrawdown:
         assert loaded["drawdown"]["calmar_ratio"] is None
 
 
+class TestTreeDiagnostics:
+    """feat-048 contract: hierarchical tree health (TDD red-first)."""
+
+    @staticmethod
+    def _tree(cov, method="single"):
+        from portfolio_engine.app.report_json import tree_diagnostics
+
+        return tree_diagnostics(cov, method)
+
+    @staticmethod
+    def _block12():
+        """3-block 12-asset pattern mirrored from tests/test_dendrogram.py."""
+        rng = np.random.default_rng(42)
+        base = np.full((12, 12), 0.2)
+        for b in range(3):
+            noise = rng.normal(0, 0.02, size=(4, 4))
+            noise = (noise + noise.T) * 0.5
+            base[b * 4:(b + 1) * 4, b * 4:(b + 1) * 4] = 0.85 + noise
+        base = np.clip(base, -0.9, 0.99)
+        np.fill_diagonal(base, 1.0)
+        vol = np.full(12, 0.2)
+        return base * np.outer(vol, vol) + np.eye(12) * 1e-6
+
+    def test_pure_chain_depth_rate_flag(self):
+        """Nested scales under single: (A,B) then +C then +D -> depth 3,
+        accretion 2/3, flag True (rate arm fires)."""
+        cov = np.eye(4) * 0.04
+        cov[0, 1] = cov[1, 0] = 0.9 * 0.04
+        for i, j in ((0, 2), (2, 0), (1, 2), (2, 1)):
+            cov[i, j] = 0.3 * 0.04
+        out = self._tree(cov)
+        assert out["max_depth"] == 3 == 4 - 1
+        assert out["chaining_rate"] == pytest.approx(2 / 3)
+        assert out["chaining_flag"] is True
+        assert out["linkage_method"] == "single"
+        assert out["n_assets"] == 4
+        assert out["depth_threshold"] == math.ceil(math.log2(4)) + 2
+        assert out["rate_threshold"] == pytest.approx(0.60)
+
+    def test_deep_chain_fires_depth_arm(self):
+        """8-asset comb (decreasing neighbor correlation): depth 7 exceeds
+        the threshold 5 — the depth arm fires independently of the rate."""
+        n = 8
+        corr = np.eye(n)
+        for i in range(n - 1):
+            corr[i, i + 1] = corr[i + 1, i] = 1 - 0.02 * 2**i
+        vol = np.full(n, 0.2)
+        out = self._tree(corr * np.outer(vol, vol) + np.eye(n) * 1e-6)
+        assert out["max_depth"] == 7 == n - 1
+        assert out["max_depth"] > out["depth_threshold"] == 5
+        assert out["chaining_flag"] is True
+
+    def test_balanced_eight_no_flag(self):
+        """4 tight pairs far apart: pair merges (leaf-leaf, not accretion),
+        then quads, then halves -> depth 3, rate 0.0, flag False."""
+        corr = np.eye(8) * 1.0
+        for a, b in ((0, 1), (2, 3), (4, 5), (6, 7)):
+            corr[a, b] = corr[b, a] = 0.95
+        for a in (0, 1):
+            for b in (2, 3):
+                corr[a, b] = corr[b, a] = 0.5
+        for a in (4, 5):
+            for b in (6, 7):
+                corr[a, b] = corr[b, a] = 0.5
+        vol = np.full(8, 0.2)
+        cov = corr * np.outer(vol, vol)
+        out = self._tree(cov)
+        assert out["max_depth"] == 3 == math.ceil(math.log2(8))
+        assert out["chaining_rate"] == pytest.approx(0.0)
+        assert out["chaining_flag"] is False
+        from scipy.cluster.hierarchy import leaves_list
+
+        from portfolio_engine.portfolio.hrp import _leaf_order, build_hrp_linkage
+
+        z = build_hrp_linkage(cov, "single")
+        assert out["leaf_order"] == _leaf_order(z, 8) == leaves_list(z).tolist()
+
+    def test_twelve_block_no_flag(self):
+        out = self._tree(self._block12())
+        assert out["max_depth"] <= math.ceil(math.log2(12)) + 2
+        assert out["chaining_rate"] < 0.60
+        assert out["chaining_flag"] is False
+        assert len(out["leaf_order"]) == 12
+        from portfolio_engine.portfolio.hrp import _leaf_order, build_hrp_linkage
+
+        assert out["leaf_order"] == _leaf_order(build_hrp_linkage(self._block12(), "single"), 12)
+
+    def test_degenerate_n_less_than_two_null_no_raise(self):
+        for cov in (np.array([[0.04]]), np.empty((0, 0))):
+            out = self._tree(cov)
+            assert out["max_depth"] is None
+            assert out["chaining_rate"] is None
+            assert out["chaining_flag"] is None
+            assert out["leaf_order"] is None
+            assert out["reason"]
+
+    def test_two_assets_by_construction(self):
+        """Single merge is leaf-leaf (both sides leaves): XOR accretion is
+        0.0 — no accretion is possible with 2 assets. Flag False."""
+        out = self._tree(np.array([[0.04, 0.01], [0.01, 0.04]]))
+        assert out["max_depth"] == 1
+        assert out["chaining_rate"] == pytest.approx(0.0)
+        assert out["chaining_flag"] is False
+
+    def test_invalid_method_raises_named(self):
+        with pytest.raises(ValueError, match="[Ll]inkage_method"):
+            self._tree(np.eye(3) * 0.04, "centroid")
+
+    def test_invalid_covariance_propagates_fail_loud(self):
+        """Non-finite / asymmetric / ragged covariances fail loud with named
+        errors — never silent None (only n<2 is degenerate-but-valid)."""
+        bad_nan = np.eye(3) * 0.04
+        bad_nan[0, 1] = float("nan")
+        with pytest.raises(ValueError, match="non-finite"):
+            self._tree(bad_nan)
+        bad_asym = np.eye(3) * 0.04
+        bad_asym[0, 1] = 0.02
+        with pytest.raises(ValueError, match="[Ss]ymmetric"):
+            self._tree(bad_asym)
+        with pytest.raises(ValueError, match="2-D numeric array"):
+            self._tree([[0.04, 0.01], [0.01]])
+
+    def test_method_error_masked_by_n2_precheck(self):
+        """Precedence pin: n<2 short-circuits BEFORE method validation — a
+        degenerate universe reports None+reason even with a bogus method."""
+        out = self._tree(np.array([[0.04]]), "bogus-method")
+        assert out["max_depth"] is None
+        assert out["reason"] == "n_assets<2"
+
+    def test_non_square_covariance_raises_named(self):
+        with pytest.raises(ValueError, match="[Ss]quare"):
+            self._tree(np.eye(2, 3))
+
+    def test_ward_three_blocks_finite(self):
+        """Ward on precomputed signed distance is an approximation (SciPy
+        Note 2): acceptance is finiteness, documented in the docstring."""
+        out = self._tree(self._block12(), "ward")
+        assert out["max_depth"] is not None
+        assert out["chaining_rate"] is not None
+        assert isinstance(out["chaining_flag"], bool)
+        assert len(out["leaf_order"]) == 12
+
+    def test_section_survives_strict_json(self, tmp_path):
+        from portfolio_engine.app.report_json import dump_technical_report
+
+        out = self._tree(self._block12())
+        target = tmp_path / "tree.json"
+        dump_technical_report({"tree": out}, target)
+        loaded = _strict_loads(target.read_text(encoding="utf-8"))
+        assert loaded["tree"]["max_depth"] == out["max_depth"]
+        assert loaded["tree"]["leaf_order"] == out["leaf_order"]
+        assert all(isinstance(i, int) for i in loaded["tree"]["leaf_order"])
+
+    def test_export_surface_tree_diagnostics(self):
+        import portfolio_engine.app as app
+
+        assert hasattr(app, "tree_diagnostics")
+
+
 class TestExportSurface:
     def test_compute_filter_rejections_exported(self):
         import portfolio_engine.app as app
