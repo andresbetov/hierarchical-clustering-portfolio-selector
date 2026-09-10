@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: **fix-045a hardening listo local** (rama `fix/allocation-diagnostics-hardening`, bucle de validación con APPROVE final, sin push hasta validación del usuario). feat-045 sigue cerrado (PRs #60-62).
-- Current status: rama fix @ init.sh exit 0 · suite 296 passed, TOTAL 86.94% · motor diff 0 · openspec validate 13/13 · `develop @ 4af849a` base intacta
-- Next: validación del usuario → push → PR `fix/... → develop` → CI → squash → feat-046 (serie in-sample + Sortino/VaR/CVaR95 + maxDD/Calmar, re-align `minimum_overlap_ratio=1.0`).
+- Goal: **fix-045a CERRADO end-to-end** (PR #63 feat-fix + CI verde, rama borrada). feat-045 + hardening en develop. Cero changes activos.
+- Current status: `develop @ 37385ac` · suite 296 passed, TOTAL 86.94% · git status 0 · openspec validate 13/13
+- Next: feat-046 (serie in-sample + Sortino/VaR/CVaR95 + maxDD/Calmar, re-align `minimum_overlap_ratio=1.0`) con la rutina completa: rama-primero → tracker in_progress en rama → propose → TDD → subagentes validadores pre-push → push → PR → merge → archive.
 
 ## Regla de flujo adoptada (2026-09-09, orden del usuario)
 

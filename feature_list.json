@@ -520,7 +520,7 @@
         "feat-045"
       ],
       "status": "done",
-      "evidence": "./init.sh FRESCO exit 0 en fix/allocation-diagnostics-hardening: 296 passed (286+10), TOTAL 86.94%, ruff/pyright/compileall verdes; motor diff 0; openspec validate --all 13/13. Bucle de validacion (regla del usuario): analisis externo (HHI/Choueifaty/Dykstra/JSON-null, 5 items) + analisis profundo (6/6 scenarios OK, 8 hallazgos MINOR) -> implementacion -> verificacion adversarial APPROVE + auditoria proceso CONDITIONAL-APPROVE -> correcciones -> re-verificacion APPROVE -> 2 MINOR -> verificacion final APPROVE. Sin push hasta validacion del usuario."
+      "evidence": "./init.sh FRESCO exit 0 en fix/allocation-diagnostics-hardening: 296 passed (286+10), TOTAL 86.94%, ruff/pyright/compileall verdes; motor diff 0; openspec validate --all 13/13. Bucle de validacion (regla del usuario): analisis externo (HHI/Choueifaty/Dykstra/JSON-null, 5 items) + analisis profundo (6/6 scenarios OK, 8 hallazgos MINOR) -> implementacion -> verificacion adversarial APPROVE + auditoria proceso CONDITIONAL-APPROVE -> correcciones -> re-verificacion APPROVE -> 2 MINOR -> verificacion final APPROVE. Sin push hasta validacion del usuario. Cierre remoto: PR #63 squash-mergeado a develop (37385ac) con CI verde matriz 3.11/3.12/3.13."
     }
   ]
 }
