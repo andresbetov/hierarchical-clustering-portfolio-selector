@@ -9,7 +9,7 @@
 | [005](005-covariance-estimator.md) | Estimador de covarianza parametrizable con scikit-learn | Aceptado | `covariance_estimator ∈ {sample, ledoit_wolf, oas}`; default `sample` en v0.1.0 (sin cambio silencioso); flip a `ledoit_wolf` en v0.2.0 con evidencia walk-forward |
 | [006](006-linkage-parameter.md) | Método de linkage parametrizable en HRP | Aceptado | `linkage_method ∈ {single, ward, average}`; default `single` (De Prado, snapshot feat-021 intacto); flip a `ward` diferido a v0.2.0 con evidencia walk-forward |
 | [007](007-filter-threshold-recalibration.md) | Recalibración de thresholds del filtro (Sharpe 0.5→0.3, vol 0.25→0.27) | Aceptado | Evidencia WF vía A (gap HRP−EQ +0.070 único positivo, N=6, 16/16 folds); revierte en 2 líneas |
-| [003 Addendum 2026-09-01](003-hrp-adoption.md) | Dykstra post-hoc euclídea vs varianza jerárquica (feat-036) | Aceptado | Documenta que la proyección Dykstra altera el balance `inverse-variance por cluster`; intra-bisección descartada (Pfitzinger & Katzke) — ADR 007 candidato |
+| [003 Addendum 2026-09-01](003-hrp-adoption.md) | Dykstra post-hoc euclídea vs varianza jerárquica (feat-036) | Aceptado | Documenta que la proyección Dykstra altera el balance `inverse-variance por cluster`; intra-bisección descartada (Pfitzinger & Katzke) — ADR 008 (pendiente) |
 
 ## Convención
 

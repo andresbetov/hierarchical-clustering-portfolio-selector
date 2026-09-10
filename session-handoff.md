@@ -2,31 +2,31 @@
 
 ## Current Objective
 
-- Goal: README showcase (EN + `README.es.md`) + fix de anualización de la gráfica 7 — listo en working tree, pendiente de commit.
-- Current status: `develop @ c91d9b0` base · suite **367 passed, TOTAL 89.18%** · `openspec validate --all` 13/13 · cambios **sin commitear**.
-- Next: revisar el diff y commitear el conjunto atómico (ver abajo); después, candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default con evidencia WF, pesos finales en JSON, empty-universe graceful, pyright strict).
+- Goal: feat-053 — docs y specs consistency sync (OpenSpec change `docs-spec-sync` + Fase 1 docs de proceso), en rama `docs/spec-sync`.
+- Current status: feat-052 done y mergeado (PR #80, 74b753b, CI verde matriz) · suite **367 passed, TOTAL 89.18%** · `openspec validate docs-spec-sync` + `--all` verdes · `init.sh` con `uv sync --frozen` en verde.
+- Next: commit + push + PR de `docs/spec-sync` a `develop`; tras merge, archive del change en rama `chore/archive-docs-spec-sync` (aplica deltas a specs vivas).
 
 ## Files Changed (working tree)
 
-- `README.md` (reescritura EN), `README.es.md` (nuevo, espejo)
-- `docs/results/technical-report-2026-09-10.json` (nuevo, snapshot de corrida)
-- `portfolio_engine/viz/reporting.py` + `tests/test_reporting_sharpe.py` (fix anualización + 2 regresiones)
-- `openspec/specs/numeric-correctness/spec.md`, `CHANGELOG.md`, `docs/diagnostics-catalog.md` (banner histórico), `progress.md`
-- 8 PNG de `charts/` regenerados con los defaults vigentes (0.3/0.27)
+- `openspec/changes/docs-spec-sync/` (proposal+design+tasks+10 deltas, validado)
+- `CONTRIBUTING.md`, `AGENTS.md`, `pyproject.toml` (comentario), `Makefile`, `.pre-commit-config.yaml`, `init.sh` (`--frozen`)
+- `docs/adr/README.md`, `docs/adr/003-hrp-adoption.md` (ADR 008 futuro + refs)
+- `docs/diagnostics-catalog.md` (6 refs, mapeo 9→6, umbral 12→6), `feature_list.json` (feat-052 done, feat-053 in-progress, refs podadas)
+- `README.md`, `README.es.md` (wording sync-frozen), `progress.md`
 
 ## Verification Evidence
 
 | Check | Command | Result |
 |---|---|---|
 | suite | `./init.sh` | ✓ 367 passed, TOTAL 89.18% · `All checks passed!` · `pyright 0` · `compileall OK` |
-| openspec | `openspec validate --all` | ✓ 13/13 |
+| openspec | `openspec validate docs-spec-sync` + `--all` | ✓ change valid · 13/13 specs |
 | review | 3 rondas con 8 subagentes | contenido sin cifras falsas; fixes de honestidad/paridad aplicados |
 | fix | recomputación independiente + OCR del chart | vol 13.61% · Sharpe 0.94 (antes 14.84 por bug dimensional) |
 
 ## Next Session Startup
 
-1. `git status` + `git diff`; commitear el conjunto (docs + fix + charts + snapshot) en rama `docs/readme-showcase`; PR a `develop`.
-2. Verificar en remoto que `README.es.md` y `docs/results/technical-report-2026-09-10.json` resuelven (evitar 404 de los enlaces del README).
+1. PR `docs/spec-sync` → `develop` (CI, squash, borrar rama); luego `chore/archive-docs-spec-sync` (aplica deltas a specs vivas + archive).
+2. Verificar en remoto que los enlaces nuevos resuelven.
 3. `develop → main` solo cuando lo indique el usuario (regla CONTRIBUTING).
 
 ## Lecciones de la sesión
@@ -38,6 +38,6 @@
 ## Blockers / Risks
 
 - `develop → main` pendiente por regla CONTRIBUTING (no es blocker).
-- Numeración ADR colisionada: el addendum de ADR 003 prometió un "ADR 007" como supersesor de Dykstra, pero ADR 007 terminó siendo la recalibración de umbrales — deuda de gobernanza.
+- Numeración ADR colisionada: resuelta en feat-053 (addendum 003 e índice apuntan a "ADR 008 (pendiente)").
 - Evidencia de ADR 007 (script de comparación) no versionada; la tabla OOS del README lo declara como limitación (selección no limpia de hiperparámetros).
 - `session-handoff.md` anterior estaba obsoleto (mandaba a feat-046 con el épico cerrado); reemplazado por este estado.

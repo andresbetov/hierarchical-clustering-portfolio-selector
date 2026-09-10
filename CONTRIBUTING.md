@@ -73,18 +73,18 @@ distancia de clustering, dependencias pesadas) se versionan como ADRs en
 
 ## Setup y verificación
 
-**Prerrequisitos:** `python >=3.11` (`pyproject.toml:requires-python`, CI matrix `3.11/3.12/3.13`), `uv` (`astral-sh/setup-uv@v6`), opcional `pyarrow>=14` para cache `data/cache/*.parquet`.
+**Prerrequisitos:** `python >=3.11` (`pyproject.toml:requires-python`, CI matrix `3.11/3.12/3.13`), `uv` (`astral-sh/setup-uv@v6`), `pyarrow>=14` (dependencia runtime del caché `data/cache/*.parquet`; sin él, el motor degrada a sin-caché con warning).
 
 ```bash
 uv sync --frozen       # instalación reproducible desde uv.lock (dev incluye ruff/pyright/pytest/pytest-cov/hypothesis)
 uv run pytest          # suite completa (offline) — hereda --cov-fail-under=85 desde pyproject.toml (equivale a make test)
-make test              # gate explícito: -q --cov=portfolio_engine --cov-report=term-missing/html/xml --cov-branch --cov-fail-under=85 (85% TOTAL combinado de coverage.py: líneas+branches / stmts+branch destinations; baseline 85.37% con 233 tests (conteo actual: ver salida de `make test`))
+make test              # gate explícito: -q --cov=portfolio_engine --cov-report=term-missing/html/xml --cov-branch --cov-fail-under=85 (85% TOTAL combinado de coverage.py: líneas+branches / stmts+branch destinations; baseline vigente 89.18% con 367 tests — 2026-09-10; el conteo cambia con la suite, ver salida de `make test`)
 make test-no-cov       # escape hatch rápido sin cobertura (--no-cov)
 make lint              # ruff static checks (también corre en ./init.sh)
 make types             # pyright type checks (también corre en ./init.sh)
 make run               # pipeline completo (requiere red, yfinance)
 ```
 
-Los cinco gates (lint, types, test con cobertura 85% TOTAL combinado de coverage.py (líneas+branches), `coverage report/html/xml`, compileall) corren automáticamente en CI
+Los cinco pasos (sync de deps, lint, types, test con cobertura 85% TOTAL combinado de coverage.py (líneas+branches) y reportes `coverage report/html/xml`, compileall) corren automáticamente en CI
 (push a develop/main y PRs) y localmente vía `./init.sh`. CI publica resumen `coverage report --format=markdown` en `$GITHUB_STEP_SUMMARY` y artifact `htmlcov` por versión de Python. Fuente única del umbral: `pyproject.toml: [tool.coverage.report] fail_under = 85` espejado en `addopts` + `Makefile` + `ci.yml` (`branch = true`). Opcional: hooks de
 pre-commit con `uv tool install pre-commit && pre-commit install`.

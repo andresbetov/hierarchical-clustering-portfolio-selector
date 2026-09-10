@@ -18,6 +18,8 @@ Números del proyecto citados como ejemplos de corridas anteriores (el snapshot 
 filtro 12→4 (JPM 25.6%, ABBV 23.5%, MRK 20.9%, WMT topado 30.0%) con defaults previos a feat-042;
 walk-forward 16 folds (train 250 / test 60 / embargo 5) con mediana OOS HRP 0.772 vs 1/N 0.777 en esa corrida;
 caso degenerado 15 ETFs → solo GLD 100%; defaults vigentes Sharpe≥0.3, vol≤0.27 (feat-042/ADR-007).
+>
+> Nota: las 9 fichas se agrupan en 6 secciones del JSON (`envelope`, `filter_rejections`, `allocation_diagnostics`, `risk`, `tree_diagnostics`, `walk_forward`); las §§1 y 9 requieren el opt-in `--walk-forward`.
 
 ---
 
@@ -234,9 +236,9 @@ walk-forward antes de operar.
 ### Origen y cómputo
 
 Emitido en feat-045 (`allocation_diagnostics` en `report_json.py`). Origen que era lugar natural: junto a `_portfolio_summary_metrics` (`reporting.py:348–387`) y
-`print_portfolio_summary` (`reporting.py:633–655`), desde `portfolio_weights` (`pipeline.py:139–154`).
+`print_portfolio_summary` (`reporting.py:641`), desde `portfolio_weights` (`pipeline.py:139–154`).
 Coste $O(N)$. Legacy $M<N$: HHI sobre el subconjunto rebanado (`allocation.py:13–31`), como ya hace
-`pipeline.py:294–298`.
+`pipeline.py:394–405`.
 
 ### Guards y caveats
 
@@ -271,7 +273,7 @@ comparar Sharpes entre fechas es peras con manzanas.
 
 ### Efecto
 
-Decide invalidar o confiar. Ejemplos: 12→4 con 0.3/0.27 no es comparable al antiguo 0.5/0.25 sin anotar
+Decide invalidar o confiar. Ejemplos: el 12→6 con 0.3/0.27 no es comparable al antiguo 12→4 con 0.5/0.25 sin anotar
 $h(\theta)$ (2 líneas mueven $N$ 4→6 y el gap WF −0.005→+0.070); si $[t_0,t_1]$ se desplaza un día, la
 key del parquet cambia y el re-run descarga de nuevo.
 
@@ -292,7 +294,7 @@ lock + commit con `./init.sh` verde. Degenerado: supervivientes $\le 1$, filas c
 Ensamblaje $O(1)$: universo `config/universe.yaml:4–16` vía `data/universe.py:13–46`; span
 `data_fetch.py:24–39` vía `provider.py:73,97`; hash en `config_fingerprint` (`report_json.py`, feat-043) desde (`config.py:43–92`, patrón de
 `_cache_key` en `data/cache.py:32–43`); versiones `pyproject.toml:3–16` + `uv.lock`; commit fuera del
-paquete (punto de emisión `cli.py:101–108`). La key de caché no sustituye a $h(\theta)$ (excluye
+paquete (punto de emisión `cli.py:135`). La key de caché no sustituye a $h(\theta)$ (excluye
 thresholds/método/linkage); `rf` distinto comparte parquet pero debe diferir en $h(\theta)$.
 
 ### Guards y caveats
@@ -303,7 +305,7 @@ pinear con span impreso para citar.
 
 ### Referencias verificables
 
-Lockfile + `uv sync --frozen` (`README.md:107–118`); De Prado (embargo/purga, `walk_forward.py:1–17`);
+Lockfile + `uv sync --frozen` (`README.md:39–49,175`); De Prado (embargo/purga, `walk_forward.py:1–17`);
 disclaimers research-only que exigen trazabilidad (precedente feat-041).
 
 ---
@@ -355,9 +357,9 @@ Ingredientes existentes: $\sigma_p^2$ en `allocation.py:34–35` y `reporting.py
 advertido `369–375`); $\sigma_i$ de `sqrt(diag(cov))` (patrón `hrp.py:169–176`); $(\Sigma w)_i$, $\mathrm{RC}_i$
 como `allocation.py:80–81` (con `VOL_FLOOR_EPS`). Calcular tras `constrained` (`allocation.py:427–431`,
 gemelo `384–389`) con la **covarianza rebanada al subconjunto** (`allocation.py:13–31`,
-`pipeline.py:294–298`; $N\times N$ con vector $M<N$ rompe el producto — bug feat-028). Coste $O(N^2)$;
+`pipeline.py:394–405`; $N\times N$ con vector $M<N$ rompe el producto — bug feat-028). Coste $O(N^2)$;
 por fold sobre `cov_train` (`walk_forward.py:241`) despreciable. Comparar pre vs post-Dykstra
-(`raw_weights`, `hrp.py:122–130`) para cuantificar el aplanamiento.
+(`raw_weights`, `allocation.py:424–428`) para cuantificar el aplanamiento.
 
 ### Guards y caveats
 
@@ -414,7 +416,7 @@ Sano: `Sortino ≥ Sharpe`, `CVaR/|VaR| ∈ [1.0, 1.6]`, `CVaR_diario ≤ 1.5·v
 Implementado en feat-046 (`tail_risk_metrics` en `report_json.py`). Origen que era inserción: métricas `metrics.py:43–67`, resumen `reporting.py:348–387`,
 matriz alineada `pipeline.py:131–133` (`metrics.py:183–260`); serie = matriz·pesos constreñidos,
 `quantile`/`mean` NumPy + máscara `minimum(0,·)`: `O(T)`. Mostrar en gráfica 7 y consola
-(`reporting.py:633–654`), nunca en el optimizador.
+(`reporting.py:641`), nunca en el optimizador.
 
 ### Guards y caveats
 

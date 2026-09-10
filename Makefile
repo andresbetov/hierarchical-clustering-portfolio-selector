@@ -1,4 +1,4 @@
-.PHONY: install test test-no-cov run run-debug clean help
+.PHONY: install lint types test test-no-cov run run-debug clean help
 
 help:
 	@echo "Hierarchical Clustering Portfolio Selector — Common Tasks"
@@ -6,7 +6,8 @@ help:
 	@echo "  make install    Install dependencies via uv"
 	@echo "  make lint       Run ruff static checks"
 	@echo "  make types      Run pyright type checks"
-	@echo "  make test       Run the offline test suite (pytest)"
+  @echo "  make test       Run the offline test suite (pytest)"
+  @echo "  make test-no-cov Run the test suite without coverage"
 	@echo "  make run        Run full portfolio analysis (downloads data)"
 	@echo "  make run-debug  Run with DEBUG logging"
 	@echo "  make clean      Remove cache, charts, build artifacts"

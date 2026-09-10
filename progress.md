@@ -3,9 +3,9 @@
 ## Current State
 
 **Last Updated:** 2026-09-10
-**Branch:** `develop @ c91d9b0` — working tree con change docs/code sin commitear (README showcase + fix gráfica 7).
+**Branch:** `docs/spec-sync` — feat-053 in-progress (OpenSpec change `docs-spec-sync` validado; Fase 1 docs de proceso aplicada, pendiente commit/PR).
 
-Hito v0.1.0 cerrado + épico JSON (feat-043..051) cerrado. Sesión 2026-09-10: README showcase EN + espejo `README.es.md`, snapshot `docs/results/technical-report-2026-09-10.json` y fix de anualización de la gráfica 7 (`_portfolio_summary_metrics`). Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13.
+feat-052 done y mergeado a develop (PR #80, 74b753b, CI verde matriz 3.11/3.12/3.13). Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13 + change `docs-spec-sync` valid.
 
 ## Status
 
@@ -42,7 +42,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Ningún feature abierto: épico feat-043..051 cerrado (PR #77 + archivado PR #78). Sesión 2026-09-10 = README showcase EN/ES + fix de anualización de la gráfica 7 + snapshot (ver Current State)._
+_feat-053 in-progress en rama `docs/spec-sync`: OpenSpec change `docs-spec-sync` (proposal+design+tasks+10 deltas) validado; Fase 1 docs de proceso aplicada (CONTRIBUTING, AGENTS, pyproject, Makefile, pre-commit, ADR index+addendum, catálogo, feature_list refs, README sync-frozen); `init.sh` verde con el nuevo `uv sync --frozen`._
 
 ### What's Done (épico Reporte técnico JSON — feat-043..051, cerrado)
 

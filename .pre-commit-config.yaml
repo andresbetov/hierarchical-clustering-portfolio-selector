@@ -1,5 +1,5 @@
 # See https://pre-commit.com for more information
-# Opt-in locally: `uv run pre-commit install` (CI remains the enforcing authority)
+# Opt-in locally: `uv tool install pre-commit && pre-commit install` (CI remains the enforcing authority)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

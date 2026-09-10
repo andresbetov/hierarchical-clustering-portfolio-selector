@@ -63,7 +63,7 @@ branch = true
 omit = ["*/tests/*", "*/__pycache__/*"]
 
 [tool.coverage.report]
-# single source: 85 branch (87 line) — baseline 2026-09-05: 85.37% branch / 87% line (1509 stmts, 230 tests)
+# Umbral de cobertura: 85 = TOTAL combinado de coverage.py (líneas+branches), con branch = true
 show_missing = true
 skip_empty = true
 precision = 1
