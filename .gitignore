@@ -12,7 +12,8 @@ build/
 htmlcov/
 coverage.xml
 coverage.json
-#charts/
+#charts/  (tracked baseline per feat-041; reports/ always ignored)
+reports/
 *.nbc
 *.nbi
 data/cache/*

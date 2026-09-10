@@ -683,6 +683,87 @@ def _drift_section(folds: list) -> dict:
     return base
 
 
+def build_technical_report(
+    requested_tickers: list,
+    asset_metrics: dict,
+    filtered_metrics: dict,
+    closing_prices: dict,
+    price_dates: dict,
+    covariance_matrix: np.ndarray,
+    covariance_tickers: list,
+    weights: dict,
+    config,
+    window_start: str,
+    window_end: str,
+    generated_at: str,
+) -> dict:
+    """Assemble the technical report from the verified section builders (feat-050).
+
+    Pure composition (no clock, no IO): envelope (feat-043) + filter
+    rejections (044, post-overlap-prune filtered set) + allocation
+    diagnostics (045, covariance sliced internally by ticker names,
+    raw_weights=None — the engine only returns constrained weights, so HRP
+    auto-recomputes and legacy yields None per contract) + risk (046: the
+    in-sample series is rebuilt here by re-aligning the filtered price
+    subset with minimum_overlap_ratio=1.0 — the feat-046 rule, since 0.9
+    could re-prune survivors) + tree diagnostics (048, full filtered
+    covariance + linkage) + walk_forward None placeholder (feat-051 fills
+    the same key; null = opt-in off, distinct from absent).
+    A series rebuild failure (e.g. empty universe) degrades risk.* to
+    well-formed None-sections with a warning — never aborts the five
+    healthy sections.
+    """
+    envelope = build_report_envelope(
+        list(requested_tickers), config, window_start, window_end, generated_at
+    )
+    rejections = compute_filter_rejections(
+        list(requested_tickers), asset_metrics, filtered_metrics, closing_prices, config
+    )
+    allocation = allocation_diagnostics(
+        dict(weights), covariance_matrix, list(covariance_tickers), config
+    )
+    risk = _risk_section(filtered_metrics, closing_prices, price_dates, weights, config)
+    tree = tree_diagnostics(covariance_matrix, config.linkage_method)
+    return {
+        "envelope": envelope,
+        "filter_rejections": rejections,
+        "allocation_diagnostics": allocation,
+        "risk": risk,
+        "tree_diagnostics": tree,
+        "walk_forward": None,
+    }
+
+
+def _risk_section(filtered_metrics, closing_prices, price_dates, weights, config) -> dict:
+    """In-sample risk block with per-section degradation (see builder)."""
+    import logging
+
+    from ..core.metrics import align_prices_to_common_calendar
+
+    logger = logging.getLogger(__name__)
+    tail = tail_risk_metrics([], config.risk_free_rate, config.trading_days_per_year)
+    drawdown = drawdown_metrics([], config.trading_days_per_year)
+    n_obs = None
+    try:
+        subset_prices = {
+            t: closing_prices[t] for t in filtered_metrics if t in closing_prices
+        }
+        subset_dates = {
+            t: price_dates[t] for t in subset_prices if t in price_dates
+        }
+        aligned = align_prices_to_common_calendar(subset_prices, subset_dates, 1.0)
+        series = portfolio_return_series(aligned, dict(weights))
+    except ValueError as exc:
+        logger.warning("In-sample risk series unavailable: %s", exc)
+    else:
+        n_obs = int(len(series))
+        tail = tail_risk_metrics(
+            series, config.risk_free_rate, config.trading_days_per_year
+        )
+        drawdown = drawdown_metrics(series, config.trading_days_per_year)
+    return {"series_n_obs": n_obs, "tail": tail, "drawdown": drawdown}
+
+
 def build_report_envelope(
     tickers: list[str],
     config,
@@ -712,6 +793,7 @@ def build_report_envelope(
 __all__ = [
     "SCHEMA_VERSION",
     "build_report_envelope",
+    "build_technical_report",
     "allocation_diagnostics",
     "compute_filter_rejections",
     "config_fingerprint",

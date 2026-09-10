@@ -167,12 +167,77 @@ def main(
     )
 
 
+def _resolve_report_window(price_dates: dict) -> tuple[str, str]:
+    """Honest data span: min/max ISO date over the union of per-ticker dates.
+
+    Uses the resolved dates (cache/offline-safe), never the nominal
+    lookback window. Empty bundle -> "unknown" sentinels, report stays valid.
+    """
+    stamps = []
+    for dates in price_dates.values():
+        stamps.extend(str(day)[:10] for day in list(dates))
+    if not stamps:
+        return "unknown", "unknown"
+    return min(stamps), max(stamps)
+
+
+def _emit_technical_report(
+    *,
+    ticker_symbols,
+    all_metrics,
+    filtered_metrics,
+    historical_prices,
+    price_dates,
+    covariance_matrix,
+    covariance_tickers,
+    weights,
+    config,
+    report_path,
+    run_walk_forward,
+) -> None:
+    """Build + dump the technical report without ever breaking the run.
+
+    Single emission point used by both the normal and the early-exit
+    (N=0) paths, so `report_path` is honored whenever the run completes.
+    """
+    if run_walk_forward:
+        logger.debug("run_walk_forward reserved for feat-051; walk-forward section stays null")
+    try:
+        from datetime import datetime, timezone
+
+        from .report_json import build_technical_report, dump_technical_report
+
+        window_start, window_end = _resolve_report_window(price_dates)
+        payload = build_technical_report(
+            list(ticker_symbols),
+            all_metrics,
+            filtered_metrics,
+            historical_prices,
+            price_dates,
+            covariance_matrix,
+            list(covariance_tickers),
+            weights,
+            config,
+            window_start,
+            window_end,
+            datetime.now(timezone.utc).isoformat(),
+        )
+        dump_technical_report(payload, report_path)
+    except Exception as exc:  # noqa: BLE001 — report is diagnostic, never break run
+        logger.warning("Technical report JSON skipped: %s", exc)
+    else:
+        logger.info("Technical report JSON written: path=%s", report_path)
+
+
 def generate_complete_analysis_report(
     ticker_symbols: list,
     config: PortfolioConfig | None = None,
     save_plots: bool = False,
     show_plots: bool = False,
     provider=None,
+    *,
+    report_path: str | Path | None = None,
+    run_walk_forward: bool = False,
 ):
     """Run the pipeline and emit the standard 8-plot analysis report.
 
@@ -180,6 +245,11 @@ def generate_complete_analysis_report(
         save_plots: when True, writes PNG files under `charts/` paths.
         show_plots: when True, opens plot windows after generating all figures.
         provider: optional MarketDataProvider forwarded to main (feat-038 cache).
+        report_path: when set, writes the machine-readable technical report
+            JSON (feat-050; the JSON is always emitted when set — `save_plots`
+            governs plots only). Default None writes nothing.
+        run_walk_forward: reserved for feat-051 (walk-forward opt-in wiring);
+            currently logged and ignored, the walk-forward section stays null.
     """
 
     if config is None:
@@ -335,6 +405,24 @@ def generate_complete_analysis_report(
         len(filtered_tickers),
         len(optimal_portfolio),
     )
+
+    if report_path is not None:
+        # NOTE (naming trap): in the HRP route optimal_portfolio is the
+        # metrics dict and portfolio_weights holds the weights dict;
+        # the legacy route uses the same convention (metrics, weights).
+        _emit_technical_report(
+            ticker_symbols=ticker_symbols,
+            all_metrics=all_metrics,
+            filtered_metrics=filtered_metrics,
+            historical_prices=historical_prices,
+            price_dates=price_dates,
+            covariance_matrix=covariance_matrix,
+            covariance_tickers=filtered_tickers,
+            weights=portfolio_weights,
+            config=config,
+            report_path=report_path,
+            run_walk_forward=run_walk_forward,
+        )
 
     return all_metrics, filtered_metrics, optimal_portfolio, portfolio_weights
 
