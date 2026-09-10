@@ -199,15 +199,17 @@ def _emit_technical_report(
 
     Single emission point used by both the normal and the early-exit
     (N=0) paths, so `report_path` is honored whenever the run completes.
+    With `run_walk_forward`, the already-unpacked bundle feeds
+    walk_forward_evaluate with its signature defaults (no re-fetch, cache
+    untouched); evaluation failure degrades to {"skipped": reason} with a
+    named warning (diagnostic-only). Without the flag the section stays null.
     """
-    if run_walk_forward:
-        logger.debug("run_walk_forward reserved for feat-051; walk-forward section stays null")
+    from datetime import datetime, timezone
+
+    from .report_json import build_technical_report, dump_technical_report
+
+    window_start, window_end = _resolve_report_window(price_dates)
     try:
-        from datetime import datetime, timezone
-
-        from .report_json import build_technical_report, dump_technical_report
-
-        window_start, window_end = _resolve_report_window(price_dates)
         payload = build_technical_report(
             list(ticker_symbols),
             all_metrics,
@@ -222,11 +224,38 @@ def _emit_technical_report(
             window_end,
             datetime.now(timezone.utc).isoformat(),
         )
+    except Exception as exc:  # noqa: BLE001 — report is diagnostic, never break run
+        logger.warning("Technical report JSON skipped: %s", exc)
+        return
+    if run_walk_forward:
+        payload["walk_forward"] = _evaluate_walk_forward_section(
+            historical_prices, price_dates, config
+        )
+    try:
         dump_technical_report(payload, report_path)
     except Exception as exc:  # noqa: BLE001 — report is diagnostic, never break run
         logger.warning("Technical report JSON skipped: %s", exc)
     else:
         logger.info("Technical report JSON written: path=%s", report_path)
+
+
+def _evaluate_walk_forward_section(historical_prices, price_dates, config):
+    """Run the OOS evaluation or return the skipped-dialect on failure."""
+    from ..validation.walk_forward import walk_forward_evaluate
+    from .report_json import walk_forward_section
+
+    try:
+        report = walk_forward_evaluate(historical_prices, price_dates, config)
+    except ValueError as exc:
+        # Expected shape: short bundle ("Not enough rows") — honest skip.
+        reason = str(exc) or repr(exc)
+        logger.warning("Walk-forward skipped: %s", reason)
+        return {"skipped": reason}
+    except Exception as exc:  # noqa: BLE001 — diagnostic-only, run stays valid
+        reason = str(exc) or repr(exc)
+        logger.warning("Walk-forward skipped: %s", reason)
+        return {"skipped": reason}
+    return walk_forward_section(report)
 
 
 def generate_complete_analysis_report(
@@ -248,8 +277,9 @@ def generate_complete_analysis_report(
         report_path: when set, writes the machine-readable technical report
             JSON (feat-050; the JSON is always emitted when set — `save_plots`
             governs plots only). Default None writes nothing.
-        run_walk_forward: reserved for feat-051 (walk-forward opt-in wiring);
-            currently logged and ignored, the walk-forward section stays null.
+        run_walk_forward: when True, runs walk-forward OOS validation into
+            the report (feat-051 opt-in, diagnostic-only); the section stays
+            null when False and degrades to {"skipped": reason} on failure.
     """
 
     if config is None:

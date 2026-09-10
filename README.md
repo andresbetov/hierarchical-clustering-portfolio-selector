@@ -72,6 +72,10 @@ print(report.to_dict())
 
 Por ventana: pesos fijados solo con datos de entrenamiento (alineación → estadísticas → **filtros de producción** → HRP sobre supervivientes), aplicados congelados sobre la ventana posterior separada por embargo — paridad exacta con la estrategia productiva. El reporte expone retorno/volatilidad/Sharpe OOS por fold y agregados por mediana, junto a benchmarks ex-ante `equal` (1/N) e `ivp` (inverse-volatility) sobre el mismo universo y los mismos retornos OOS: si el motor no bate a 1/N en mediana, créelo (DeMiguel 2007). Disciplina temporal: embargo de 5 días (práctica 5-20 para estrategias diarias) y purga implícita de 1 día (horizonte de la etiqueta = retorno diario), que el embargo excede. Sin costos ni turnover todavía — úsalo como contraste direccional, no como P&L esperado.
 
+## Reporte técnico JSON
+
+Cada corrida del CLI escribe `reports/technical-report.json` (siempre emitido salvo fallo del propio reporte, que degrada a warning sin romper el run; `--no-save` gobierna solo los plots): documento machine-readable con `schema_version: 1`, fingerprint determinista de configuración+universo+ventana (`run_id` derivado, sin uuid) y secciones por diagnóstico — huella, exclusiones con distancias al umbral, asignación (HHI/DR/RC + telemetría Dykstra), riesgo in-sample (serie, Sortino, VaR/CVaR95, drawdown/Calmar), salud del árbol y walk-forward. Etiquetado honesto: todo lo in-sample lleva `sample: "in-sample", frequency: "daily", costs: "no-costs"`; resultados teóricos/backtest no son trading real y el pasado no predice. La sección walk-forward (OOS: medianas, detalle por fold, deriva `drift-not-turnover`) solo aparece con el opt-in `--walk-forward` (apagado por defecto: reestima por ventana); sin el flag la clave es `null`, y si la evaluación falla es `{"skipped": "<motivo>"}` — nunca rompe el run.
+
 ## Gráficas del reporte
 
 | # | Gráfica | Decisión que habilita |
@@ -109,7 +113,7 @@ Declaración explícita de alcance para v0.1.0 (estándar de facto en proyectos 
 ```bash
 make lint    # ruff
 make types   # pyright
-make test    # pytest (230 tests)
+make test    # pytest (365 tests)
 ./init.sh    # los 4 gates completos
 ```
 

@@ -78,7 +78,7 @@ distancia de clustering, dependencias pesadas) se versionan como ADRs en
 ```bash
 uv sync --frozen       # instalación reproducible desde uv.lock (dev incluye ruff/pyright/pytest/pytest-cov/hypothesis)
 uv run pytest          # suite completa (offline) — hereda --cov-fail-under=85 desde pyproject.toml (equivale a make test)
-make test              # gate explícito: -q --cov=portfolio_engine --cov-report=term-missing/html/xml --cov-branch --cov-fail-under=85 (85% TOTAL combinado de coverage.py: líneas+branches / stmts+branch destinations; baseline 85.37% con 233 tests)
+make test              # gate explícito: -q --cov=portfolio_engine --cov-report=term-missing/html/xml --cov-branch --cov-fail-under=85 (85% TOTAL combinado de coverage.py: líneas+branches / stmts+branch destinations; baseline 85.37% con 233 tests (conteo actual: ver salida de `make test`))
 make test-no-cov       # escape hatch rápido sin cobertura (--no-cov)
 make lint              # ruff static checks (también corre en ./init.sh)
 make types             # pyright type checks (también corre en ./init.sh)
