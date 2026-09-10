@@ -351,19 +351,26 @@ def _portfolio_summary_metrics(
     covariance_matrix: np.ndarray | None,
     risk_free_rate: float,
     per_asset_volatilities: list[float] | None = None,
+    trading_days_per_year: int = 252,
 ) -> dict:
     """Honest portfolio summary (A5): Sharpe from real wᵀΣw variance.
 
-    With a covariance matrix, portfolio volatility is sqrt(wᵀΣw). If absent
-    (defensive route only), falls back to the diagonal approximation from
-    per-asset volatilities with a warning — correlations then ignored.
+    Unit contract: ``expected_returns`` and the returned ``volatility`` are
+    annualized, while ``covariance_matrix`` is the daily covariance produced
+    from daily log-returns (as delivered by the pipeline), so it is scaled by
+    ``trading_days_per_year`` before sqrt(wᵀΣw). Mixing daily risk with annual
+    returns inflates the Sharpe by ~sqrt(252).
+
+    If the covariance matrix is absent (defensive route only), falls back to
+    the diagonal approximation from annualized per-asset volatilities with a
+    warning — correlations then ignored.
     """
     weight_vector = np.asarray(weights, dtype=np.float64)
     return_vector = np.asarray(expected_returns, dtype=np.float64)
     portfolio_return = float(weight_vector @ return_vector)
 
     if covariance_matrix is not None:
-        cov = np.asarray(covariance_matrix, dtype=np.float64)
+        cov = np.asarray(covariance_matrix, dtype=np.float64) * trading_days_per_year
         portfolio_variance = float(weight_vector @ cov @ weight_vector)
         portfolio_volatility = float(np.sqrt(max(portfolio_variance, 0.0)))
     else:
@@ -443,6 +450,7 @@ def plot_optimal_portfolio_analysis(
         covariance_matrix,
         config.risk_free_rate,
         per_asset_volatilities=volatilities,
+        trading_days_per_year=config.trading_days_per_year,
     )
 
     metrics_data = {

@@ -127,7 +127,7 @@ Ante covarianza no positiva-definida, SHALL intentarse reparación determinista 
 
 ### Requirement: Sharpe reportado con covarianza real
 
-El Sharpe de cartera mostrado en el resumen SHALL calcularse como (w·μ − rf)/sqrt(wᵀΣw) usando la matriz de covarianza alineada; la fórmula legacy sqrt(Σ(wᵢσᵢ)²) SHALL desaparecer del código de reporte. La matriz de covarianza entregada al resumen SHALL estar rebanada al subconjunto exacto del portfolio seleccionado — mismas dimensiones y mismo orden de tickers que el vector de pesos — en todas las rutas de asignación, incluida la ruta legacy con pruning por cluster (M < N). El pipeline SHALL preparar ese rebanado antes de invocar al módulo de reporte; el reporte SHALL NOT recibir matrices de dimensión distinta a los pesos.
+El Sharpe de cartera mostrado en el resumen SHALL calcularse como (w·μ − rf)/sqrt(wᵀΣw) usando la matriz de covarianza alineada; la fórmula legacy sqrt(Σ(wᵢσᵢ)²) SHALL desaparecer del código de reporte. La covarianza SHALL interpretarse en unidades diarias (como la entrega el pipeline) y SHALL anualizarse con `trading_days_per_year` antes de calcular la volatilidad y el Sharpe, evitando mezclar riesgo diario con retornos anualizados. La matriz de covarianza entregada al resumen SHALL estar rebanada al subconjunto exacto del portfolio seleccionado — mismas dimensiones y mismo orden de tickers que el vector de pesos — en todas las rutas de asignación, incluida la ruta legacy con pruning por cluster (M < N). El pipeline SHALL preparar ese rebanado antes de invocar al módulo de reporte; el reporte SHALL NOT recibir matrices de dimensión distinta a los pesos.
 
 #### Scenario: correlación cero equivale a legacy
 - **WHEN** la covarianza es diagonal (ρ=0)

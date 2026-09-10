@@ -10,10 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Reporte técnico JSON machine-readable (`reports/technical-report.json`, `schema_version: 1`, fingerprint determinista): núcleo estricto + envelope (feat-043), exclusiones con distancias (feat-044), asignación HHI/DR/RC + telemetría Dykstra (feat-045), riesgo in-sample serie/cola/drawdown (feat-046), salud del árbol depth-chaining (feat-048), sección walk-forward + deriva L1 (feat-049), ensamblador keystone con emisión fail-safe en el pipeline/CLI (feat-050) y opt-in `--walk-forward` (feat-051).
+- README orientado a showcase: reescritura en inglés + espejo `README.es.md`, tabla CLI, diagrama de flujo, resultados in-sample/out-of-sample con snapshot de la corrida en `docs/results/technical-report-2026-09-10.json`, sección del harness de agentes y referencias metodológicas.
 
 ### Changed
 
 - feat-042: recalibración de thresholds del filtro (ADR 007) — `minimum_sharpe_threshold` 0.5→0.3, `maximum_volatility_threshold` 0.25→0.27; evidencia walk-forward (única configuración donde HRP bate a 1/N en mediana OOS); revierte en 2 líneas.
+
+### Fixed
+
+- Gráfica 7 (resumen de cartera): la volatilidad `sqrt(wᵀΣw)` SHALL anualizarse con `trading_days_per_year` antes de calcular el Sharpe. La covarianza del pipeline es diaria y los retornos anualizados, así que el Sharpe reportado estaba inflado ~√252 (en la corrida 2026-09-10: 14.84 con vol diaria vs 0.94 anualizado; la gráfica commiteada anterior mostraba 14.48 en otra corrida); `test_reporting_sharpe.py` alineado al contrato de unidades + 2 regresiones (`test_daily_covariance_is_annualized`, `test_trading_days_parameter_controls_annualization`).
 
 ## [0.1.0] - 2026-09-09
 

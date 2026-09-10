@@ -14,8 +14,9 @@ Cómo leer cada ficha: **Definición** (intuitiva + formal) · **Propósito** (p
 **Cómo leerlo** (sano / vigilancia / degenerado) · **Origen y cómputo** (file:line verificados, coste) ·
 **Guards y caveats** (prohibiciones) · **Referencias verificables** (conceptuales, sin URLs).
 
-Números del proyecto citados: filtro 12→4 (JPM 25.6%, ABBV 23.5%, MRK 20.9%, WMT topado 30.0%);
-walk-forward 16 folds (train 250 / test 60 / embargo 5) con mediana OOS HRP 0.772 vs igual 0.777;
+Números del proyecto citados como ejemplos de corridas anteriores (el snapshot vigente del showcase vive en `docs/results/`):
+filtro 12→4 (JPM 25.6%, ABBV 23.5%, MRK 20.9%, WMT topado 30.0%) con defaults previos a feat-042;
+walk-forward 16 folds (train 250 / test 60 / embargo 5) con mediana OOS HRP 0.772 vs 1/N 0.777 en esa corrida;
 caso degenerado 15 ETFs → solo GLD 100%; defaults vigentes Sharpe≥0.3, vol≤0.27 (feat-042/ADR-007).
 
 ---
