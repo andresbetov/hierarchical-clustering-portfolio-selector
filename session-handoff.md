@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: **feat-044 done local en su rama** (regla del usuario: trackers y change dentro de la rama de feature). Rama `feat/filter-rejections-distances` sin push hasta validación del diff.
-- Current status: change `feat-filter-rejections-distances` valid (+1 ADDED a `technical-report`) · suite 256 passed, TOTAL 86.20% · motor diff 0 · feat-043 cerrado (PR #55 + #56)
-- Next: usuario valida → push → PR → CI → squash → archive del change vía rama chore → feat-045 (HHI/DR/RC + raw-vs-constrained).
+- Goal: **feat-044 CERRADO end-to-end** con la regla de validación pre-push aplicada (PR #57 feat con 3 MAJOR corregidos pre-push + PR #58 archive). Capability `technical-report` con 5 requirements.
+- Current status: `develop @ 3cf3441` · suite 262 passed, TOTAL 86.21% · `openspec validate --all` 14/14 · git status 0 · cero changes activos
+- Next: feat-045 (HHI/DR/RC + raw-vs-constrained) con la rutina completa: rama-primero → tracker in_progress en rama → propose → TDD → **subagentes validadores pre-push** → push → PR → merge → archive.
 
 ## Regla de flujo adoptada (2026-09-09, orden del usuario)
 
@@ -31,7 +31,15 @@
 
 1. Validar diff de `feat/filter-rejections-distances` → push → PR → CI → squash → archive del change vía rama chore + PR.
 2. feat-045 (HHI/DR/RC + raw-vs-constrained): rama primero → tracker in_progress en rama → propose → TDD → validación subagentes pre-push → cierre.
-3. Rutina fija: rama-primero → in_progress en rama → TDD → gates → subagentes validadores → push → PR → merge → archive.
+3. Rutina fija: rama-primero → in_progress en rama → TDD → gates → subagentes validadores (regla: fix antes de push) → push → PR → merge → archive vía chore.
+
+## Lecciones consolidadas del proyecto
+
+1. Los heredocs fuzzy python son no-op silenciosos — SOLO Edit/Write tools para código fuente.
+2. La validación pre-push con subagentes vale: 3 MAJOR (mutantes de guard order/frontera/ingesta) eliminados ANTES del push de feat-044.
+3. Los fixtures incoherentes los caza el test de equivalencia contra el motor (feat-044: EDGE no puede estar en filtered_metrics; OVERLAP sí pasa).
+4. Severidad ≠ orden: cobertura va penúltima porque mide código estabilizado.
+5. OpenSpec validate es pre-commit: MODIFIED debe copiar scenarios exactos; capabilities existentes NO llevan ## Purpose.
 
 ## Decisions Made
 
