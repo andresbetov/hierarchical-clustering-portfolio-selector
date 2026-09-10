@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: **feat-051 done local en su rama + ÉPICO feat-043..051 COMPLETO** (bucle de validación con APPROVE final). Change `feat-cli-walkforward-optin` valid (MODIFIED requirement, 7 scenarios).
-- Current status: rama `feat/cli-walkforward-optin-docs` · suite 365 passed, TOTAL 89.18% · core/portfolio/data/validation/viz diff cero · openspec validate 14/14 · feat-050 cerrado (PRs #74-75)
-- Next: cierre remoto feat-051 (push→PR→CI→merge→archive) + handoff de épico.
+- Goal: **ÉPICO feat-043..051 CERRADO end-to-end** (PR #77 feat + PR #78 archive, CI verde). Capability `technical-report` con 10 requirements. Cero changes activos. Todas las features del tracker en `done`.
+- Current status: `develop @ 591a204` · suite 365 passed, TOTAL 89.18% · git status 0 · openspec validate 13/13
+- Next: lo que indique el usuario (candidatos del backlog v0.2.0: CPCV/DSR/PBO, costos+turnover, HERC, flip default LedoitWolf con evidencia WF, pyright strict). Merge `develop → main` solo cuando lo indique (CONTRIBUTING).
 - Next: feat-046 (serie in-sample + Sortino/VaR/CVaR95 + maxDD/Calmar, re-align `minimum_overlap_ratio=1.0`) con la rutina completa: rama-primero → tracker in_progress en rama → propose → TDD → subagentes validadores pre-push → push → PR → merge → archive.
 
 ## Regla de flujo adoptada (2026-09-09, orden del usuario)
