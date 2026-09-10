@@ -24,7 +24,7 @@ El dispatcher de asignación SHALL cubrir los cinco métodos legacy (`equal`, `i
 
 ### Requirement: Ventana temporal parametrizada
 
-`lookback_years` SHALL defaultear a 5 y aceptar solo enteros >= 1; `trading_days_per_year` SHALL defaultear a 252 dentro de [1, 366]; `minimum_overlap_ratio` SHALL defaultear a 0.9 dentro de (0, 1].
+`lookback_years` SHALL defaultear a 5 y rechazar valores < 1; `trading_days_per_year` SHALL defaultear a 252 dentro de [1, 366]; `minimum_overlap_ratio` SHALL defaultear a 0.9 dentro de (0, 1].
 
 #### Scenario: lookback inválido
 

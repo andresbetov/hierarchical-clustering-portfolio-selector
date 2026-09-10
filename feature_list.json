@@ -538,7 +538,7 @@
         "feat-052"
       ],
       "status": "in-progress",
-      "evidence": "2026-09-10 sesion feat-053 (rama docs/spec-sync): rama-primero + in-progress ANTES de implementar; OpenSpec change docs-spec-sync (proposal+design+tasks+10 deltas: 8 MODIFIED + 2 ADDED) validado; Fase 1 docs de proceso aplicada (CONTRIBUTING/AGENTS/pyproject/Makefile/pre-commit/ADR index+addendum/catalogo 6 refs+mapeo/feature_list refs/README wording + init.sh uv sync --frozen). ./init.sh FRESCO exit 0: 367 passed, TOTAL 89.18%; openspec validate docs-spec-sync + --all verdes; greps anti-regresion limpios."
+      "evidence": "2026-09-10 sesion feat-053 (rama docs/spec-sync): rama-primero + in-progress ANTES de implementar; OpenSpec change docs-spec-sync (proposal+design+tasks+10 deltas: 8 MODIFIED + 2 ADDED) validado; Fase 1 docs de proceso aplicada (CONTRIBUTING/AGENTS/pyproject/Makefile/pre-commit/ADR index+addendum/catalogo 6 refs+mapeo/feature_list refs/README wording + init.sh uv sync --frozen). ./init.sh FRESCO exit 0: 367 passed, TOTAL 89.18%; openspec validate docs-spec-sync + --all verdes; greps anti-regresion limpios. Archive en rama chore/archive-docs-spec-sync: deltas aplicados a las 10 specs vivas + tasks 4.x/6.x done; pendiente merge para marcar done."
     }
   ]
 }

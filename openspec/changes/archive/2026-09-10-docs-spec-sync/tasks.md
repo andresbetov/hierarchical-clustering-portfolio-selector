@@ -26,8 +26,8 @@
 
 ## 4. Fase 2 — archive + sync a specs vivas
 
-- [ ] 4.1 Rama `chore/archive-docs-spec-sync`; aplicar deltas a las 10 specs
-- [ ] 4.2 `openspec validate --all` 13/13
+- [x] 4.1 Rama `chore/archive-docs-spec-sync`; aplicar deltas a las 10 specs
+- [x] 4.2 `openspec validate --all` 13/13
 
 ## 5. Verificación
 
@@ -36,5 +36,5 @@
 
 ## 6. Cierre (todo en la rama)
 
-- [ ] 6.1 Trackers (feat-053 done con evidencia, progress, handoff)
-- [ ] 6.2 Commit atómico; push → PR → CI → squash → archive del change
+- [x] 6.1 Trackers (progress, handoff, feat-053 evidence de archive)
+- [x] 6.2 Commit atómico; push → PR → CI → squash → archive del change

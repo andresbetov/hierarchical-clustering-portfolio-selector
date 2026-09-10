@@ -3,9 +3,9 @@
 ## Current State
 
 **Last Updated:** 2026-09-10
-**Branch:** `docs/spec-sync` — feat-053 in-progress (OpenSpec change `docs-spec-sync` validado; Fase 1 docs de proceso aplicada, pendiente commit/PR).
+**Branch:** `chore/archive-docs-spec-sync` — feat-053 en archive (deltas aplicados a las 10 specs vivas, pendiente commit/PR).
 
-feat-052 done y mergeado a develop (PR #80, 74b753b, CI verde matriz 3.11/3.12/3.13). Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13 + change `docs-spec-sync` valid.
+feat-052 done y mergeado (PR #80, 74b753b, CI verde matriz) · Fase 1 mergeada (PR #81, cd02d49, CI verde matriz). Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13 + change `docs-spec-sync` valid.
 
 ## Status
 
@@ -42,7 +42,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_feat-053 in-progress en rama `docs/spec-sync`: OpenSpec change `docs-spec-sync` (proposal+design+tasks+10 deltas) validado; Fase 1 docs de proceso aplicada (CONTRIBUTING, AGENTS, pyproject, Makefile, pre-commit, ADR index+addendum, catálogo, feature_list refs, README sync-frozen); `init.sh` verde con el nuevo `uv sync --frozen`._
+_Feat-053 en archive en rama `chore/archive-docs-spec-sync`: deltas del change `docs-spec-sync` aplicados a las 10 specs vivas; `init.sh` y validates verdes; pendiente commit + push + PR._
 
 ### What's Done (épico Reporte técnico JSON — feat-043..051, cerrado)
 

@@ -15,3 +15,11 @@ El motor SHALL usar exceso logarítmico `excess = annual_return_log - ln(1+rf)` 
 #### Scenario: rf 0.045 coherente
 - **WHEN** se calcula Sharpe con `rf=0.045` y `ret=0.10, vol=0.15`
 - **THEN** excess = `0.10 - ln(1.045)` (≈0.055983) y Sharpe ≈0.37322, no `(0.10-0.045)/0.15=0.3666`
+
+### Requirement: Trade-off Dykstra vs HRP documentado
+
+La documentación cuantitativa SHALL explicar que la proyección Dykstra post-hoc minimiza distancia euclídea al vector HRP puro y no preserva el balance jerárquico de riesgo (ADR 003 addendum).
+
+#### Scenario: trade-off localizable
+- **WHEN** se busca "Dykstra" en la documentación del motor
+- **THEN** existe la explicación del trade-off con referencia al ADR 003
