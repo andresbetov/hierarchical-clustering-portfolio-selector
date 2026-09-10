@@ -2,9 +2,15 @@
 
 ## Current Objective
 
-- Goal: **feat-043 CERRADO end-to-end** (PR #55 feat + PR #56 archive, CI verde). Capability `technical-report` viva con 4 requirements. Cero changes activos.
-- Current status: `develop @ 257f190` · suite 246 passed, TOTAL 85.60% · `openspec validate --all` 13/13 · git status limpio
-- Next: feat-044 (rejections+distances, deps feat-043) — propose change `feat-filter-rejections-distances`, TDD, merge serial; luego 045/046/048/049, 050, 051.
+- Goal: **feat-044 done local en su rama** (regla del usuario: trackers y change dentro de la rama de feature). Rama `feat/filter-rejections-distances` sin push hasta validación del diff.
+- Current status: change `feat-filter-rejections-distances` valid (+1 ADDED a `technical-report`) · suite 256 passed, TOTAL 86.20% · motor diff 0 · feat-043 cerrado (PR #55 + #56)
+- Next: usuario valida → push → PR → CI → squash → archive del change vía rama chore → feat-045 (HHI/DR/RC + raw-vs-constrained).
+
+## Regla de flujo adoptada (2026-09-09, orden del usuario)
+
+1. Al iniciar feature: rama correcta primero → `feature_list.json` a `in-progress` EN la rama → recién entonces implementar.
+2. Todo lo modificado por la feature (código, tests, change OpenSpec, trackers: `feature_list.json`, `progress.md`, `session-handoff.md`) vive en la rama de la feature — nada directo a `develop`.
+3. El archive del change se hace vía rama chore + PR (mecánica post-merge).
 
 ## Completed This Session
 
