@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: **feat-048 done local en su rama** (bucle de validación con APPROVE final, sin push hasta validación del usuario). Change `feat-tree-health-chaining` valid (+1 ADDED a `technical-report`, 8 scenarios). Decisión de usuario registrada: acreción exactamente-un-lado.
-- Current status: rama `feat/tree-health-depth-chaining` · suite 335 passed, TOTAL 88.01% · `hrp.py` diff cero · openspec validate 14/14 · feat-046 cerrado (PRs #65-67)
-- Next: validación del usuario → push → PR → CI → squash → archive vía rama chore → feat-049 (sección walk-forward + deriva L1).
+- Goal: **feat-048 CERRADO end-to-end** (PR #68 feat + PR #69 archive, CI verde). Capability `technical-report` con 8 requirements. Cero changes activos. MODO AUTÓNOMO activado por el usuario: no esperar validaciones, decidir con análisis profundo hasta completar el épico.
+- Current status: `develop` + archive feat-048 · suite 335 passed, TOTAL 88.01% · openspec validate 13/13
+- Next: feat-049 (sección walk-forward + deriva L1) ciclo completo autónomo.
 - Next: feat-046 (serie in-sample + Sortino/VaR/CVaR95 + maxDD/Calmar, re-align `minimum_overlap_ratio=1.0`) con la rutina completa: rama-primero → tracker in_progress en rama → propose → TDD → subagentes validadores pre-push → push → PR → merge → archive.
 
 ## Regla de flujo adoptada (2026-09-09, orden del usuario)
