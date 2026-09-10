@@ -51,7 +51,8 @@ def test_cli_refresh_cache_propagates_to_provider(monkeypatch):
 
     captured: dict = {}
 
-    def fake_report(universe, config, save_plots=True, show_plots=False, provider=None):
+    def fake_report(universe, config, save_plots=True, show_plots=False, provider=None,
+                      report_path=None, run_walk_forward=False):
         captured["provider"] = provider
         return {}, {}, {}, {}
 
@@ -148,7 +149,8 @@ def test_cli_propagates_all_to_config(monkeypatch):
 
     captured: dict = {}
 
-    def fake_report(universe, config, save_plots=True, show_plots=False, provider=None):
+    def fake_report(universe, config, save_plots=True, show_plots=False, provider=None,
+                      report_path=None, run_walk_forward=False):
         captured["config"] = config
         captured["save_plots"] = save_plots
         captured["show_plots"] = show_plots
@@ -186,7 +188,8 @@ def test_cli_defaults_propagate(monkeypatch):
 
     captured: dict = {}
 
-    def fake_report(universe, config, save_plots=True, show_plots=False, provider=None):
+    def fake_report(universe, config, save_plots=True, show_plots=False, provider=None,
+                      report_path=None, run_walk_forward=False):
         captured["config"] = config
         captured["save_plots"] = save_plots
         captured["show_plots"] = show_plots

@@ -123,6 +123,7 @@ def main(argv: list[str] | None = None, universe_path: str | None = None) -> Non
         save_plots=save_plots,
         show_plots=show_plots,
         provider=provider,
+        report_path="reports/technical-report.json",
     )
 
     print_portfolio_summary(optimal_portfolio, portfolio_weights)

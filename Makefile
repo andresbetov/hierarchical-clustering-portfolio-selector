@@ -34,7 +34,7 @@ run-debug:
 	LOG_LEVEL=DEBUG uv run scripts/assets-investment.py
 
 clean:
-	rm -rf __pycache__ .ruff_cache .pytest_cache charts/*.png *.pyc htmlcov .coverage coverage.xml coverage.json
+	rm -rf __pycache__ .ruff_cache .pytest_cache charts/*.png *.pyc htmlcov .coverage coverage.xml coverage.json reports/*.json
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -name "*.nbc" -o -name "*.nbi" | xargs rm -f 2>/dev/null || true
 

@@ -12,6 +12,7 @@ Quick start: `uv sync && uv run portfolio-run` over config/universe.yaml.
 """
 
 from .app.pipeline import generate_complete_analysis_report, main
+from .app.report_json import build_technical_report, dump_technical_report
 from .core.config import PortfolioConfig
 from .core.logging_utils import configure_logging
 from .core.metrics import (
@@ -111,6 +112,8 @@ __all__ = [
     "print_covariance_matrix",
     "print_portfolio_summary",
     "main",
+    "build_technical_report",
+    "dump_technical_report",
     "generate_complete_analysis_report",
     "configure_logging",
 ]
