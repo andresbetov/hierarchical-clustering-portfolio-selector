@@ -4,31 +4,31 @@ import pytest
 
 from portfolio_engine import (
     PortfolioConfig,
-    download_and_calculate_metrics,
     apply_asset_filters,
-    construct_returns_matrix,
     calculate_correlation_matrix,
     calculate_covariance_matrix,
-    select_optimal_diversified_portfolio,
     calculate_optimal_portfolio_weights,
+    construct_returns_matrix,
+    select_optimal_diversified_portfolio,
 )
 
 
 @pytest.fixture
 def sample_config():
-    """Minimal config for testing."""
-    config = PortfolioConfig()
-    config.minimum_sharpe_threshold = -10
-    config.maximum_volatility_threshold = 10
-    config.maximum_correlation_threshold = 0.8
-    return config
+    """Loose thresholds + LEGACY two-stage allocation pinned deliberately:
+    these tests exercise the composite-scoring path (hrp is end-to-end)."""
+    return PortfolioConfig(
+        minimum_sharpe_threshold=-10.0,
+        maximum_volatility_threshold=10.0,
+        maximum_correlation_threshold=0.8,
+        weight_allocation_method="risk_parity",
+    )
 
 
 @pytest.fixture
 def synthetic_prices():
     """Generate synthetic price data for offline testing."""
     np.random.seed(42)
-    dates = np.arange(100)
 
     # Create 4 synthetic assets with correlated movements
     asset_1 = 100 * np.exp(np.cumsum(np.random.randn(100) * 0.01))

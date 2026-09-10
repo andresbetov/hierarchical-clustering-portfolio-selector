@@ -1,15 +1,17 @@
 """Core metrics unit tests."""
 
+import math
+
 import numpy as np
 import pytest
 
 from portfolio_engine.core.metrics import (
-    compute_logarithmic_returns,
     calculate_annualized_return,
     calculate_annualized_volatility,
-    calculate_sharpe_ratio,
     calculate_correlation_matrix,
     calculate_covariance_matrix,
+    calculate_sharpe_ratio,
+    compute_logarithmic_returns,
     construct_returns_matrix,
 )
 
@@ -45,18 +47,102 @@ class TestAnnualizedMetrics:
         assert np.isclose(annual_return, 0.252, atol=0.001)
 
     def test_annualized_volatility(self):
-        # Daily volatility of 1% annualizes to ~15.9% (0.01 * sqrt(252))
+        # Sample estimator (ddof=1) consistent with the covariance kernel (C3).
         daily_returns = np.array([0.01, -0.01] * 126)
+        expected = float(np.std(daily_returns, ddof=1)) * np.sqrt(252)
         annual_vol = calculate_annualized_volatility(daily_returns)
-        assert np.isclose(annual_vol, 0.01 * np.sqrt(252), atol=0.001)
+        assert annual_vol == pytest.approx(expected, rel=1e-12)
 
     def test_sharpe_ratio(self):
         annual_return = 0.10  # 10%
         annual_vol = 0.15  # 15%
         risk_free = 0.02  # 2%
         sharpe = calculate_sharpe_ratio(annual_return, annual_vol, risk_free)
-        expected = (0.10 - 0.02) / 0.15
-        assert np.isclose(sharpe, expected)
+        expected = (0.10 - math.log1p(0.02)) / 0.15
+        assert sharpe == pytest.approx(expected, rel=1e-12)
+
+
+class TestRiskFreeLogConvention:
+    """Coherencia logarítmica rf_log = ln(1+rf) — single source, estable."""
+
+    def test_helper_zero_invariant(self):
+        from portfolio_engine.core.metrics import risk_free_log_rate
+
+        assert risk_free_log_rate(0.0) == 0.0
+
+    def test_helper_0045_pin(self):
+        from portfolio_engine.core.metrics import risk_free_log_rate
+
+        assert risk_free_log_rate(0.045) == pytest.approx(0.04401688541677432, rel=1e-12)
+
+    def test_config_property_delegates(self):
+        from portfolio_engine.core.config import PortfolioConfig
+
+        assert PortfolioConfig(risk_free_rate=0.045).risk_free_rate_log == pytest.approx(
+            math.log1p(0.045), rel=1e-12
+        )
+        assert PortfolioConfig(risk_free_rate=0.0).risk_free_rate_log == 0.0
+
+    def test_sharpe_rf_zero_invariant(self):
+        # rf=0 must be identical pre/post-fix (log1p(0)=0)
+        assert calculate_sharpe_ratio(0.10, 0.15, 0.0) == pytest.approx(0.10 / 0.15, rel=1e-12)
+
+    def test_sharpe_rf_0045_pin(self):
+        assert calculate_sharpe_ratio(0.10, 0.15, 0.045) == pytest.approx(
+            (0.10 - 0.04401688541677432) / 0.15, rel=1e-12
+        )
+
+
+class TestNumericGuards:
+    """C3: degenerate inputs produce NaN semantics and never infinities."""
+
+    def test_sharpe_nan_for_zero_volatility(self):
+        assert np.isnan(calculate_sharpe_ratio(0.10, 0.0, 0.02))
+
+    def test_sharpe_nan_for_tiny_below_eps(self):
+        assert np.isnan(calculate_sharpe_ratio(0.10, 1e-15, 0.02))
+
+    def test_sharpe_finite_for_small_positive_vol(self):
+        assert np.isfinite(calculate_sharpe_ratio(0.10, 1e-6, 0.02))
+
+    def test_volatility_single_point_is_nan_not_crash(self):
+        assert np.isnan(calculate_annualized_volatility(np.array([0.01])))
+
+    def test_correlation_diagonal_honest_for_flat_asset(self):
+        flat = np.full((30,), 0.001)  # zero variance daily series
+        varying = np.linspace(-0.02, 0.02, 30)
+        matrix = calculate_correlation_matrix(np.column_stack([varying, flat]))
+
+        assert np.isnan(matrix[1, 1])  # no fake 1.0 for a flat asset
+        assert np.isnan(matrix[0, 1])
+        assert np.isnan(matrix[1, 0])
+        assert matrix[0, 0] == 1.0  # informative asset keeps honest diagonal
+
+    def test_covariance_singular_dup_columns_still_finite(self):
+        col = np.linspace(-0.01, 0.01, 40)
+        matrix = calculate_covariance_matrix(np.column_stack([col, col]))
+        assert np.all(np.isfinite(matrix))
+        assert np.allclose(matrix, matrix.T)
+
+
+class TestTradingDaysParameterization:
+    """B4: the annualization constant is an explicit parameter."""
+
+    def test_legacy_252_default_unchanged(self):
+        returns = np.array([0.001] * 252)
+        assert calculate_annualized_return(returns) == pytest.approx(0.252)
+
+    def test_crypto_calendar_365(self):
+        returns = np.array([0.001] * 365)
+        assert calculate_annualized_return(returns, trading_days=365) == pytest.approx(0.365)
+        expected_vol = float(np.std(returns, ddof=1)) * np.sqrt(365)
+        assert calculate_annualized_volatility(returns, trading_days=365) == pytest.approx(expected_vol, rel=1e-12)
+
+    def test_distinct_calendars_produce_distinct_vols(self):
+        rng_returns = np.array([0.01, -0.005] * 100)
+        vol_252 = calculate_annualized_volatility(rng_returns, trading_days=252)
+        vol_365 = calculate_annualized_volatility(rng_returns, trading_days=365)
+        assert vol_365 > vol_252
 
 
 class TestCorrelationMatrix:

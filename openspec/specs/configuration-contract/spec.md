@@ -1,0 +1,119 @@
+# configuration-contract Specification
+
+## Purpose
+La configuración del motor SHALL ser un objeto inmutable, construido por un único punto validado, donde todo estado inválido es imposible de crear (falla en construcción) y ningún consumidor puede mutarla después.
+
+## Requirements
+
+### Requirement: Inmutabilidad estructural
+
+Post-construcción, cualquier intento de asignar un atributo SHALL fallar con `FrozenInstanceError`; los nombres de campos SHALL preservar la API histórica para que consumidores existentes no cambien.
+
+#### Scenario: mutación rechazada
+- **WHEN** se intenta `config.minimum_sharpe_threshold = -10` tras construir
+- **THEN** se lanza `FrozenInstanceError`
+
+### Requirement: Validación al construir
+
+`__post_init__` SHALL validar y rechazar con `ValueError`: pesos de scoring que no sumen 1±1e-9 o salgan de [0,1]; `risk_free_rate` fuera de [0,1]; `maximum_volatility_threshold <= 0`; `minimum_single_asset_weight > maximum_single_asset_weight`; `lookback_years < 1`; `trading_days_per_year` fuera de [1, 366]; `minimum_overlap_ratio` fuera de (0, 1]; método, distancia, estimador o linkage fuera de sus enums. (`target_portfolio_volatility` fue eliminado por ADR 001 y SHALL NOT reaparecer en el contrato.)
+
+#### Scenario: typo de método
+- **WHEN** se construye con `weight_allocation_method="risk_parit"`
+- **THEN** ValueError descriptivo — el fallback silencioso runtime queda eliminado
+
+### Requirement: Dispatch sin red de seguridad muerta
+
+El dispatcher de asignación SHALL cubrir los cinco métodos legacy (`equal`, `inverse_volatility`, `risk_parity`, `max_sharpe`, `min_variance`) con mapeo 1:1 a su función; `hrp` SHALL lanzar un error de ruteo hacia la vía jerárquica; la rama else (inalcanzable por contrato de construcción) SHALL lanzar `ValueError` — SHALL NOT existir fallback silencioso.
+
+#### Scenario: código sin rama muerta
+- **WHEN** se inspecciona el dispatch
+- **THEN** cada método legacy mapea 1:1 a su función, `hrp` rechaza con mensaje de ruteo y no existe fallback genérico silencioso
+
+### Requirement: Ventana temporal parametrizada
+
+`lookback_years` SHALL defaultear a 5 y rechazar valores < 1; `trading_days_per_year` SHALL defaultear a 252 dentro de [1, 366]; `minimum_overlap_ratio` SHALL defaultear a 0.9 dentro de (0, 1].
+
+#### Scenario: lookback inválido
+- **WHEN** se construye con `lookback_years=0`
+- **THEN** ValueError descriptivo
+
+### Requirement: Métrica de distancia de correlación validada
+
+`PortfolioConfig` SHALL exponer `distance_metric` con valores {signed, abs} (default signed según ADR 002) y SHALL rechazar cualquier otro valor en construcción.
+
+#### Scenario: valor inválido
+- **WHEN** se construye con distance_metric="euclidean"
+- **THEN** ValueError enumera los valores permitidos
+
+### Requirement: Estimador de covarianza validado
+
+`PortfolioConfig` SHALL exponer `covariance_estimator` con valores {sample, ledoit_wolf, oas} (default `sample` según ADR 005) y SHALL rechazar cualquier otro valor en construcción con `ValueError` descriptivo.
+
+#### Scenario: valor inválido
+- **WHEN** se construye con covariance_estimator="shrinkage_otro"
+- **THEN** ValueError enumera los valores permitidos
+
+#### Scenario: default sin cambio
+- **WHEN** se construye sin especificar covariance_estimator
+- **THEN** el campo vale "sample"
+
+### Requirement: Método de linkage validado
+
+`PortfolioConfig` SHALL exponer `linkage_method` con valores {single, ward, average} (default `single` según ADR 006) y SHALL rechazar cualquier otro valor en construcción con `ValueError` descriptivo.
+
+#### Scenario: valor inválido
+- **WHEN** se construye con linkage_method="centroid"
+- **THEN** ValueError enumera los valores permitidos
+
+#### Scenario: default sin cambio
+- **WHEN** se construye sin especificar linkage_method
+- **THEN** el campo vale "single"
+
+### Requirement: Días de trading configurables y validados
+
+`PortfolioConfig` SHALL exponer `trading_days_per_year` (default 252) validado dentro de [1, 366]; los kernels de anualización SHALL recibirlo como parámetro explícito y SHALL NOT contener la constante enterrada.
+
+#### Scenario: calendario alternativo
+- **WHEN** se configura trading_days_per_year=365 para un universo crypto
+- **THEN** retorno/volatilidad anualizados usan exactamente 365 en su fórmula
+
+#### Scenario: valor inválido
+- **WHEN** se construye con trading_days_per_year=0
+- **THEN** ValueError descriptivo
+
+### Requirement: Ruta end-to-end HRP sin pruning intermedio
+
+Con method=hrp, la orquestación SHALL asignar pesos sobre TODO el universo filtrado mediante linkage→quasi-diag→bisección, omitiendo la selección por scoring compuesto; los bounds de feat-014 SHALL aplicarse al vector final igual que en los demás métodos.
+
+#### Scenario: flujo hrp del pipeline
+- **WHEN** main() corre con config default
+- **THEN** los pesos provienen de calculate_hrp_weights y todos los tickers filtrados aparecen en el resultado con peso > 0
+
+### Requirement: Ratio de solapamiento validado
+`PortfolioConfig` SHALL exponer `minimum_overlap_ratio: float = 0.9` validado en `(0, 1]` (exclusivo 0, inclusivo 1) y SHALL rechazar fuera de rango en construcción con `ValueError`.
+
+#### Scenario: cero excluido
+- **WHEN** se construye con `minimum_overlap_ratio=0`
+- **THEN** `ValueError` `must be within (0, 1]`
+
+#### Scenario: uno inclusivo
+- **WHEN** se construye con `minimum_overlap_ratio=1.0`
+- **THEN** construcción válida (exige solape perfecto, igual a inner join actual)
+
+#### Scenario: fuera de rango superior
+- **WHEN** se construye con `minimum_overlap_ratio=1.0001`
+- **THEN** `ValueError`
+
+### Requirement: Defaults de filtrado recalibrados
+
+El constructor por defecto SHALL usar `minimum_sharpe_threshold == 0.3` y `maximum_volatility_threshold == 0.27`. Los overrides explícitos SHALL seguir respetándose sin cambios y la validación de rangos existente SHALL permanecer intacta.
+
+#### Scenario: defaults recalibrados
+
+- **WHEN** se construye `PortfolioConfig()` sin overrides
+- **THEN** `minimum_sharpe_threshold == 0.3` y `maximum_volatility_threshold == 0.27`
+
+#### Scenario: overrides explícitos intactos
+
+- **WHEN** se construye con thresholds explícitos (p. ej. `minimum_sharpe_threshold=0.5`)
+- **THEN** se usan los valores dados y la validación de rangos aplica igual que antes

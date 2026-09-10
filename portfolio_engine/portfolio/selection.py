@@ -1,12 +1,17 @@
-"""Asset filtering and diversified candidate selection."""
+"""Asset filtering and diversified candidate selection.
+
+Legacy two-stage path (screen → representative scoring). Since ADR 003 the
+default allocation is end-to-end HRP; these functions remain fully operative
+for every non-hrp method and for reproducibility of prior compositions.
+"""
 
 import logging
+import math
+
 import numpy as np
-from numba import jit
 
 from ..core.config import PortfolioConfig
 from ..core.metrics import compute_correlation_distance_matrix
-
 
 logger = logging.getLogger(__name__)
 
@@ -14,10 +19,15 @@ logger = logging.getLogger(__name__)
 def apply_asset_filters(
     asset_metrics: dict,
     closing_prices: dict,
-    minimum_sharpe: float = None,
-    maximum_volatility: float = None,
+    minimum_sharpe: float | None = None,
+    maximum_volatility: float | None = None,
 ):
-    """Apply basic Sharpe/volatility screening before correlation clustering."""
+    """Apply Sharpe/volatility screening before correlation clustering.
+
+    Non-finite decision metrics (NaN/inf Sharpe or volatility) are excluded
+    here with a per-ticker reason, so corrupt inputs never silently leak into
+    composite scoring or weight allocation.
+    """
 
     if minimum_sharpe is None and maximum_volatility is None:
         logger.info("Asset filters skipped: no thresholds provided")
@@ -32,26 +42,49 @@ def apply_asset_filters(
 
     filtered_metrics = {}
     filtered_prices = {}
+    rejected_reasons = []
 
     for ticker, metrics in asset_metrics.items():
-        if minimum_sharpe is not None and metrics["sharpe_ratio"] < minimum_sharpe:
-            continue
+        sharpe_ratio = metrics.get("sharpe_ratio")
+        annual_volatility = metrics.get("annual_volatility")
 
-        if maximum_volatility is not None and metrics["annual_volatility"] > maximum_volatility:
+        # C3: undefined metrics must never reach scoring/allocation.
+        if not isinstance(sharpe_ratio, (int, float)) or not math.isfinite(sharpe_ratio):
+            rejected_reasons.append(f"{ticker}:sharpe_non_finite({sharpe_ratio})")
+            continue
+        if not isinstance(annual_volatility, (int, float)) or not math.isfinite(annual_volatility):
+            rejected_reasons.append(f"{ticker}:vol_non_finite({annual_volatility})")
+            continue
+        if minimum_sharpe is not None and sharpe_ratio < minimum_sharpe:
+            rejected_reasons.append(f"{ticker}:below_min_sharpe")
+            continue
+        if maximum_volatility is not None and annual_volatility > maximum_volatility:
+            rejected_reasons.append(f"{ticker}:above_max_vol")
             continue
 
         filtered_metrics[ticker] = metrics
         filtered_prices[ticker] = closing_prices[ticker]
 
-    logger.info("Asset filters complete: kept=%d rejected=%d", len(filtered_metrics), len(asset_metrics) - len(filtered_metrics))
+    if rejected_reasons:
+        logger.warning(
+            "Asset filters rejected assets: count=%d reasons=%s",
+            len(rejected_reasons),
+            rejected_reasons,
+        )
+
+    logger.info(
+        "Asset filters complete: kept=%d rejected=%d",
+        len(filtered_metrics),
+        len(asset_metrics) - len(filtered_metrics),
+    )
     return filtered_metrics, filtered_prices
 
 
-@jit(nopython=True, cache=True)
 def perform_hierarchical_clustering(distance_matrix: np.ndarray, distance_threshold: float) -> np.ndarray:
     """Greedy agglomerative clustering using a fixed distance threshold.
 
     The algorithm repeatedly merges the closest pair of different clusters.
+    Vectorized pair-search replaces the removed numba kernel (feat-022).
     """
 
     matrix_size = distance_matrix.shape[0]
@@ -80,6 +113,20 @@ def perform_hierarchical_clustering(distance_matrix: np.ndarray, distance_thresh
     return cluster_assignments
 
 
+def _resolve_distance_threshold(maximum_correlation: float, metric: str) -> float:
+    """Convert a user correlation threshold into the distance scale.
+
+    Preserves the semantic "merge pairs whose |signed| correlation exceeds
+    the threshold" regardless of the active metric (ADR 002):
+      signed -> sqrt(0.5*(1-t));  abs -> 1 - t.
+    """
+    if metric == "signed":
+        return math.sqrt(0.5 * (1.0 - maximum_correlation))
+    if metric == "abs":
+        return 1.0 - maximum_correlation
+    raise ValueError(f"Unknown distance metric '{metric}'; allowed: ['abs', 'signed']")
+
+
 def select_optimal_diversified_portfolio(
     correlation_matrix: np.ndarray,
     asset_metrics: dict,
@@ -100,10 +147,17 @@ def select_optimal_diversified_portfolio(
     if number_of_assets <= 1:
         return asset_metrics
 
-    # Use 1 - |corr| so strongly correlated or anti-correlated assets are treated as close
-    # and the clustering step avoids selecting redundant exposures.
-    correlation_distance_threshold = 1.0 - config.maximum_correlation_threshold
-    distance_matrix = compute_correlation_distance_matrix(correlation_matrix)
+    # Use ADR-002-selected distance; threshold converted to preserve the
+    # user-facing "merge if corr > threshold" semantic in either mode.
+    correlation_distance_threshold = _resolve_distance_threshold(
+        config.maximum_correlation_threshold, config.distance_metric
+    )
+    logger.debug(
+        "Clustering distances ready: metric=%s threshold_equivalent=%s",
+        config.distance_metric,
+        correlation_distance_threshold,
+    )
+    distance_matrix = compute_correlation_distance_matrix(correlation_matrix, config.distance_metric)
     cluster_labels = perform_hierarchical_clustering(distance_matrix, correlation_distance_threshold)
 
     asset_clusters = {}

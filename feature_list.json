@@ -1,0 +1,544 @@
+{
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "Analisis de orden de resolucion del roadmap",
+      "description": "Define el orden en que se resolveran los 28 hallazgos de docs/auditoria-tecnica.md (§3): C1-C4, A1-A7, M1-M10, B1-B7. Construye el DAG de dependencias tecnicas verificadas con evidencia file:line, determina la causalidad causa-efecto entre hallazgos, ejecuta el ordenamiento topologico del grafo y desempata casos sin dependencia mutua con el criterio de trascendencia (validez de resultados > reproducibilidad > mantenibilidad > higiene). Entrega docs/orden-de-resolucion.md (grafo mermaid + secuencia justificada) y registra la secuencia aprobada como feat-002..feat-027 con dependencies explicitas. Metodo completo, deliverables y acceptance criteria: historia en git (change podado en #47; ver `docs/orden-de-resolucion.md`).",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "./init.sh exit 0 (2026-08-26, sesion feat-001): compileall OK; uv/pytest saltados por entorno sin uv (limitacion registrada en progress.md). OpenSpec validate: valid. Tracker machine-check: cobertura 28/28 hallazgos exacta, deps solo hacia anteriores, schema canonico 27 features."
+    },
+    {
+      "id": "feat-002",
+      "name": "Verification entrypoint fix",
+      "description": "Resuelve A7: Makefile:17 apunta a tests/smoke_test.py inexistente; cambiar a 'uv run pytest -q' + pytest.ini con testpaths. Puerta de entrada: sin verificacion funcional nada mas es verificable.",
+      "dependencies": [
+        "feat-001"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26, sesion feat-002: make test -> 16 passed (primera suite verde real del repo); ./init.sh exit 0 con pytest via uv run python -m pytest (16 passed visible). Fix extra in-scope descubierto al correr suite real: ModuleNotFoundError portfolio_engine -> resuelto con pythonpath=[\".\"] en [tool.pytest.ini_options] (el packaging completo es feat-003/M7)."
+    },
+    {
+      "id": "feat-003",
+      "name": "Project manifests lockfile",
+      "description": "Resuelve B1+A6: quitar uv.lock de .gitignore:16 y versionarlo; renombrar pyproject.toml:2 al nombre real del repo; requires-python>=3.10; declarar deps reales (scipy pasa de fantasma a usado en feat-018 o se retira).",
+      "dependencies": [
+        "feat-002"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-003: uv.lock 587KB versionado (fuera de .gitignore, git check-ignore vacio); pyproject renombrado a hierarchical-clustering-portfolio-selector + requires-python>=3.10; re-lock universal 52 packages; gates: make test 16 passed, ./init.sh exit 0, uv sync --frozen reproduce sin re-resolver; smoke numba 0.67.0/jit OK (scipy 1.18.1 queda como excepcion documentada hasta feat-018)."
+    },
+    {
+      "id": "feat-004",
+      "name": "Quality gates CI",
+      "description": "Resuelve M9: [tool.ruff]+[tool.pyright]+[tool.pytest] en pyproject, .pre-commit-config.yaml y .github/workflows/ci.yml (uv sync, ruff, pyright, pytest). Protege todo el trabajo posterior.",
+      "dependencies": [
+        "feat-003"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-004: make lint 'All checks passed!' (18 hallazgos iniciales resueltos: 9 I001 autofix, 6 E501 wrap manual, 1 F401+1 F841 tests muertos); make types 0 errors (21 reportArgumentType: implicit-Optional -> X|None en firmas viz/pipeline/selection, floating[Any] -> float() en data_fetch, pandas .values -> np.asarray dtype); make test 16 passed; ./init.sh exit 0 corriendo los 4 gates; YAML x2 validados. Dev-deps pinned en lock (ruff 0.16.4, pyright 1.1.411)."
+    },
+    {
+      "id": "feat-005",
+      "name": "Logging and headless viz",
+      "description": "Resuelve M4+M5: logger por paquete con StreamHandler explicito respetando LOG_LEVEL (logging_utils.py:7-19); backend Agg cuando no hay display y eliminar show bloqueante en modo save (reporting.py:22-23, pipeline.py:203).",
+      "dependencies": [
+        "feat-004"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-005: suite 16->30 passed (test_viz_headless.py 14 tests contrato); make lint/types/test verdes; make run-debug LOG_LEVEL ahora funcional (discrepancia nueva resuelta); guard Agg determinista; pipeline sin pyplot (verificado grep); bug real cazado por TDD: getLevelName(int)->str corregido en _resolve_level; init.sh exit 0 con 4 gates."
+    },
+    {
+      "id": "feat-006",
+      "name": "Package console entrypoint",
+      "description": "Resuelve M7: eliminar sys.path.insert de scripts/assets-investment.py:5 y declarar [project.scripts] portfolio=... sobre identidad de paquete de feat-003.",
+      "dependencies": [
+        "feat-003"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-006: hatchling build OK (primera vez que uv sync instala el proyecto); entrypoint portfolio-run -> portfolio_engine.cli:main resuelto via importlib.metadata; import funciona desde cwd externo; sys.path hacks = 0 en scripts/+paquete; bug de edicion TOML detectado al vuelo (dependencies dentro de project.scripts) corregido; suite 30->33 passed (test_cli.py x3); make lint/types/test + ./init.sh exit 0; yfinance drift 1.6.0->1.7.0 en re-lock documentado."
+    },
+    {
+      "id": "feat-007",
+      "name": "Risk free single source",
+      "description": "Resuelve A2: eliminar default 0.03 de data_fetch.py:15; risk_free_rate vive solo en PortfolioConfig (0.045). Corrige Sharpe 150bps antes de validar metricas downstream.",
+      "dependencies": [
+        "feat-002"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-007: firma sin default (inspect: default empty); TypeError verificable offline (binding pre-red) en test_data_fetch_contract.py; grep 0.03 en fuente = 0 ocurrencias; suite 33->35 passed; lint/harness exit 0."
+    },
+    {
+      "id": "feat-008",
+      "name": "Returns date alignment",
+      "description": "Resuelve A3: construct_returns_matrix (metrics.py:121-138) asume longitudes iguales sin usar price_dates; unir por indice de fechas (intersection) antes de retornos. Fundacion de toda matriz posterior (corr/cov/clustering).",
+      "dependencies": [
+        "feat-002"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-008: pandas>=2.0 declarada (ya transitiva); align_prices_to_common_calendar inner-join + MIN_COMMON_ROWS=2 + ValueError guard en construct_returns_matrix; pipeline consume alineado con log rows antes/despues; tests/test_alignment.py 8 casos deterministas (short ticker/gap middle/disjoint/min rows/mismatch/missing entry/loud guard/legacy intact); suite 35->43 passed; gates verdes."
+    },
+    {
+      "id": "feat-009",
+      "name": "Numeric guards metrics",
+      "description": "Resuelve C3: guard vol<eps en sharpe (metrics.py:34), ddof=1 consistente (:28), corr NaN si varianza cero manteniendo PSD-ish (:74), helpers epsilon-floor compartidos. Requiere series alineadas de feat-008 para tests significativos.",
+      "dependencies": [
+        "feat-008"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-009: VOL_FLOOR_EPS; sharpe NaN si vol<=eps (nunca inf); vol anual ddof=1 manual numba-compatible + expectativa test exacta actualizada; corr diagonal honesta (1.0 solo var>0); apply_asset_filters excluye non-finitos nombrando ticker+motivo (fixture propagate para caplog robusto ante orden de sesion); risk_parity piso+caps[0.1,10]+warnings degenerate/no-convergencia, cov singular devuelve pesos finitos suma=1 y sana iguala contribuciones 0.25 atol 1e-6. Suite 49->62 passed (+13). Gates: lint/types/test verdes, init.sh exit 0."
+    },
+    {
+      "id": "feat-010",
+      "name": "Inverse vol epsilon guard",
+      "description": "Resuelve M10: allocation.py:48-50 divide por vol sin guard; reutiliza helper epsilon-floor de feat-009.",
+      "dependencies": [
+        "feat-009"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion: np.maximum(vols, VOL_FLOOR_EPS) pre-inversion; test degenerado vol=0 finitos/positivos/suma 1; suite 62->63 passed; gates verdes."
+    },
+    {
+      "id": "feat-011",
+      "name": "Lookback param calendar",
+      "description": "Resuelve A4: parametrizar lookback_years y calendario bursatil en data_fetch.py:28-29 y PortfolioConfig; acoplado temporalmente con feat-008 (mismas lineas) — orden fijo por eso.",
+      "dependencies": [
+        "feat-008"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion: _resolve_window pura (replace-year + clamp Feb29); lookback requerido sin default (TypeError binding test); config.lookback_years=5 pasado por pipeline; grep 5*365=0; 6 tests fecha nuevos; suite 43->49 passed; gates verdes."
+    },
+    {
+      "id": "feat-012",
+      "name": "Yfinance batch cache hardening",
+      "description": "Resuelve C2: yf.download batch auto_adjust=False con fallback Close si columna ausente (issues #2255/#2197), retry tenacity, validacion empty-frame, cache parquet. Fija contrato de datos para tests (M8) y benchmarks (C1).",
+      "dependencies": [
+        "feat-011"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-012: batch unico yf.download(auto_adjust=False, group_by=ticker) via _fetch_batch monkeypatcheable; retry stdlib 3 intentos backoff (1s,2s) loggeado; _extract_adjusted_close puro: Adj Close->Close fallback nombrado->rechazo; MultiIndex/flat tolerado; NaN colas dropna+log; rechazos agregados 1 warning (batch_failed_or_empty/no_usable_prices); no raises al caller. Suite 63->70 passed. Bug fixture propio: index or BASE_INDEX bool(DatetimeIndex) -> is not None. Gates verdes."
+    },
+    {
+      "id": "feat-013",
+      "name": "Frozen validated config",
+      "description": "Resuelve M1: @dataclass(frozen=True) con validacion (pesos de scoring suman 1.0). Preserva accesos por atributo (contract-first): evita doble migracion de consumidores C4/M2/B4/C1.",
+      "dependencies": [
+        "feat-002"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-013: @dataclass(frozen=True) API-preservante (nombres de campo identicos); __post_init__ valida suma pesos +-1e-9, rangos [0,1] rf/vol-target, min<=max, lookback>=1, metodo enum cerrado WEIGHT_ALLOCATION_METHODS; max_volatility_threshold solo >0 (refinamiento: fixture loose=10 demostro que cap 1.0 era sobre-cenido); dispatch sin fallback muerto (raise inalcanzable documentado); fixture integracion migrada a kwargs; test replace-pattern legal; mis 3 defectos en vivo cazados por gates (newline, test frozen con replace mal disenado, rango sobre-cenido). Suite 70->80 passed."
+    },
+    {
+      "id": "feat-014",
+      "name": "Iterative weight bounds",
+      "description": "Resuelve C4: apply_weight_constraints (allocation.py:114-121) clip->renorm una pasada viola max=0.30; hacer lazo iterativo mientras violacion>eps. Requiere pesos finitos de feat-009.",
+      "dependencies": [
+        "feat-009"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-014: primer intento water-filling con fixed-sets FALLO para fijacion simultanea ambos lados (suma 0.55, free vacio — test lo expuso); reemplazo por Dykstra ciclico (proyecciones {w>=min}/{w<=max}/simplex) convergencia garantizada; segundo bug propio: acumulador p_max anulado por reasignacion de variable — corregido con temps por etapa; verificacion final dura (sum/bounds ±1e-9 raise), viabilidad ruidosa n*min<=1<=n*max; 100 seeds stress siempre validos. Suite 80->88 passed."
+    },
+    {
+      "id": "feat-015",
+      "name": "Volatility target or removal",
+      "description": "Resuelve A1: decidir via ADR e implementar scaling w*=target_vol/vol_ around bounds de feat-014, o eliminar target_portfolio_volatility muerto (config.py:26, README.md:43 discrepancia D1).",
+      "dependencies": [
+        "feat-014"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-015: ADR docs/adr/001-volatility-target-removal.md aceptado (implementar exige leverage fuera del mandato long-only fully-invested; diagnostico duplicaria feat-020/A5); campo+regla eliminados de config; README D1 cerrada; regresion en test_config documenta remocion; grep fuente=0 refs; suite 80->89 passed."
+    },
+    {
+      "id": "feat-016",
+      "name": "Correlation distance ADR",
+      "description": "Resuelve M2: ADR signed-vs-abs para distancia de clustering (metrics.py:141-152 usa 1-abs(corr)); expone distance_metric en config frozen; decision PREVIA obligatoria porque linkage la consume. Contexto histórico en git (podado en #47: docs/decision-log-feat001.md + archive feat-001).",
+      "dependencies": [
+        "feat-013"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-016: ADR 002 aceptado (signed default, abs legacy bajo demanda); kernel numba flag entero + wrapper str con validacion; _resolve_distance_threshold preserva semantica corr-threshold por modo (signed: sqrt(0.5(1-t))); config distance_metric=signed validada; 11 tests incl contraste behavioral real (hedge corr<-0.65 vs gemelo +0.9) — bug propio cazado: pasaba matriz covarianza como correlacion (test firmado vacuamente verde); corregido np.corrcoef + assert sanidad anti-vacio. Suite 89->100 passed."
+    },
+    {
+      "id": "feat-017",
+      "name": "Trading days parameterization",
+      "description": "Resuelve B4: trading_days_per_year en config (metrics.py:24,30 hardcodean 252); coherente con modelo de calendario de feat-011.",
+      "dependencies": [
+        "feat-013"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-017: kernels anualizacion aceptan trading_days param (numba-compatible); config trading_days_per_year=252 validado [1,366]; fetcher 4to requerido (TypeError contracts actualizados), pipeline pasa desde config; tests crypto 365 exactos + distinct vols + validacion parametrizada; grep *252 fuente=0; suite 100->105 passed."
+    },
+    {
+      "id": "feat-018",
+      "name": "Real HRP linkage recbipart",
+      "description": "Resuelve C1 (CRITICO keystone): scipy.cluster.hierarchy.linkage + quasi-diagonalization + recursive bisection (De Prado 2016/Palomar 12.3), cov_estimator parametrico. Va en posicion 19 NO en la 1: consume A3+C3+M1+M2+C2. Contexto histórico en git (podado en #47: docs/decision-log-feat001.md + archive feat-001).",
+      "dependencies": [
+        "feat-008",
+        "feat-009",
+        "feat-012",
+        "feat-013",
+        "feat-016"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-018: HRP canónico implementado (linkage single sobre distancia firmada ADR 002, quasi-diag recursivo, bisección inverse-variance SIN inversion de covarianza); default flip a hrp (ADR 003); ruta end-to-end pipeline sin pruning; analítico diag(0.01,0.04)->[0.80,0.20]; invarianza-permutación multiset; bloques contiguos quasi-diag; suite 105->116 passed — PR #22 mergeada con CI verde matriz."
+    },
+    {
+      "id": "feat-019",
+      "name": "Stable covariance solvers",
+      "description": "Resuelve B5: reemplazar np.linalg.inv (allocation.py:89,102) por solve/pinv + shrinkage LedoitWolf compartiendo plumbing cov_estimator introducido con feat-018.",
+      "dependencies": [
+        "feat-018"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-019: _ensure_positive_definite (cholesky-test + jitter progresivo determinista loggeado; trace<=0 = irreparable sin fabricar senal); max_sharpe/min_variance via np.linalg.solve (denominador GMV por identidad, una factorizacion); fallback equal-weights nombrado conservado; TDD expuso: jitter sobre matriz cero fabricaba varianza y casing del match regex. Equivalencia analitica diagonal exacta; colinealidad severa finita/normalizada. Suite 116->123 passed."
+    },
+    {
+      "id": "feat-020",
+      "name": "Portfolio sharpe covariance",
+      "description": "Resuelve A5: reporting.py:308-310 calcula Sharpe asumiendo correlacion 0; usar w^T Cov w real (calculate_portfolio_variance allocation.py:34) coherente con motor.",
+      "dependencies": [
+        "feat-019"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-020: _portfolio_summary_metrics pura (vol sqrt(wTΣw), sharpe honesto, NaN si vol degenerada); plot_optimal_portfolio_analysis acepta covariance_matrix (pipeline la pasa; wrapper descarta _ ahora cov); fallback diagonal con warning solo defensivo; 6 tests: rho=0 equivale legacy exacto, rho=0.9 mayor riesgo/menor sharpe, rho=1 == weighted avg vol analitico, manual wTW agreement, warning fallback, NaN degenerado. Suite 123->129 passed."
+    },
+    {
+      "id": "feat-021",
+      "name": "Deep characterization suite",
+      "description": "Resuelve M8: tests de caracterizacion del estado FINAL (contratos C2/C4/C1 ya estables) con hypothesis+pytest-mock y fixtures de jerarquia HRP; backend headless requerido (feat-005). Red de seguridad para M6/M3. Contexto histórico en git (podado en #47: docs/decision-log-feat001.md + archive feat-001).",
+      "dependencies": [
+        "feat-005",
+        "feat-012",
+        "feat-014",
+        "feat-018"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-021: hypothesis dev-dep (derandomize CI-determinista); conftest panel sintetico yfinance-shape multi-ticker (drift positivo para cruzar filtro Sharpe); test_properties.py 6 propiedades simplex-invarianza (HRP/minvar/riskparity/Dykstra-bounds sobre cov PD arbitrarias n=2-25); test_pipeline_e2e.py 4 composicion end-to-end offline. BUGS REALES DESCUBIERTOS: (1) align set-comparacion direccionalmente ciega rechazaba fechas extra de tickers filtrados (fix one-directional); (2) politica de relajacion del mandato para universos pequenos (n*max<1 crasheaba main — ahora CRITICAL log + max=1/n; solver puro intacto); (3) pinneado contrato precios full-universe para charts vs stats filtradas. Suite 129->140+1skip."
+    },
+    {
+      "id": "feat-022",
+      "name": "Numba pruning with net",
+      "description": "Resuelve M6: benchmarkear y remover wrappers @jit triviales (metrics.py siete kernels) con red de regresion de feat-021.",
+      "dependencies": [
+        "feat-021"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-022: snapshot pre/post IDENTICO bit-a-bit (logret/annret/annvol/sharpe/corr/cov); kernels vectorizados numpy puro; numba removida de pyproject (Uninstalled 3 pkgs) y de todos los imports residuales allocation/selection; ADR 004 + decision-log M6 resuelta; red feat-021 intacta: 140 tests SIN modificar asserts; gates verdes."
+    },
+    {
+      "id": "feat-023",
+      "name": "Layered architecture strangler",
+      "description": "Resuelve M3: extraer DataProvider protocol + separar domain/app/viz bajo patron Strangler Fig, protegido por suite de caracterizacion (fan-in alto de pipeline.py/__init__.py exige red previa). Contexto histórico en git (podado en #47: docs/decision-log-feat001.md + archive feat-001).",
+      "dependencies": [
+        "feat-021"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-023: MarketDataProvider Protocol (typing.Protocol estructural) + YFinanceProvider adapter delegante en data/provider.py; main(provider=None) seam con default-construction retrocompatible; app sin refs transporte (grep=0); test_provider_dependency_injection: bundle identity verificado; statico anti-canvas; ADR 004 deuda saldada (fue citado falsamente en commit feat-022); leccion critica registrada: heredocs fuzzy t.replace son no-op silenciosos si no matchean — Edit tool OBLIGATORIO para codigo; suite 140 passed."
+    },
+    {
+      "id": "feat-024",
+      "name": "External universe yaml",
+      "description": "Resuelve B2: universo de tickers desde config/universe.yaml cargado por la capa data definitiva de feat-023.",
+      "dependencies": [
+        "feat-023"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-024: pyyaml>=6 declarada; config/universe.yaml (12 tickers + comentarios sector); load_universe schema validado con ValueError nombrados; cli.main(universe_path=None); lista hardcodeada muerta; 7 tests universo + fix contrato test_cli. Suite 140->147 passed. (tasks.md del change no trackeado por rm accidental previo al archive — gates y delta specs si quedaron archivados)"
+    },
+    {
+      "id": "feat-025",
+      "name": "Docs consolidation ADRs",
+      "description": "Resuelve B3: consolidar CHANGELOG + ADRs (distancia M2, vol-target A1, cov estimator) + coherencia es/en; documenta arquitectura ya asentada de feat-023.",
+      "dependencies": [
+        "feat-023"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-025: docs/adr/README.md indice (4 ADRs con estado y convencion no-retroactiva); README metodologia HRP+distance_metric fila+enlace ADRs; CONTRIBUTING seccion decisiones. Flujo OpenSpec completo (skip_specs legitimo decision documental)."
+    },
+    {
+      "id": "feat-026",
+      "name": "Walk forward validation",
+      "description": "Resuelve B6: backtest walk-forward purged (De Prado CV) sobre universo parametrizable de feat-024; primera validacion out-of-sample real del pipeline.",
+      "dependencies": [
+        "feat-024"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-026: _iter_walk_windows puro con embargo verificado (gap exacto), guard insuficiencia; walk_forward_evaluate fold-a-fold ex-ante (pesos solo de train; test de mutacion OOS no altera pesos — la prueba anti-fuga PASA); WalkForwardReport dataclass + to_dict agregados coherentes, folds degenerados excluidos con warning; capa validation/ nueva. Suite 147->154 passed (+7)."
+    },
+    {
+      "id": "feat-027",
+      "name": "Package docstring sync",
+      "description": "Resuelve B7: sincronizar docstrings/superficie exportada del paquete con arquitectura final post-M3; cambio trivial terminal.",
+      "dependencies": [
+        "feat-023",
+        "feat-025"
+      ],
+      "status": "done",
+      "evidence": "2026-08-26 sesion feat-027: __init__.py docstring de paquete (hrp default/signed/walk-forward/ADRs); exports canonicos añadidos (calculate_hrp_weights, load_universe, walk_forward_evaluate, MarketDataProvider/YFinanceProvider, construct_returns_matrix recuperado); pyright warning __all__ vs imports reales saldado (sharpe/risk_parity faltaban por perdida heredoc); data_fetch/selection docstrings a arquitectura final. Suite 154 passed; gates verdes."
+    },
+    {
+      "id": "feat-028",
+      "name": "Reporting legacy covariance slice",
+      "description": "Fix bug ruta no-HRP: pipeline.py:249 pasa la covarianza N*N del universo filtrado a plot_optimal_portfolio_analysis, pero optimal_portfolio en la ruta legacy (metodos != hrp) tiene M<N activos tras el pruning por cluster -> error de broadcasting en reporting.py:440-446 (weight_vector @ cov @ weight_vector con vector M y matriz N*N). El default hrp (M==N) oculta el defecto y ningun test cubre la ruta legacy del reporte. Fix: rebanar la covarianza al subconjunto de optimal_portfolio reutilizando create_portfolio_covariance_matrix (allocation.py:13-31) antes de graficar. Aceptacion: test E2E ruta legacy (risk_parity) con pruning M<N genera las 7 graficas sin excepcion; Sharpe del resumen == wT*Cov*w manual; suite 154 verde. TDD: test de regresion rojo primero.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-028: TDD rojo registrado (test E2E legacy risk_parity con pruning M<N reprodujo ValueError matmul size 5 vs 3 en reporting.py:367 pre-fix); fix en pipeline.py reutilizando create_portfolio_covariance_matrix antes de plot_optimal_portfolio_analysis; test E2E verde con spy verificando covarianza rebanada 3x3 == slice esperado; +2 tests unitarios contrato en test_reporting_sharpe.py (acuerdo manual wT*Cov*w 3 activos + dims desalineadas ValueError); ./init.sh exit 0: 157 passed (154+3), ruff OK, pyright 0 errors, compileall OK; red feat-021 sin asserts modificados (git diff 0 en test_hrp/properties/solvers/walk_forward); change OpenSpec valid + archivado."
+    },
+    {
+      "id": "feat-029",
+      "name": "Walk forward first return fix",
+      "description": "Fix bug validacion: walk_forward.py:144-146 computa log_test = np.log(matrix[test_idx] / np.roll(matrix[test_idx], 1, axis=0))[1:] — el truco roll genera log(P[0]/P[ultimo]) (valor basura contra un precio FUTURO dentro de la ventana) y luego lo descarta con [1:], por lo que cada fold pierde el retorno del primer dia del test (n retornos = test_rows-1) y el comentario que lo justifica es engañoso. Fix: computar el retorno del primer dia del test contra el ultimo precio previo a test_start (precio pasado conocido, leak-free), eliminando np.roll y el comentario. Aceptacion: fold sintetico con retornos constantes -> OOS exacto analiticamente; n retornos por fold == test_rows; test anti-fuga de feat-026 intacto.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-029: TDD rojo registrado (test analitico obtuvo 0.08542 = 0.02/59*252 pre-fix — el spike del primer dia excluido; esperado 0.52/60*252); fix en walk_forward.py: ventana extendida [test_start-1, test_end) con diff logaritmico directo (sin np.roll, precio previo = pasado leak-free); verde con valor exacto 2.184 (rel 1e-9) y valid_folds=1; ./init.sh exit 0: 158 passed (157+1), ruff OK, pyright 0 errors, compileall OK; test anti-fuga feat-026 intacto; red feat-021 sin asserts modificados (git diff 0); change OpenSpec valid + archivado, spec out-of-sample-validation sincronizada (scenario primer dia del test)."
+    },
+    {
+      "id": "feat-030",
+      "name": "Test fixture determinism",
+      "description": "Fix determinismo de tests: conftest.py:23 usa np.random.default_rng(abs(hash(ticker)) % 2**32) — hash() de strings en Python esta salado por PYTHONHASHSEED, asi que el panel sintetico difiere entre procesos (demostrado: PYTHONHASHSEED=1 vs 999 producen seeds distintos) y la afirmacion 'semillas fijas en fixtures' de README.md:103 y system-verification/spec.md:26 es falsa. Fix: seed estable por ticker (zlib.crc32(ticker.encode())) independiente del salting del interprete. Aceptacion: paneles identicos bit a bit ejecutando la suite con PYTHONHASHSEED=1 y PYTHONHASHSEED=999; asserts de la suite (invariantes) siguen verdes en ambos.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-030: TDD rojo registrado (subprocesos con PYTHONHASHSEED=1 vs 999 produjeron paneles distintos pre-fix — AssertionError en test_fixture_determinism.py:43); fix conftest.py:23: np.random.default_rng(zlib.crc32(ticker.encode())) estable entre procesos; verde: paneles byte-identicos bajo ambas seeds; ./init.sh exit 0: 159 passed (158+1), ruff OK (import base64 muerto cazado y corregido), pyright 0 errors, compileall OK; red feat-021/026 sin asserts modificados (solo conftest.py cambia — invariantes sostenidos con paneles nuevos); change OpenSpec valid + archivado, spec system-verification sincronizada (requirement determinismo entre procesos + scenario PYTHONHASHSEED)."
+    },
+    {
+      "id": "feat-031",
+      "name": "Spec sync pre release",
+      "description": "Sincronizacion documental previa a Fase B: (1) openspec/specs/configuration-contract/spec.md:18 lista 5 metodos sin 'hrp' (default desde feat-018) — el delta de feat-018 no se fusiono completo; (2) errata 'SHANL' en configuration-contract/spec.md:54 y 'no SHALL NO coexistir' en numeric-correctness/spec.md:26; (3) tasks.md del change archivado feat-018 con boxes sin marcar; (4) crear CHANGELOG.md inicial (formato Keep a Changelog 2.0: seccion Unreleased + Added/Changed/Fixed, fechas ISO); (5) limpiar progress.md (secciones 'What's Next' duplicadas, restos de sesiones anteriores); (6) actualizar session-handoff.md obsoleto (habla de feat-004..008 como sesion actual); (7) spec project-packaging a matrix 3.11-3.13 en preparacion de feat-032. Aceptacion: set de metodos en spec == enum del codigo (6); grep SHANL = 0; CHANGELOG.md existe con formato canonico; un solo bloque What's Next en progress.md.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-031 (cierra CP1): configuration-contract corregida (set 6 metodos con hrp, errata SHANL eliminada — grep SHANL=0 en openspec/specs/ vivos); numeric-correctness doble negacion corregida; project-packaging a 3.11-3.13 (prep feat-032); feat-018 tasks.md 0 boxes sin marcar; CHANGELOG.md inicial Keep a Changelog (Unreleased + placeholder 0.1.0); progress.md consolidado (1 solo What's Next); change skip_specs documental (precedente feat-025) valid + archivado 2026-08-28-docs-spec-sync-pre-release; openspec validate --specs 11/11; ./init.sh exit 0: 159 passed, ruff/pyright/compileall verdes (docs-only, cero cambios de comportamiento)."
+    },
+    {
+      "id": "feat-032",
+      "name": "Python floor 311 sklearn",
+      "description": "Bump de plataforma para v0.1.0: requires-python >=3.11 (Python 3.10 llega a EOL 31-oct-2026 segun PEP 619/devguide; SPEC 0 del ecosistema cientifico recomienda soltarlo) y entrada de scikit-learn>=1.8 (exige Python >=3.11) como dependencia para el estimador de covarianza de feat-033. Cambios: pyproject.toml requires-python + dependencies; CI matrix ['3.11','3.12','3.13'] en .github/workflows/ci.yml; re-lock uv (scikit-learn + joblib + threadpoolctl + narwhals transitivos); nota breaking en CHANGELOG Unreleased. Aceptacion: CI verde en las 3 versiones; uv sync --frozen reproducible sin re-resolver; import sklearn OK offline; gates locales verdes.",
+      "dependencies": [
+        "feat-031"
+      ],
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-032 (breaking): requires-python>=3.11 + scikit-learn>=1.8 en pyproject (ruff target py311); CI matrix [3.11,3.12,3.13]; uv lock re-resuelto (sklearn 1.9.0 + threadpoolctl 3.6.0 + narwhals 2.25.0; scipy 1.15.3 eliminada del lock por ser resolucion exclusiva 3.10; tomli fuera — consecuente con el floor); uv sync --frozen reproduce + uv lock --check OK + import sklearn 1.9.0 y transitivas joblib/threadpoolctl/narwhals OK; ./init.sh exit 0: 159 passed, ruff/pyright/compileall verdes; CHANGELOG Unreleased con entrada Removed breaking (drop python 3.10); change skip_specs (contrato ya declarado en project-packaging feat-031) valid + archivado 2026-08-28-chore-python-floor-311-sklearn; commit chore! + BREAKING CHANGE footer."
+    },
+    {
+      "id": "feat-033",
+      "name": "Covariance estimator param",
+      "description": "Estimador de covarianza parametrizable con ADR 005 (decision metodologica aprobada: dependencia sklearn). Justificacion: Trucios 2026 (Empirical Economics) demuestra que metodos jerarquicos son sensibles al estimador de covarianza; LedoitWolf/OAS mitigan el ruido de la covarianza muestral (shrunk = (1-s)*cov + s*mu*I, sklearn.covariance). Alcance: ADR 005 aceptado; PortfolioConfig.covariance_estimator: 'sample'|'ledoit_wolf'|'oas' validado en __post_init__; seam puro estimate_covariance(returns_matrix, method) en core/metrics.py; pipeline.main y walk_forward_evaluate lo consumen. Default 'sample' en v0.1.0 (la red feat-021 pina numeros exactos — sin cambio silencioso de resultados); flip de default a ledoit_wolf diferido a v0.2.0 con evidencia walk-forward. Aceptacion: paridad con sklearn.covariance.LedoitWolf/OAS a 1e-12; condition number de ledoit_wolf <= sample en cov ruidosa; enum invalido rechazado en construccion; E2E offline con ledoit_wolf pasa la red feat-021 sin modificar asserts.",
+      "dependencies": [
+        "feat-032"
+      ],
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-033: ADR 005 aceptado (default sample en v0.1.0, flip ledoit_wolf diferido a v0.2.0 con evidencia WF); TDD rojo (import error de seam inexistente + param inexistente); implementado: COVARIANCE_ESTIMATORS + campo validado en config.py, seam estimate_covariance en core/metrics.py (sample bit a bit, LedoitWolf/OAS sklearn, degeneracion NaN sin sklearn), consumo en pipeline.py y walk_forward.py, export __init__; verde: 23 tests (paridad sklearn 1e-12, condition number <= sample, default/replace/valores invalidos) + E2E offline ledoit_wolf con weights finitos suma 1; ./init.sh exit 0: 170 passed (159+11), ruff (2 I001 cazados y corregidos), pyright 0 errors, compileall OK; red feat-021 diff 0; specs configuration-contract + numeric-correctness sincronizadas (2 deltas ADDED); change archivado 2026-08-28-feat-covariance-estimator; README tabla + CHANGELOG actualizados."
+    },
+    {
+      "id": "feat-034",
+      "name": "Linkage parameter ADR 006",
+      "description": "Linkage parametrizable con ADR 006. Justificacion: De Prado 2016 usa single (original) pero sufre chaining; skfolio setea Ward como default por estabilidad y pyhrp documenta la comparativa — exponerlo es practica 2025-26 (diferido historico en decision-log feat-025). Alcance: ADR 006 aceptado; PortfolioConfig.linkage_method: 'single'|'ward'|'average' (default 'single', fiel al paper y a los snapshots de la red feat-021); calculate_hrp_weights(covariance_matrix, linkage_method='single') propaga a scipy.cluster.hierarchy.linkage; pipeline y walk_forward pasan el valor desde config. Aceptacion: snapshot bit a bit con default single (red feat-021 intacta sin modificar asserts); ward sobre universo sintetico de 3 bloques de correlacion produce pesos finitos suma 1; enum invalido rechazado en construccion.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-034: ADR 006 aceptado (single default snapshot-compatible, ward/average expuestos; flip ward candidato v0.2.0); TDD rojo (7 failures: param inexistente en config y calculate_hrp_weights); implementado: LINKAGE_METHODS + campo validado en config.py, firma calculate_hrp_weights(cov, linkage_method='single') con ValueError pre-scipy, propagacion en hrp.py + allocation.py (ruta HRP) + walk_forward.py; verde: 7 tests nuevos (snapshot single bit a bit, ward 3 bloques con adyacencia intra-bloque via _leaf_order, average valido, enum invalido); ./init.sh exit 0: 177 passed (170+7), ruff/pyright/compileall verdes; red feat-021 diff 0 (solo adiciones en test_hrp/test_config); specs configuration-contract + numeric-correctness sincronizadas (2 deltas ADDED); change archivado 2026-08-28-feat-linkage-parameter; README + CHANGELOG actualizados."
+    },
+    {
+      "id": "feat-035",
+      "name": "Walk forward production parity",
+      "description": "El walk-forward debe validar la ESTRATEGIA productiva completa, no solo el nucleo HRP: walk_forward.py:131-140 no aplica apply_asset_filters por fold de train mientras el pipeline productivo si lo hace (pipeline.py:76-81) — la validacion OOS cubre una estrategia distinta. Alcance: (1) aplicar filtros Sharpe/vol por fold de train (universos variables por fold con warning nombrado si difieren); (2) WalkForwardReport añade benchmarks 'equal' (1/N) e 'ivp' (inverse-volatility) con retorno/volatilidad/Sharpe medianos calculados sobre los MISMOS retornos OOS — sin benchmark 1/N la lectura del Sharpe mediano es engañosa (Palomar: '1/N jerarquico dificil de batir'); (3) documentar en docstring que embargo=5d esta dentro de la practica (5-20 dias diarios) y que la purga implicita es 1d (horizonte de la etiqueta = retorno diario). Aceptacion: fold donde un activo no pasa el filtro de train queda fuera de los pesos de ese fold; benchmarks computados sobre retornos OOS identicos a los del motor; test anti-fuga de feat-026 intacto; to_dict() expone benchmarks.",
+      "dependencies": [
+        "feat-029",
+        "feat-033",
+        "feat-034"
+      ],
+      "status": "done",
+      "evidence": "2026-08-28 sesion feat-035 (feature central de CP2, flujo extendido): busqueda de fuentes (skfolio/DeMiguel 2007: naive 1/N e IVP tienden a batir MVO OOS; bestfolio: benchmarks ex-ante creibles) + analisis de codigo con subagente explore. TDD rojo (3 tests nuevos fallan pre-impl). Implementado: _train_survivors reusa apply_asset_filters literal (paridad productiva real) por fold; _embed con ceros para excluidos (sin desalinear log_test); benchmarks equal/ivp ex-ante sobre supervivientes con mismos retornos OOS + pesos auditable en fold.benchmarks; 6 medianas nuevas en to_dict; docstring disciplina temporal (embargo 5d en practica 5-20d, purga implicita 1d). VALIDACION ITERATIVA: revision adversarial con subagente general — verifico cero fuga temporal (envenenamiento empirico test+embargo), alineacion de columnas correcta, edge cases n=1/embargo=0 seguros; cazo 1 defecto real accionable (guard NaN-blind en _oos_metrics: test_rows=1 producia folds 'validos' con metricas NaN — corregido con not(x>0) + test de regresion dedicado) + hardening isfinite en medianas + import muerto eliminado. Suite 177→182 passed (13/13 WF), gates verdes; asserts existentes intactos (solo 3 lineas de fixtures relajadas D6); spec out-of-sample-validation sincronizada (MODIFIED + ADDED, 2 scenarios nuevos); change archivado 2026-08-28-feat-walk-forward-production-parity; README + CHANGELOG actualizados."
+    },
+    {
+      "id": "feat-036",
+      "name": "Sharpe convention unification",
+      "description": "Fix consistencia estadistica: metrics.py:23-40 mezcla media de log-returns anualizada (numerador) con rf aritmetica (0.045) — convencion ambigua sin aproximacion log/aritmetica explicita. Fix: convertir rf a terminos logaritmicos (ln(1+rf)) coherente con los log-returns del pipeline, con constante derivada una sola vez desde PortfolioConfig. Ademas: addendum en ADR 003 documentando que la proyeccion Dykstra post-hoc (feat-014) altera el balance de riesgo HRP — eleccion de ingenieria consciente, no propiedad del metodo. Aceptacion: Sharpe con rf=0 invariante; rf=0.045 produce numerador con ln(1.045) (assert exacto); red feat-021 actualizada donde pine rf; cambio de contrato registrado en CHANGELOG Unreleased; ADR 003 con addendum firmado.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "2026-08-31 sesion feat-036: analisis extendido (2 subagentes general: flujo optimo 6 call-sites single-conversion + robustez edge cases rf<=-1/inf/NaN/VOL_FLOOR_EPS + 3 subagentes validacion: harness, flujo, best practices) + busqueda extendida (Sharpe log vs arithmetic: quant.stackexchange Lo 2002, HRP Dykstra Pfitzinger/Katzke). TDD: helper risk_free_log_rate + property risk_free_rate_log + 4 tests nuevos (rf=0 invariante, rf=0.045 pin 0.044016..., rf=0.045 Sharpe pin) + 3 pinnings migrados a log1p rel=1e-12 (rojo 3 failures -> verde). Implementacion: config math.log1p property, metrics helper con guard nan/domain, calculate_sharpe_ratio log, allocation 1 sitio, reporting 3 sitios (propiedad), walk_forward _oos_metrics unificado a calculate_sharpe_ratio (F401 corregido), ADR 003 Addendum 2026-09-01. Validacion iterativa: 3 subagentes post-impl cazaron 1 ALTA (F401 VOL_FLOOR_EPS), 1 MEDIA (rf domain), 1 BAJA (tolerancias) — corregidos + re-verificacion. ./init.sh: 187 passed, All checks passed!, pyright 0 errors, compileall OK. Specs: 12/12 (quant-docs nueva + numeric-correctness MOD)."
+    },
+    {
+      "id": "feat-037",
+      "name": "Alignment overlap guard",
+      "description": "Guard de solapamiento en alineacion: align_prices_to_common_calendar (metrics.py:127-168) hace inner join — un ticker delisted/IPO a mitad de ventana trunca la historia de TODOS los demas al overlap, corrupcion silenciosa del calendario comun (impacto bajo con 12 large-caps, alto en universos amplios). Alcance: PortfolioConfig.minimum_overlap_ratio (default 0.9, rango (0,1]); la alineacion excluye con warning nombrado a tickers cuya historia solapa menos que el ratio contra el span comun, preservando la historia del resto; manejo por-ticker completo (union + forward-fill por politica) queda explicitamente diferido a v0.2.0. Aceptacion: ticker con historia 50% mas corta es excluido y NO trunca a los demas; sin delistings el comportamiento es bit a bit identico al actual (invariancia); config rechaza ratio fuera de (0,1].",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "2026-08-31 sesion feat-037: analisis extendido (2 subagentes: alineacion + config/contract + busqueda survivorship bias / yfinance delistings y pandas join best practice) + TDD 14 tests fallan pre-impl (TypeError minimum_overlap_ratio). Implementado: config minimum_overlap_ratio=0.9 validado (0,1], metrics guard post-DataFrame con notna().mean() sobre union, warning nombrado, MIN_COMMON_ROWS sobre supervivientes + n==0 ValueError, chart 4 alineado con mismo guard (try/except 0 survivors). Validacion 1 (2 subagentes): 3 ALTA (ruff walrus/E501, pyright cast, chart 4 crash) corregidos, 203 passed. Re-validacion 2 (2 subagentes post-fix): MEDIA chart 4 test rojo->verde faltante anadido (test_report_with_ipo_history_50_percent, ValueError lengths differ pre-fix -> verde 2x2, C excluido), 204 passed; ruff/pyright verdes. Specs 12/12."
+    },
+    {
+      "id": "feat-038",
+      "name": "Data cache parquet",
+      "description": "Cache de datos local para confiabilidad operativa: rate-limiting de yfinance activo 2025-2026 (issues #2280, #2422, #2526; soluciones comunitarias yfinance-cache/requests_cache) hace que corridas repetidas fallen intermitentemente — sin cache, cada corrida del pipeline depende de red exitosa. Alcance: cache opcional data/cache/*.parquet en YFinanceProvider (key determinista: tickers + ventana resuelta + trading_days; invalidacion por cambio de key); flag --refresh-cache en CLI; data/cache/ en .gitignore; exclusion explicita de CI (que sigue offline). Aceptacion: segunda llamada con misma key NO invoca _fetch_batch (verificado con contador monkeypatcheado); --refresh-cache fuerza re-descarga; corrida sin red desde cache produce resultados identicos; suite offline verde sin tocar red.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "2026-08-31 sesion feat-038 (rama feat/data-cache-parquet): analisis extendido (2 subagentes: feeder cache + robustez) + busqueda 2025-2026 yfinance rate-limit #2422/#2526 + atomic parquet best practice; TDD rojo 9 tests (ModuleNotFound cache + contador 2) -> verde; implementado: cache.py CACHE_VERSION v1 sha256 16hex sorted upper + atomic mkstemp+snappy+os.replace + grace pyarrow/OSError/ArrowInvalid, provider use_cache+refresh_cache con key ventana resuelta, pipeline provider forward via inspect.signature, cli _build_parser --refresh-cache/--universe, data/cache/.gitkeep + .gitignore data/cache/* !.gitkeep, pyarrow 25.0.1; validacion 2 iteraciones (subagentes): 5 HIGH (gitkeep ignorado, use_cache divergencia, spec config vacio, CLI legacy, rama sin commit) corregidos + 2 cli tests; ./init.sh exit 0: 216 passed, ruff All checks passed!, pyright 0 errors, compileall OK, openspec validate 13/13, uv lock --check OK"
+    },
+    {
+      "id": "feat-039",
+      "name": "CLI args and dendrogram",
+      "description": "Cierre de producto para v0.1.0: (1) argparse en cli.py — flags --universe, --method, --covariance-estimator, --linkage, --save/--show, --refresh-cache propagados a PortfolioConfig y generate_complete_analysis_report (argparse venia diferido por decision-log feat-006); (2) grafica 8 del reporte: dendrograma del linkage real del HRP (scipy.cluster.hierarchy.dendrogram sobre la matriz de linkage de calculate_hrp_weights, reutilizando la misma construccion de distancia firmada) — la visualizacion mas natural del proyecto, hoy ausente (skfolio la incluye por defecto); (3) export de la funcion en __init__.py. Aceptacion: tests CLI con provider monkeypatcheado verifican que cada flag propaga a config; dendrograma headless genera PNG con hojas en orden quasi-diagonal consistente con el HRP; --help documenta todos los flags; suite offline verde.",
+      "dependencies": [
+        "feat-033",
+        "feat-034",
+        "feat-038"
+      ],
+      "status": "done",
+      "evidence": "2026-09-04 feat/cli-dendrogram ./init.sh exit 0 230 passed (216+14: 7 CLI flags +7 dendrograma) All checks passed! pyright 0 errors compileall OK openspec validate --all 13/13 (package-interface + runtime-diagnostics) branch feat/cli-dendrogram. Revisión 2 subagentes: 5 HIGH corregidos (tickers/cov mismatch guard, legacy argv warning, _leaf_order iterativo, width cap 40, WAYLAND_DISPLAY). README 7->8, CHANGELOG Added, tasks.md 9/9."
+    },
+    {
+      "id": "feat-040",
+      "name": "Coverage gate CI",
+      "description": "Medicion y umbral de cobertura + higiene de dependencias: (1) pytest-cov con --cov-fail-under en addopts (umbral = baseline medido tras estabilizar el codigo de Fases A/B + feat-038/039, ~85% estimado; medir antes de fijar); (2) mover pytest de dependencies runtime a dev-dependency-groups (pyproject.toml:14 — pytest en runtime es un residuo del arranque del proyecto); (3) Makefile test target reporta cobertura. Aceptacion: make test reporta cobertura y falla bajo el umbral; pyproject sin pytest en dependencies runtime; uv sync instala igual el proyecto; gates y CI verdes con el umbral fijado.",
+      "dependencies": [
+        "feat-039"
+      ],
+      "status": "done",
+      "evidence": "2026-09-05 chore/coverage-gate ./init.sh exit 0 230 passed 85.37% branch (87% line) TOTAL 1509 stmts All checks passed! pyright 0 errors compileall OK make test --cov-fail-under=85 pass / --cov-fail-under=90 fail (gate activo) uv lock --check OK uv sync --frozen OK openspec validate --all 14/14 (project-packaging + quality-gates + verification-harness) branch chore/coverage-gate. Higiene: pytest 0 en runtime, pytest+pytest-cov en dev."
+    },
+    {
+      "id": "feat-041",
+      "name": "Release v0.1.0",
+      "description": "Cierre del hito v0.1.0 'estable y correcta': (1) CHANGELOG.md con entrada [0.1.0] completa (Added/Changed/Fixed desde el origen del proyecto, fecha ISO); (2) seccion README 'Limitaciones conocidas' declarando explicitamente: no apta para decisiones de inversion hasta v0.2.0 (sin costos de transaccion ni turnover), survivorship bias del universo fijo, dependencia de disponibilidad de yfinance; (3) tag anotado v0.1.0 sobre develop apuntando a SHA con CI verde; (4) GitHub Release opcional; (5) progress.md/session-handoff.md finales de hito con backlog v0.2.0 registrado (CPCV/DSR/PBO via purgedcv o temporalcv, costos+turnover, HERC, tearsheet, VaR/CVaR, flip default LedoitWolf con evidencia WF, pyright strict, delistings por-ticker). Merge develop -> main queda a decision del usuario (regla CONTRIBUTING). Aceptacion: tag sobre SHA con ./init.sh verde fresco en sesion; CHANGELOG completo y fechado; README con limitaciones; repo reiniciable (git status limpio, ./init.sh pasa de nuevo).",
+      "dependencies": [
+        "feat-028",
+        "feat-029",
+        "feat-030",
+        "feat-031",
+        "feat-032",
+        "feat-033",
+        "feat-034",
+        "feat-035",
+        "feat-036",
+        "feat-037",
+        "feat-038",
+        "feat-039",
+        "feat-040"
+      ],
+      "status": "done",
+      "evidence": "2026-09-09 sesion feat-041 (rama feat/release-v0-1-0): baseline ./init.sh exit 0 en develop pre-rama (230 passed, 85.37% branch); standards externos verificados (Keep a Changelog 2.0: Unreleased movido a [0.1.0] - 2026-09-09 + Unreleased fresco + links compare/tag; tags anotados con prefijo v semver; disclaimers de facto FinRL/QuantSphere/cpz-quant); cambios docs-only sin OpenSpec change (precedente skip_specs feat-025/031): CHANGELOG [0.1.0] fechado, README Limitaciones conocidas (no-inversion hasta v0.2.0, survivorship bias, yfinance + disclaimer), charts/ baseline 8 PNG trackeado (decision usuario, 3.5M); ./init.sh FRESCO post-edicion exit 0 (230 passed, ruff OK, pyright 0, compileall OK); commit + tag anotado v0.1.0 local. Cierre remoto 2026-09-09: PR #51 squash-mergeado a develop (633efa6), CI verde matriz 3.11/3.12/3.13, tag v0.1.0 re-apuntado a 633efa6 + push, GitHub Release publicado (releases/tag/v0.1.0)."
+    },
+    {
+      "id": "feat-042",
+      "name": "Filter threshold recalibration",
+      "description": "Recalibrar defaults de filtrado con ADR 007 (decision metodologica con evidencia walk-forward via A): minimum_sharpe_threshold 0.5->0.3 y maximum_volatility_threshold 0.25->0.27 en PortfolioConfig; actualizar tabla README, entrada Changed en CHANGELOG, pinnings test_config.py:27,77 y test de contrato de nuevos defaults; regresion walk-forward sintetica CI-safe (HRP >= equal). Scope bloqueado: solo defaults, sin flags CLI, sin cambio de universo. Aceptacion: N viable sin degenerar, ./init.sh verde, openspec validate verde, commit en rama feat/threshold-recalibration sin push hasta validacion del usuario.",
+      "dependencies": [
+        "feat-041"
+      ],
+      "status": "done",
+      "evidence": "2026-09-09 sesion feat-042 (rama feat/threshold-recalibration): TDD rojo registrado (pin 0.5==0.3, relaxed 1==0 bajo defaults antiguos); implementado config 0.3/0.27 + README/CHANGELOG + pins feat-042 + test contrato + regresion WF sintetica seed-9 (rel 0, medN 5, HRP 1.995>=EQ 1.948; legacy rel 1); ./init.sh FRESCO exit 0 (233 passed =230+3, cobertura 85.37%>=85, ruff OK, pyright 0, compileall OK); openspec validate change valid + --all 13/13; ADR-007 Aceptado; diff tests solo justificado; commit en rama SIN push (veto usuario pendiente validacion). Cierre 2026-09-09: PR #53 squash-mergeado a develop (d1b7da3) con CI verde matriz; change archivado 2026-09-09-feat-threshold-recalibration + spec configuration-contract sincronizada (+1 ADDED); openspec validate --all 12/12."
+    },
+    {
+      "id": "feat-043",
+      "name": "Report json core",
+      "description": "Nucleo del reporte tecnico machine-readable: crear portfolio_engine/app/report_json.py con (a) sanitize_json_payload recursivo (np.ndarray->tolist, np.generic->item, float no-finito->None, tuple->list, Path->str, date/datetime->isoformat), garantizando JSON estricto con json.dump(allow_nan=False) mas test de parseo con parse_constant que revienta ante NaN/Infinity tokens; (b) dump_technical_report(payload, path): un solo archivo por run (overwrite), mkdir reports/ parents=True; (c) config_fingerprint: sha256 16hex de dataclasses.asdict(PortfolioConfig) serializado canonicamente + universo ordenado + span resuelto + engine_version via importlib.metadata + generated_at UTC ISO-8601; run_id derivado del fingerprint (uuid4 PROHIBIDO); commit hash omitido explicitamente (Non-goal documentado: vive fuera del paquete, punto de emision futuro cli.py:101-108); (d) build_report_envelope: schema_version=1 (entero), secciones ausente-tolerantes (un consumidor de un artefacto intermedio ve menos keys sin romper). Exports en portfolio_engine/app/__init__.py (capa app; __init__ del paquete se completa en feat-050). Aceptacion: TDD rojo (import error) -> verde; round-trip con payload envenenado (ndarray 2D, np.int64, np.float32, nan, inf, np.bool_, Path, date); fingerprint identico para config identica y distinto ante cualquier campo de config.py:52-92; openspec change feat-report-json-core crea capability technical-report (spec delta ADDED requirement Sanitizador/Envelope/Fingerprint, escenario parseo estricto); ./init.sh exit 0 con TOTAL % de cobertura combinada registrado; openspec validate verde. Scope cortado: cero metricas, cero integracion pipeline/CLI, sin README.",
+      "dependencies": [
+        "feat-042"
+      ],
+      "status": "done",
+      "evidence": "2026-09-09 sesion feat-043 (rama feat/report-json-core): flujo OpenSpec completo (propose: 4 artefactos valid — proposal/specs capability technical-report con 4 requirements + 8 scenarios/design/tasks); analisis externo aplicado (RFC 8785 canonizacion sort-keys; python docs allow_nan=False fail-fast + parse_constant test estricto; patron sanitizador recursive ndarray->tolist/np.generic->item, np.float64 subclasifica float por eso item() PRIMERO); TDD rojo registrado: 34 failures por ModuleNotFoundError pre-impl; implementado report_json.py (sanitize_json_payload, dump_technical_report allow_nan=False+indent+sort_keys+mkdir, config_fingerprint sha256-16hex sobre asdict canonico + universo sorted-upper + span + engine_version, build_report_envelope schema_version=1 run_id derivado uuid4-prohibido) + exports en app/__init__.py; BUG PROPIO cazado por gates: ruff F841/I001 (config_dump muerto + math muerto) y pyright reportArgumentType en is_dataclass (fix and not isinstance(type)) — 2 iteraciones de gate hasta exit 0; suite 246 passed (233+13), cobertura TOTAL combinada 85.60% (sube desde 85.37%, modulo nuevo ~100% cubierto); motor diff 0 archivos (core/portfolio/data/validation/viz/pipeline intocados), red feat-021 git diff 0; openspec validate change valid + --all 13/13. Sin push hasta validacion del usuario. Cierre remoto 2026-09-09: PR #55 squash-mergeado a develop (356db0e) con CI verde matriz 3.11/3.12/3.13; change archivado 2026-09-09-feat-report-json-core (+4 requirements a spec technical-report); openspec validate --all verde."
+    },
+    {
+      "id": "feat-044",
+      "name": "Filter rejections with distances",
+      "description": "Diagnostico de exclusion (docs/diagnostics-catalog.md §3) como funcion pura compute_filter_rejections(requested_tickers, asset_metrics, filtered_metrics, closing_prices, config) en report_json.py — firma exige universo pedido y closing_prices porque los rechazos de ingesta (data_fetch.py:183-217, solo logs) y la poda de solape son indeducibles sin ellos. Para cada ticker pedido: ausente en asset_metrics -> ingestion_rejected (distancias None); sharpe/vol no finitos -> sharpe_non_finite/vol_non_finite (slugs identicos a selection.py:53,56,59,62; distancias None); sharpe<min -> below_min_sharpe con d_sharpe=sharpe-minimum_sharpe; vol>max -> above_max_vol con d_vol=maximum_volatility-vol (flotantes exactos); pasa umbrales pero no esta en filtered_metrics -> overlap_pruned (ENMIENDA de implementacion: inferencia pura SIN re-ejecutar apply_asset_filters — mismo orden de guardias, sin warning duplicado; ver design.md); superviviente -> kept con mismas distancias (deteccion 'casi pasa' |d|<0.05). Output {thresholds, tickers:{t:{reason,d_sharpe,d_vol}}, counts} con kept+rejected==requested. Aceptacion: TDD rojo->verde; pines exactos (sharpe 0.28 vs 0.30 -> d=-0.02; vol 0.35 vs 0.27 -> d=-0.08); activo plano -> sharpe_non_finite sin distancia; caso overlap_pruned construido con filtered_metrics podado; razon derivada == la que loggea apply_asset_filters para el mismo panel sintetico (conftest.py:13-45); ./init.sh + validate verde con TOTAL %.",
+      "dependencies": [
+        "feat-043"
+      ],
+      "status": "done",
+      "evidence": "2026-09-09 sesion feat-044 (rama feat/filter-rejections-distances, TODO en la rama segun regla del usuario): flujo OpenSpec completo en rama (change feat-filter-rejections-distances 4 artefactos valid — capability technical-report +1 ADDED requirement con 6 scenarios; feat-044 -> in_progress ANTES de implementar, orden rama-primero); analisis externo aplicado (matriz accept/reject audit-ready EU JTPF/SFDR per-decision audit trail/OIG screening: motivos especificos + consistencia + conteos por etapa); TDD rojo registrado: 10 failures nuevos (ImportError compute_filter_rejections) pre-impl; implementado compute_filter_rejections(requested_tickers, asset_metrics, filtered_metrics, closing_prices, config) con orden de guardias EXACTO de selection.py:47-63 (sharpe_non_finite -> vol_non_finite -> below_min_sharpe -> above_max_vol -> kept/overlap_pruned; ingestion_rejected fuera del loop; distancias firmadas d_sharpe/d_vol; no-finito -> ambas None), export en app/__init__.py; BUGS PROPIOS cazados por el test de equivalencia: fixture incoherente 2x (EDGE con sharpe 0.28 < 0.30 no puede estar en filtered_metrics; OVERLAP 0.90/0.15 SI pasa el filtro de produccion) — fixture realineado + test de equivalencia mapea capa overlap_pruned (apply_asset_filters no conoce la poda de calendario, ocurre despues del filtro; production_filtered=={GOOD,OVERLAP,PRUNED} pineado); ./init.sh FRESCO exit 0: 256 passed (246+10), cobertura TOTAL combinada 86.20% (sube desde 85.60%); openspec validate --all 14/14; motor diff 0 archivos (red feat-021 intacta). Validacion pre-push (regla del usuario, 2 subagentes): reviewer de codigo NOT-APPROVED con 3 MAJOR mutantes que sobrevivian (swap below_min<->above_max, swap sharpe_non_finite<->vol_non_finite, or->and en guardia de ingesta, < -> <=) — TODOS eliminados con fixtures DOUBLEBAD/DOUBLENAN/ATBOUND/PHANTOM/NOPRICE + test dedupe + test universo vacio (29 tests modulo, 262 passed, TOTAL 86.21%); auditoria de proceso APPROVE con 3 MINOR de higiene (descripcion del tracker enmendada, progress.md stale refrescado, session-handoff stale pruned). Sin push hasta validacion del usuario. Cierre remoto 2026-09-09: PR #57 squash-mergeado a develop (875e83e) con CI verde matriz 3.11/3.12/3.13; change archivado 2026-09-09-feat-filter-rejections-distances (+1 requirement a spec technical-report)."
+    },
+    {
+      "id": "feat-045",
+      "name": "Allocation diagnostics HHI DR RC",
+      "description": "Diagnostico de asignacion (catalogo §4+§6) como funcion pura allocation_diagnostics(weights, covariance_matrix, covariance_tickers, config, raw_weights=None) (ENMIENDA: +covariance_tickers para rebanar por nombres en ruta legacy M<N, ver design.md): (1) hhi=Sum(w^2), n_effective=1/hhi con guard N=0->None, N=1->hhi=1.0 (eco allocation.py:346-349,420-422) y verificacion Sum(w)==1+-1e-9 (tolerancia _WEIGHT_SUM_TOLERANCE config.py:35) antes de elevar; peso no finito -> hhi NaN-nunca-inf; (2) diversification_ratio=Sum(w_i*sigma_i)/sigma_p y risk_contributions RC_i=w_i*(Sigma w)_i/sigma_p^2 + dispersion (std(RC), max-min, max/(1/N)) — SIEMPRE con covarianza rebanada al subconjunto via create_portfolio_covariance_matrix (allocation.py:13-31, regla feat-028; precedentes pipeline.py:294-298) cuando len(weights)<cov.shape[0]; sigma_p<=VOL_FLOOR_EPS (metrics.py:19) -> DR/RC None (NaN-no-inf); (3) raw_vs_constrained: metodo hrp con raw_weights=None -> recompute determinista calculate_hrp_weights(cov, linkage_method) (hrp.py:93-166) reportando l1_raw_to_constrained, max_weight_drop, n_weights_changed + effective_bounds/mandate_relaxed via _resolve_effective_bounds (allocation.py:203-230; CRITICAL duplicado de allocation.py:223-229 documentado); telemetria del aplanamiento Dykstra del Addendum ADR-003. Metodo no-HRP -> raw_vs_constrained None+motivo (el vector pre-Dykstra legacy no esta expuesto; fabricarlo es deshonesto). Sin edits a allocation.py/hrp.py (git diff cero en red feat-021); test de bit-identidad: recompute == pesos del motor sobre panel feat-021. Aceptacion: pines analiticos (equal n=4 -> HHI 0.25/N_eff 4.0; N=1 -> HHI 1.0/DR 1.0/RC [1.0]; Sum(RC)==1+-1e-9 en cov PD seeded; slice 3 pesos vs cov 5x5 -> DR/RC sobre 3x3; orden permutado -> HHI identico; mandate_relaxed con n=3 max=0.30). Scope cortado: sin ENB-PCA, sin DR/RC por fold, sin serializar vectores de pesos por sección. ./init.sh + validate verde con TOTAL %.",
+      "dependencies": [
+        "feat-043"
+      ],
+      "status": "done",
+      "evidence": "2026-09-09 sesion feat-045 (rama feat/allocation-diagnostics, TODO en la rama): flujo OpenSpec completo en rama (change feat-allocation-diagnostics valid — capability technical-report +1 ADDED requirement con 6 scenarios; feat-045 -> in_progress ANTES de implementar; descripcion enmendada +covariance_tickers); analisis externo (formulas DR/RC/HHI con guards numericos, patron DiversificationAnalyzer + Choueifaty); TDD rojo registrado: 15 failures (ImportError allocation_diagnostics) en /tmp/red045.log; implementado con reutilizacion de 4 seams del motor (create_portfolio_covariance_matrix regla feat-028, calculate_portfolio_variance, _resolve_effective_bounds import privado documentado, calculate_hrp_weights recompute determinista); VALIDACION PRE-PUSH (regla del usuario, 2 subagentes): codigo CONDITIONAL-APPROVE con MAJOR-1 (guard de forma raw_weights nombrado) y MAJOR-2 (2 pines faltantes: engine round-trip sobre panel conftest real + n=3 relajado 1/3) — ambos implementados, mas MINOR (long-only nombrado, NaN-raw -> telemetry null, umbral 1e-12 blindado, max_over_equal pin exacto, len-check cov_tickers, docstring bit-identity condicional + CRITICAL duplicado, __all__ orden, design.md NIT corregido); proceso APPROVE con MINOR de higiene corregidos; BUGS PROPIOS: cov slice no simetrica, n=2 relaja siempre, pytest.approx como valor de peso, fix de pin l1==0 -> acuerdo exacto con recompute independiente (l1=0.133>0 demuestra que el cap mordio en panel real); ./init.sh FRESCO exit 0: 286 passed (278+8 netos), cobertura TOTAL combinada 86.91% (sube desde 86.21%); motor diff 0 archivos; openspec validate --all 14/14. Sin push hasta validacion del usuario. Cierre remoto 2026-09-09: PR #60 squash-mergeado a develop con CI verde matriz; change archivado (+1 requirement a spec technical-report)."
+    },
+    {
+      "id": "feat-046",
+      "name": "Insample series tail drawdown",
+      "description": "Riesgo in-sample (catalogo §7+§2, feat absorbe el maxDD/Calmar que iba separado — demasiado pequeño para id propio y el fork del builder seria autocontradictorio en el mismo JSON): (a) portfolio_return_series(prices_alineados, weights) -> np.ndarray: log-retornos por serie (compute_logarithmic_returns metrics.py:35-40) apilados en orden de claves + serie cartera = matriz @ vector de pesos ordenado a las mismas claves; ValueError nombrado ante mismatch de claves; RE-ALINEACION OBLIGATORIA con align_prices_to_common_calendar(..., minimum_overlap_ratio=1.0) sobre las claves finales de filtered_metrics (metrics.py:183-260): ratio 1.0 salta el guard 0.9 y reproduce exactamente la interseccion-dropna que uso main (contraejemplo verificado: re-correr con 0.9 en calendarios patologicos EXCLUYE supervivientes que ya tenian peso); ruta legacy M<N: pesos embebidos con ceros sobre el universo filtrado (patron _embed walk_forward.py:252-256); (b) tail_risk_metrics(serie_diaria, risk_free_rate, trading_days): sortino=(mean(r)*trading_days - ln(1+rf))/downside_dev con objetivo LOG-COHRENC via risk_free_log_rate (metrics.py:22-32, feat-036) y downside_dev sqrt(mean(min(0, r - rf/252)^2))*sqrt(trading_days); sortino None si no hay dias de caida; var_95_daily=-quantile(r,0.05) (interpolacion linear PINADA por test), cvar_95_daily=-mean(r|r<=q05); SIEMPRE CVaR>=|VaR|; JAMAS anualizar VaR/CVaR con sqrt(252) (guard catalogo §7:421-422); len<2 o no-finito -> todo None+motivo (nunca 0/inf); labels in-sample/daily/no-costs embebidos; (c) drawdown_metrics(serie): P_t=exp(cumsum(r_t)), DD_t=P_t/Peak_t-1<=0, max_drawdown=min(DD), calmar=ret_anualizado/|maxDD| con calmar=None si |maxDD|<=VOL_FLOOR_EPS (serie constante; nunca inf; Calmar negativo legal); maxDD<=0 invariante testado. Aceptacion: pines analiticos rel 1e-12 (serie constante exacta, rf=0.045 usa ln(1.045)); Serie de re-align con superviviente con huecos + ticker podado con fechas unicas -> filas de serie == cov.shape[0]-1 y pesos alineados (regresion del contraejemplo); len<2 -> None. Scope cortado: sin VaR por fold OOS (test_rows=60 = 3 puntos de cola, invalido), sin VaR parametrico/Cornish-Fisher, sin curva de drawdown serializada (solo escalares), sin Sortino en consola. ./init.sh + validate verde con TOTAL %. ERRATA pineada en design (cambio feat-insample-tail-drawdown, decision 1 y 8): objetivo downside T/252 con T=ln(1+rf) via risk_free_log_rate (el texto rf/252 mezclaba simple/log); invariante CVaR: cvar>=var firmado SIEMPRE, cvar>=|VaR| solo con VaR>=0 (cola real de perdidas).",
+      "dependencies": [
+        "feat-043"
+      ],
+      "status": "done",
+      "evidence": "2026-09-10 sesion feat-046 (rama feat/insample-tail-drawdown, TODO en la rama): rama-primero + in-progress ANTES de implementar; 4 subagentes pre-analisis (entendimiento + externo verificable + mapeo + sintesis->blueprint D1-D6); OpenSpec change feat-insample-tail-drawdown valid (proposal +1 ADDED technical-report 7 scenarios + design 11 decisiones + tasks); TDD rojo 14 ImportError -> verde 26 tests (bugs propios: |VaR| solo con VaR>=0, serie cte bajo target, fechas ISO, dict fechas, overflow exp con errstate); implementado append-only (portfolio_return_series/tail_risk_metrics/drawdown_metrics + exports; reutiliza seams publicos risk_free_log_rate/VOL_FLOOR_EPS/compute_logarithmic_returns/calculate_annualized_return); bucle validacion: code-APPROVE + process-CONDITIONAL -> 9 guards/tests + higiene -> re-verify CONDITIONAL (4 doc-MINOR) -> aplicados -> final APPROVE; ./init.sh FRESCO exit 0: 322 passed (296+26), TOTAL 87.61%; motor diff 0; openspec validate --all 14/14. Sin push hasta validacion del usuario. Cierre remoto 2026-09-10: PR #65 squash-mergeado a develop con CI verde matriz; change archivado (+1 requirement a spec technical-report)."
+    },
+    {
+      "id": "feat-048",
+      "name": "Tree health depth chaining",
+      "description": "Salud del arbol (catalogo §8) como funcion pura tree_diagnostics(covariance_matrix, linkage_method) reutilizando los seams publicos build_hrp_linkage (hrp.py:57-90) y _leaf_order (hrp.py:23-42, import privado entre modulos — aceptable, documentado) sin tocar hrp.py: (1) max_depth = camino raiz->hoja mas largo contando fusiones sobre la matriz Z ((n-1)x4, definicion PINADA en docstring+test — fusiones, no altura del eje Y); (2) chaining_rate = fusiones con exactamente un hijo hoja/(n-1) (acrecion-singleton por XOR sobre Z cols 0-1; ver ERRATA); (3) flag = max_depth > ceil(log2(n))+2 o chaining_rate > 0.60 (umbrales catalogo §8); (4) leaf_order incluida para comparabilidad machine con el dendrograma (invariante quasi-diag del spec runtime-diagnostics: leaves_list==_leaf_order). Guards: n<2 -> {None..., reason} por pre-chequeo sin elevar al caller (sin try/except ancho); n==2 -> depth 1, rate 0.0 (fusion hoja-hoja), flag False explicito (no patologico); n==1 ya retorna 1.0 sin clustering (hrp.py:122-123). Cofenetic/balance/altura EXCLUIDOS (HRP biseca por conteo — la altura es causalmente irrelevante para los pesos, hrp.py:140-156). Coste: recompute del linkage O(n^2) tipico (n<=12 trivial). Aceptacion: TDD rojo->verde; covarianza de 3 bloques (patron tests/test_dendrogram.py) -> depth<=ceil(log2 n)+2, flag False, leaf_order==_leaf_order(Z,n) [SUPERSEDED por ERRATA: rate<=0.2 imposible]; caso cadena pura -> depth==n-1, rate==(n-2)/(n-1), flag True; n=1 -> None+motivo sin raising; n=2 -> por construccion; ward sobre 3 bloques finito (enum ADR-006 respetado, sin nueva config). Scope cortado: sin cofenetic/balance/gap (§10), sin flip de linkage default (v0.2.0 con evidencia WF), sin tree diagnostics por fold. ./init.sh + validate verde con TOTAL %. ERRATA decidida por usuario 2026-09-10 (verificacion empirica en sesion: tasa>=1-hoja tiene piso 0.5 y da 0.818 en el patron sano 12-bloques): chaining_rate = fusiones con EXACTAMENTE un hijo hoja / (n-1) (acrecion-singleton; par hoja-hoja inicial no cuenta). Pines corregidos: cadena pura n -> depth==n-1, rate==(n-2)/(n-1), flag True (depth y rate disparan); balanceado n=8 a mano -> depth==3, rate==0.0, flag False; patron 12-bloques single -> depth<=ceil(log2 n)+2, flag False (rate ~0.55 gris, sin flag). Catalogo §8 intacto (\"singleton-contra-resto\" ya describe ex1). Aclaracion 2026-09-10 (cazada por TDD): n==2 -> rate==0.0 (la unica fusion es hoja-hoja, XOR falso; sin acrecion posible), flag False; el rate 1.0 original correspondia a la lectura >=1-hoja descartada.",
+      "dependencies": [
+        "feat-043"
+      ],
+      "status": "done",
+      "evidence": "2026-09-10 sesion feat-048 (rama feat/tree-health-depth-chaining, TODO en la rama): rama-primero + in-progress ANTES de implementar; 3 subagentes pre-analisis (entendimiento + externo + mapeo); HALLAZGO PROPIO verificado empiricamente: tasa>=1-hoja tiene piso 0.5 (0.818 en patron sano) -> pregunta al usuario -> acrecion exactamente-un-lado decidida + errata; OpenSpec change feat-tree-health-chaining valid (proposal +1 ADDED 8 scenarios + design 11 decisiones + tasks); TDD rojo 10 failures -> verde 13 tests (bug propio: n==2 rate 0.0 no 1.0; 2xE501 docstring cazados por ruff); implementado append-only (tree_diagnostics: pre-chequeo n<2, DP profundidad, XOR acrecion, carve-out n==2, umbrales eco, leaf_order motor; hrp.py diff cero); bucle: code-CONDITIONAL (MAJOR stale-1.0) + process-CONDITIONAL -> 9 fixes (guards ragged, pins thresholds, depth-fire n=8, fail-loud, precedencia, paridad ==0.60 indemostrable documentada) -> final APPROVE; ./init.sh FRESCO exit 0: 335 passed (322+13), TOTAL 88.01%; openspec validate --all 14/14. Cierre remoto 2026-09-10: PR #68 squash-mergeado a develop con CI verde matriz; change archivado (+1 requirement a spec technical-report)."
+    },
+    {
+      "id": "feat-049",
+      "name": "Walkforward json section pure",
+      "description": "Seccion walk-forward del reporte (catalogo §1+§9) como funcion pura walk_forward_section(report: WalkForwardReport) -> dict en report_json.py, CONSUMIENDO WalkForwardReport.to_dict() (walk_forward.py:179-196) verbatim — identidad pinada: medianas de la seccion == to_dict() del reporte, NUNCA modificar to_dict (pinnings test_walk_forward.py). (a) Agregados verbatim del to_dict; (b) Detalle por fold desde WalkForwardFold (walk_forward.py:81-94): index, train/test positions, tickers, weights (ya float casteados), oos_return/volatility/sharpe, mandate_relaxed, benchmarks — el detalle que hoy vive en report.folds pero to_dict no expone; (c) Deriva (§9): folds VALIDOS consecutivos ordenados por index, pesos embebidos sobre el universo completo del fold (fold.tickers + weights.get(t,0.0), patron zero-embed walk_forward.py:252-256), l1=Sum|w_k - w_k-1| in [0,2], median_l1, p90_l1, pairs_computed/pairs_possible (fold invalido rompe la cadena — sin interpolacion), label drift-not-turnover, JAMAS anualizada, JAMAS multiplicada por bps (catalogo §9 guards). Aceptacion: TDD rojo->verde con bundles sinteticos offline (patron test_walk_forward.py:13-42); pines de deriva (pesos identicos consecutivos -> 0.0; mover 10 puntos -> 0.20 exacto; fold invalido intermedio -> cadena rota, pairs_computed<pairs_possible, sin interpolacion; reporte de un fold -> deriva None+motivo); tuples de posiciones serializadas a listas; sanitizador de feat-043 maneja los None-heavy de folds. Scope cortado: sin CLI/flag (feat-051), sin invocar walk_forward_evaluate aqui, sin CPCV/DSR/PBO (backlog v0.2.0), sin turnover modelado. ./init.sh + validate verde con TOTAL %.",
+      "dependencies": [
+        "feat-043"
+      ],
+      "status": "done",
+      "evidence": "2026-09-10 sesion feat-049 (rama feat/walkforward-json-section, TODO en la rama): rama-primero + in-progress ANTES; 2 subagentes pre-analisis (entendimiento+mapeo con rulings + externo L1/GIPS/H&F-7/Perold); OpenSpec change feat-walkforward-json-section valid (proposal +1 ADDED 7 scenarios + design 8 decisiones + tasks); TDD rojo 11 ImportError -> verde 13 tests (1 integracion evaluate real); implementado append-only (walk_forward_section + helpers: agregados verbatim, filas, deriva con broken_pairs + label; walk_forward.py diff cero); bucle: code-CONDITIONAL (mutante median->mean MAJOR + deepcopy + reason-pins) + process-CONDITIONAL (design D6 + inf-Sharpe) -> 6 fixes -> final APPROVE; ./init.sh FRESCO exit 0: 348 passed (335+13), TOTAL 88.19%; openspec validate --all 14/14. Cierre remoto: PR #71 squash-mergeado a develop con CI verde matriz; change archivado (+1 requirement a spec technical-report)."
+    },
+    {
+      "id": "feat-050",
+      "name": "Report assembler pipeline integration",
+      "description": "Integracion keystone del ensamblador en generate_complete_analysis_report (pipeline.py:170-339): (1) build_technical_report(...) en report_json.py ensambla envelope (feat-043) + filter_rejections (044, con requested_tickers+closing_prices de main) + allocation_diagnostics (045, con cov completa filtrada + tickers: el rebanado ocurre dentro via regla feat-028, equivalente al slice pipeline.py:294-298) + risk (tail 046 + drawdown) + tree_diagnostics (048, cov 8-tuple + config.linkage_method) + walk_forward=null placeholder; serie in-sample reconstruida re-alineando {t: closing_prices[t] for t in filtered_metrics} con minimum_overlap_ratio=1.0 (regla feat-046); (2) generate_complete_analysis_report gana kwargs keyword-only report_path: str|Path|None=None (default ESCRIBE NADA — los 233 tests existentes quedan intactos, feat-021 diff 0 verificado) y run_walk_forward: bool=False reservado (feat-051 lo usa); cuando report_path esta seteado: construye y llama dump_technical_report DETRAS de try/except con warning nombrado estilo dendrograma (pipeline.py:311-325 pattern, except Exception + noqa BLE001) — el fallo del reporte NUNCA rompe el run; una sola linea log logger.info('Technical report JSON written: path=%s') tras el log final pipeline.py:331-337; consola otherwise intacta (print_portfolio_summary cli.py:128 sin tocar); (3) 8-tuple (pipeline.py:96-105,158-167) y 4-tuple (pipeline.py:339) INTOCA DOS; report_path jamas se reenvia a main; (4) cli.main pasa report_path='reports/technical-report.json' en la llamada (cli.py:115-126, diff de 1 linea) y los 3 fakes de tests/test_cli.py aceptan report_path/run_walk_forward + nuevo tests/test_report_assembler.py via patched_batch (mejor que fakes: ruta real offline); (5) .gitignore reports/ + Makefile clean gana reports/*.json (asimetria documentada: charts/ tracked por decision feat-041, reports/ ignored); (6) exports de report_json en portfolio_engine/__init__.py (imports :14-65, __all__ :67-116). Pinear escenario --no-save vs JSON (JSON siempre se emite; --no-save gobierna solo plots). Aceptacion: TDD rojo->verde via fakes existentes (tests/test_pipeline_e2e.py:251-261,344-354): JSON existe en tmp_path, json.loads OK, schema_version==1, todas las secciones presentes, no-finito->null en panel EEEE flat (test_pipeline_e2e.py:28); ruta early-exit (pipeline.py:93-105) escribe JSON valido mayormente-null (branch test); report_path=None default escribe NADA; excepcion del builder -> warning nombrado + run completa + 4-tuple intacto (branch test sin pragma no cover); pipeline.py acotado a helper + call-site de 2 lineas (desviacion documentada en design: el cap de +15 no admite el punto unico de emision que exige N=0); parseo estricto del archivo escrito (parse_constant raising); ./init.sh FRESCO exit 0 con TOTAL % registrado + openspec validate verde (delta MODIFIED technical-report: file-writer + integration con escenarios diagnostic-only-failure y default-on-via-CLI).",
+      "dependencies": [
+        "feat-043",
+        "feat-044",
+        "feat-045",
+        "feat-046",
+        "feat-048",
+        "feat-049"
+      ],
+      "status": "done",
+      "evidence": "2026-09-10 sesion feat-050 (rama feat/report-assembler-integration, TODO en la rama): rama-primero + in-progress ANTES; 2 subagentes pre-analisis (entendimiento+mapeo con blueprint + patrones externos OTel/MLflow/Stripe/PEP3102); OpenSpec change feat-report-assembler valid (proposal +1 ADDED 4 scenarios + design 10 decisiones + tasks); TDD rojo 8 failures -> verde 10 tests (bugs propios: naming-trap optimal/portfolio_weights, import en funcion ajena, schema/fingerprint en envelope, fakes sin kwarg, F401); implementado (build_technical_report + _risk_section degradada + _resolve_report_window + helper _emit_technical_report punto unico; kwargs keyword-only; cli 1 linea; 3 fakes; gitignore reports/; make clean; exports top-level); bucle: code-APPROVE + process-CONDITIONAL (MAJOR early-exit N=0 + cap) -> helper + tests N=0/builder-failure + docs -> final APPROVE; ./init.sh FRESCO exit 0: 358 passed (348+10), TOTAL 88.92%; core/portfolio/data/validation/viz diff cero; openspec validate --all 14/14. Cierre remoto: PR #74 squash-mergeado a develop con CI verde matriz; change archivado (+1 requirement a spec technical-report)."
+    },
+    {
+      "id": "feat-051",
+      "name": "CLI walkforward optin and docs",
+      "description": "Cierre del epico (catalogo §1+§9 wired): (1) _build_parser (cli.py:22-71) añade --walk-forward (store_true default False, help documentando proposito OOS y opt-in) — actualizar la lista de flags esperada en tests/test_cli.py:129-143; cli.main reenvia run_walk_forward=args.walk_forward (cli.py:115-126; ruta legacy universe_path la FUERZA off siguiendo el patron refresh=False de cli.py:84 y añade el test faltante del warning argv en cli.py:81-82, branch hits=0 hoy); (2) dentro de generate_complete_analysis_report, flag on -> walk_forward_evaluate(historical_prices, price_dates, config) con defaults de firma (walk_forward.py:199-207: train 250/test 60/embargo 5, SIN nuevos flags de ventana) usando el bundle ya desempaquetado en pipeline.py:195-215 (sin re-fetch, cache intocada), envuelto en try/except: ValueError 'Not enough rows' (walk_forward.py:62-66) u otro fallo -> walk_forward={'skipped': reason} con warning nombrado, run y JSON siguen validos (diagnostic-only); test con panel corto (rows=20 conftest) y con bundle >=560 filas para folds reales; (3) seccion = salida de walk_forward_section (feat-049) — las convenciones de reason de 049 son las de la seccion, sin segundo dialecto; (4) consola sin lineas nuevas mas alla de la de feat-050; (5) Docs: README seccion 'Reporte tecnico JSON' (path, schema_version, flag opt-in, etiquetado in-sample vs OOS + historia 'JSON siempre se emite'), CHANGELOG Unreleased Added, catalogo header de 'propuesta documental' a implementado-con-estado para secciones entregadas, correccion terminologica del gate (CONTRIBUTING.md:81,89 '85% branch' -> '85% total combinado coverage.py' y README.md:112 cuenta de tests stale). Aceptacion: TDD rojo->verde: parser (--walk-forward default False, parse True, --help documenta, pattern test_cli.py:37-46); propagate via monkeypatch de generate_complete_analysis_report capturando el kwarg (pattern test_cli.py:49-70); E2E offline bundle largo -> JSON con walk_forward.median_oos_sharpe no-null + filas por fold + drift.median_l1; bundle corto -> seccion skipped con motivo, exit 0, JSON parsea; default (sin flag) -> walk_forward null; schema_version permanece 1; suite existente intacta; ./init.sh FRESCO exit 0 con TOTAL % + openspec validate verde (delta MODIFIED technical-report: escenarios opt-in + skipped). Scope cortado: sin flags de ventana train/test/embargo, sin toggle de pretty-print, sin flag de path alternativo (fijo reports/technical-report.json), sin auto-enable del walk-forward en otros lados.",
+      "dependencies": [
+        "feat-050",
+        "feat-049"
+      ],
+      "status": "done",
+      "evidence": "2026-09-10 sesion feat-051 (rama feat/cli-walkforward-optin-docs, TODO en la rama): rama-primero + in-progress ANTES; 2 subagentes pre-analisis (entendimiento+mapeo con blueprint + patrones externos store_true/GIPS/Keep-a-Changelog/JUnit-GX/coverage); OpenSpec change feat-cli-walkforward-optin valid (proposal + MODIFIED requirement completo 7 scenarios + design 8 decisiones + tasks); TDD rojo 7 failures -> verde (parser/propagate/legacy/warning + largo/corto/plano/raise; I001 import-order 2x); implementado (flag --walk-forward + forwards incl. legacy off; _evaluate_walk_forward_section con defaults + ValueError/generico->skipped con repr-fallback + seccion verbatim; docs: README seccion + counts, CHANGELOG Added, catalogo header + sync §§1,2,4,5,7,8, CONTRIBUTING baseline); bucle: 2x CONDITIONAL -> 6 fixes (docstring, repr-fallback, README qualified, catalog sync, baseline, tasks) -> final APPROVE; ./init.sh FRESCO exit 0: 365 passed, TOTAL 89.18%; core/portfolio/data/validation/viz diff cero; openspec validate --all 14/14. EPICO feat-043..051 COMPLETO. Cierre remoto: PR #77 squash-mergeado a develop con CI verde matriz; change archivado (MODIFIED requirement fundido a spec technical-report). EPICO feat-043..051 COMPLETO."
+    },
+    {
+      "id": "fix-045a",
+      "name": "Allocation diagnostics hardening",
+      "description": "Endurecimiento post-cierre de feat-045 (rama fix/allocation-diagnostics-hardening, orden del usuario): docstring de contratos (N_eff Herfindahl vs Meucci, filtro 1e-12 como noise-filter, split raise-vs-null, HRP M<N->None), guard fail-loud de tickers duplicados, guard de varianza pre-sqrt (sin RuntimeWarning, equivalencia exacta), colapso del doble asarray; +10 tests (F1 telemetria nula HRP M<N y override con raw del caller, F2 permutacion conjunta desigual, F3 duplicados, F4 indefinida/NaN/inf sin warning, F5 lista/2-D/vacio, F6/F7 n_effective-NaN + piso DR>=1 + ddof=0). Scope: solo report_json.py + test_report_json.py, motor 0, sin delta OpenSpec (spec 88-120 intacta).",
+      "dependencies": [
+        "feat-045"
+      ],
+      "status": "done",
+      "evidence": "./init.sh FRESCO exit 0 en fix/allocation-diagnostics-hardening: 296 passed (286+10), TOTAL 86.94%, ruff/pyright/compileall verdes; motor diff 0; openspec validate --all 13/13. Bucle de validacion (regla del usuario): analisis externo (HHI/Choueifaty/Dykstra/JSON-null, 5 items) + analisis profundo (6/6 scenarios OK, 8 hallazgos MINOR) -> implementacion -> verificacion adversarial APPROVE + auditoria proceso CONDITIONAL-APPROVE -> correcciones -> re-verificacion APPROVE -> 2 MINOR -> verificacion final APPROVE. Sin push hasta validacion del usuario. Cierre remoto: PR #63 squash-mergeado a develop (37385ac) con CI verde matriz 3.11/3.12/3.13."
+    },
+    {
+      "id": "feat-052",
+      "name": "README showcase EN+ES con evidencia versionada",
+      "description": "Reescritura del README orientada a reclutador tecnico (rama docs/readme-showcase): README.md EN recruiter-first (TL;DR, quickstart con salida real, tabla CLI, diagrama Mermaid, resultados IS/OOS con snapshot docs/results/technical-report-2026-09-10.json, seccion harness de agentes, limitaciones, autor) + README.es.md espejo; fix bug dimensional grafica 7 (_portfolio_summary_metrics anualiza wTSw con trading_days_per_year; Sharpe 14.84->0.94) + 2 regresiones en test_reporting_sharpe.py + sync spec numeric-correctness + CHANGELOG Fixed + banner historico docs/diagnostics-catalog.md; charts/ regenerados (8) con defaults vigentes + scripts/charts/ regenerados a 8; progress.md/session-handoff.md al dia. Verificacion: ./init.sh + 3 rondas de subagentes (hechos/codigo, best practices externas, honestidad adversarial, render/paridad) con fixes en bucle hasta contenido sin cifras falsas.",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "2026-09-10 sesion feat-052 (rama docs/readme-showcase): README.md EN + README.es.md; snapshot docs/results/technical-report-2026-09-10.json; fix grafica 7 (cov diaria anualizada, Sharpe 14.84->0.94) + 2 regresiones + spec numeric-correctness + CHANGELOG; charts/ y scripts/charts/ regenerados (8); 3 rondas subagentes sin cifras falsas. ./init.sh FRESCO exit 0: 367 passed, TOTAL 89.18%; openspec validate --all 13/13. Cierre remoto: PR #80 squash-mergeado a develop (74b753b) con CI verde matriz 3.11/3.12/3.13."
+    },
+    {
+      "id": "feat-053",
+      "name": "Docs y specs consistency sync post-showcase",
+      "description": "Sincronizar documentacion y specs OpenSpec con el codigo actual (rama docs/spec-sync; OpenSpec change docs-spec-sync con proposal+design+tasks+deltas): Fase 1 docs de proceso (CONTRIBUTING baseline 367/89.18% + pyarrow runtime + gates + pre-commit; AGENTS 5 pasos; pyproject comentario TOTAL combinado; Makefile .PHONY/help; ADR README:12 + adr/003:34 renumerar a ADR 008 + refs; catalogo 6 refs + mapeo 9 fichas->6 secciones + umbral 12->6; feature_list refs podadas + typo ADR002; scripts/charts decision) + Fase 2 deltas de specs vivas (numeric-correctness Dykstra; configuration-contract vol-target/dispatch/lookback; package-interface --walk-forward/logging; quality-gates TOTAL combinado; project-packaging scipy; runtime-diagnostics darwin; system-verification n 2-25; technical-report serie/pesos; verification-harness comando; quant-docs Dykstra). Validacion: ./init.sh fresco + openspec validate --all 13/13 + greps anti-regresion; archive del change segun flujo del repo.",
+      "dependencies": [
+        "feat-052"
+      ],
+      "status": "done",
+      "evidence": "2026-09-10 sesion feat-053 (ramas docs/spec-sync + chore/archive-docs-spec-sync): rama-primero + in-progress ANTES; OpenSpec change docs-spec-sync (proposal+design+tasks+10 deltas: 8 MODIFIED + 2 ADDED) validado; Fase 1 docs de proceso (CONTRIBUTING/AGENTS/pyproject/Makefile/pre-commit/ADR index+addendum/catalogo/feature_list refs/README wording + init.sh uv sync --frozen); archive con deltas aplicados a las 10 specs vivas + tasks 4.x/6.x done. ./init.sh FRESCO exit 0: 367 passed, TOTAL 89.18%; openspec validate docs-spec-sync + --all 13/13 verdes; greps anti-regresion limpios. Cierre remoto: PR #81 (Fase 1 + change) y PR #82 (archive + sync) squash-mergeados a develop (cd02d49, 5924c95) con CI verde matriz 3.11/3.12/3.13."
+    }
+  ]
+}

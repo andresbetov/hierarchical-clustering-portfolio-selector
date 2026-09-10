@@ -10,7 +10,11 @@ build/
 .pytest_cache/
 .coverage
 htmlcov/
-#charts/
+coverage.xml
+coverage.json
+#charts/  (tracked baseline per feat-041; reports/ always ignored)
+reports/
 *.nbc
 *.nbi
-uv.lock
+data/cache/*
+!data/cache/.gitkeep

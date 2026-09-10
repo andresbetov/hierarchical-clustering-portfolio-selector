@@ -1,25 +1,36 @@
 """Top-level orchestration of the portfolio analysis workflow."""
 
+import inspect
 import logging
-import matplotlib.pyplot as plt
-import numpy as np
 from pathlib import Path
 
-from ..portfolio.allocation import calculate_optimal_portfolio_weights
+import numpy as np
+
 from ..core.config import PortfolioConfig
-from ..data.data_fetch import download_and_calculate_metrics
-from ..core.metrics import calculate_correlation_matrix, calculate_covariance_matrix, construct_returns_matrix
+from ..core.metrics import (
+    align_prices_to_common_calendar,
+    calculate_correlation_matrix,
+    calculate_covariance_matrix,
+    construct_returns_matrix,
+    estimate_covariance,
+)
+from ..portfolio.allocation import (
+    calculate_optimal_portfolio_weights,
+    calculate_optimal_portfolio_weights_hrp,
+    create_portfolio_covariance_matrix,
+)
+from ..portfolio.selection import apply_asset_filters, select_optimal_diversified_portfolio
 from ..viz.reporting import (
+    finalize_report_show,
     plot_asset_metrics_comparison,
     plot_correlation_covariance_matrices,
     plot_correlation_heatmap,
     plot_filtering_analysis,
     plot_historical_prices,
+    plot_hrp_dendrogram,
     plot_optimal_portfolio_analysis,
     plot_risk_return_scatter,
 )
-from ..portfolio.selection import apply_asset_filters, select_optimal_diversified_portfolio
-
 
 logger = logging.getLogger(__name__)
 
@@ -32,22 +43,43 @@ CHART_FILENAMES = {
     "filtering_analysis": "asset_filtering_effects.png",
     "filtered_correlation_heatmap": "filtered_assets_correlation_heatmap.png",
     "optimal_portfolio_analysis": "optimal_portfolio_allocation_summary.png",
+    "hrp_dendrogram": "hrp_dendrogram.png",
 }
 
 
-def main(ticker_symbols: list, config: PortfolioConfig = None):
-    """Run the core pipeline: download -> filter -> stats -> select -> allocate.
+def main(
+    ticker_symbols: list,
+    config: PortfolioConfig | None = None,
+    provider=None,
+):
+    """Run the core pipeline: fetch -> filter -> align -> cluster -> allocate.
+
+    `provider` is an optional MarketDataProvider (structural protocol); when
+    omitted a YFinanceProvider is constructed. Orchestration never imports
+    transport modules directly (M3 seam).
 
     Returns raw metrics, filtered universe, selected portfolio, weights and matrices
     so callers can build custom reports without rerunning computations.
     """
-
     if config is None:
         config = PortfolioConfig()
+    if provider is None:
+        from ..data.provider import YFinanceProvider
 
-    logger.info("Pipeline started: tickers=%d", len(ticker_symbols))
+        provider = YFinanceProvider()
 
-    asset_metrics, closing_prices, price_dates = download_and_calculate_metrics(ticker_symbols, config.risk_free_rate)
+    logger.info(
+        "Pipeline started: tickers=%d provider=%s",
+        len(ticker_symbols),
+        type(provider).__name__,
+    )
+
+    asset_metrics, closing_prices, price_dates = provider.fetch_metrics(
+        ticker_symbols,
+        config.risk_free_rate,
+        config.lookback_years,
+        config.trading_days_per_year,
+    )
 
     filtered_metrics, filtered_prices = apply_asset_filters(
         asset_metrics,
@@ -72,19 +104,54 @@ def main(ticker_symbols: list, config: PortfolioConfig = None):
             price_dates,
         )
 
-    daily_returns_matrix = construct_returns_matrix(filtered_prices)
-    correlation_matrix = calculate_correlation_matrix(daily_returns_matrix)
-    covariance_matrix = calculate_covariance_matrix(daily_returns_matrix)
-
-    optimal_portfolio = select_optimal_diversified_portfolio(correlation_matrix, filtered_metrics, config)
-
-    portfolio_weights = calculate_optimal_portfolio_weights(
-        optimal_portfolio,
-        correlation_matrix,
-        covariance_matrix,
-        filtered_metrics,
-        config,
+    # A3: multivariate stats must run on the common calendar (inner join),
+    # otherwise rows of different trading days get compared silently.
+    # Overlap guard (feat-037): low-coverage tickers excluded before stats.
+    aligned_prices = align_prices_to_common_calendar(
+        filtered_prices, price_dates, config.minimum_overlap_ratio
     )
+    # Prune filtered_metrics to the alignment survivors for dimensional coherence
+    # (covariance MxM must match filtered_metrics keys). The guard already
+    # logged the excluded tickers with ratios.
+    if set(aligned_prices.keys()) != set(filtered_prices.keys()):
+        excluded = sorted(set(filtered_prices.keys()) - set(aligned_prices.keys()))
+        logger.warning(
+            "Pipeline pruned filtered universe by calendar overlap: excluded=%s",
+            excluded,
+        )
+        filtered_metrics = {t: filtered_metrics[t] for t in aligned_prices}
+    aligned_rows = len(next(iter(aligned_prices.values()))) if aligned_prices else 0
+    logger.info(
+        "Calendar alignment: tickers=%d common_rows=%d input_rows(first)=%d",
+        len(aligned_prices),
+        aligned_rows,
+        len(filtered_prices[next(iter(filtered_prices))]) if filtered_prices else 0,
+    )
+
+    daily_returns_matrix = construct_returns_matrix(aligned_prices)
+    correlation_matrix = calculate_correlation_matrix(daily_returns_matrix)
+    covariance_matrix = estimate_covariance(daily_returns_matrix, config.covariance_estimator)
+
+    if config.weight_allocation_method == "hrp":
+        # End-to-end hierarchical path (ADR 003): every filtered asset is
+        # allocated via linkage -> quasi-diag -> recursive bisection. The
+        # legacy two-stage scoring/pruning flow is bypassed entirely.
+        portfolio_weights = calculate_optimal_portfolio_weights_hrp(
+            filtered_metrics,
+            covariance_matrix,
+            config,
+        )
+        optimal_portfolio = dict(filtered_metrics)
+    else:
+        optimal_portfolio = select_optimal_diversified_portfolio(correlation_matrix, filtered_metrics, config)
+
+        portfolio_weights = calculate_optimal_portfolio_weights(
+            optimal_portfolio,
+            correlation_matrix,
+            covariance_matrix,
+            filtered_metrics,
+            config,
+        )
 
     logger.info("Pipeline complete: selected_assets=%d", len(optimal_portfolio))
 
@@ -100,17 +167,119 @@ def main(ticker_symbols: list, config: PortfolioConfig = None):
     )
 
 
+def _resolve_report_window(price_dates: dict) -> tuple[str, str]:
+    """Honest data span: min/max ISO date over the union of per-ticker dates.
+
+    Uses the resolved dates (cache/offline-safe), never the nominal
+    lookback window. Empty bundle -> "unknown" sentinels, report stays valid.
+    """
+    stamps = []
+    for dates in price_dates.values():
+        stamps.extend(str(day)[:10] for day in list(dates))
+    if not stamps:
+        return "unknown", "unknown"
+    return min(stamps), max(stamps)
+
+
+def _emit_technical_report(
+    *,
+    ticker_symbols,
+    all_metrics,
+    filtered_metrics,
+    historical_prices,
+    price_dates,
+    covariance_matrix,
+    covariance_tickers,
+    weights,
+    config,
+    report_path,
+    run_walk_forward,
+) -> None:
+    """Build + dump the technical report without ever breaking the run.
+
+    Single emission point used by both the normal and the early-exit
+    (N=0) paths, so `report_path` is honored whenever the run completes.
+    With `run_walk_forward`, the already-unpacked bundle feeds
+    walk_forward_evaluate with its signature defaults (no re-fetch, cache
+    untouched); evaluation failure degrades to {"skipped": reason} with a
+    named warning (diagnostic-only). Without the flag the section stays null.
+    """
+    from datetime import datetime, timezone
+
+    from .report_json import build_technical_report, dump_technical_report
+
+    window_start, window_end = _resolve_report_window(price_dates)
+    try:
+        payload = build_technical_report(
+            list(ticker_symbols),
+            all_metrics,
+            filtered_metrics,
+            historical_prices,
+            price_dates,
+            covariance_matrix,
+            list(covariance_tickers),
+            weights,
+            config,
+            window_start,
+            window_end,
+            datetime.now(timezone.utc).isoformat(),
+        )
+    except Exception as exc:  # noqa: BLE001 — report is diagnostic, never break run
+        logger.warning("Technical report JSON skipped: %s", exc)
+        return
+    if run_walk_forward:
+        payload["walk_forward"] = _evaluate_walk_forward_section(
+            historical_prices, price_dates, config
+        )
+    try:
+        dump_technical_report(payload, report_path)
+    except Exception as exc:  # noqa: BLE001 — report is diagnostic, never break run
+        logger.warning("Technical report JSON skipped: %s", exc)
+    else:
+        logger.info("Technical report JSON written: path=%s", report_path)
+
+
+def _evaluate_walk_forward_section(historical_prices, price_dates, config):
+    """Run the OOS evaluation or return the skipped-dialect on failure."""
+    from ..validation.walk_forward import walk_forward_evaluate
+    from .report_json import walk_forward_section
+
+    try:
+        report = walk_forward_evaluate(historical_prices, price_dates, config)
+    except ValueError as exc:
+        # Expected shape: short bundle ("Not enough rows") — honest skip.
+        reason = str(exc) or repr(exc)
+        logger.warning("Walk-forward skipped: %s", reason)
+        return {"skipped": reason}
+    except Exception as exc:  # noqa: BLE001 — diagnostic-only, run stays valid
+        reason = str(exc) or repr(exc)
+        logger.warning("Walk-forward skipped: %s", reason)
+        return {"skipped": reason}
+    return walk_forward_section(report)
+
+
 def generate_complete_analysis_report(
     ticker_symbols: list,
-    config: PortfolioConfig = None,
+    config: PortfolioConfig | None = None,
     save_plots: bool = False,
     show_plots: bool = False,
+    provider=None,
+    *,
+    report_path: str | Path | None = None,
+    run_walk_forward: bool = False,
 ):
-    """Run the pipeline and emit the standard 7-plot analysis report.
+    """Run the pipeline and emit the standard 8-plot analysis report.
 
     Args:
         save_plots: when True, writes PNG files under `charts/` paths.
         show_plots: when True, opens plot windows after generating all figures.
+        provider: optional MarketDataProvider forwarded to main (feat-038 cache).
+        report_path: when set, writes the machine-readable technical report
+            JSON (feat-050; the JSON is always emitted when set — `save_plots`
+            governs plots only). Default None writes nothing.
+        run_walk_forward: when True, runs walk-forward OOS validation into
+            the report (feat-051 opt-in, diagnostic-only); the section stays
+            null when False and degrades to {"skipped": reason} on failure.
     """
 
     if config is None:
@@ -120,10 +289,30 @@ def generate_complete_analysis_report(
         Path("charts").mkdir(parents=True, exist_ok=True)
         logger.info("Charts directory ready: path=charts")
 
-    all_metrics, filtered_metrics, optimal_portfolio, portfolio_weights, corr_matrix, _, historical_prices, price_dates = main(
-        ticker_symbols,
-        config,
-    )
+    # Forward provider when mocked mains accept it; fallback for legacy fakes.
+    sig = inspect.signature(main)
+    if "provider" in sig.parameters:
+        (
+            all_metrics,
+            filtered_metrics,
+            optimal_portfolio,
+            portfolio_weights,
+            corr_matrix,
+            covariance_matrix,
+            historical_prices,
+            price_dates,
+        ) = main(ticker_symbols, config, provider=provider)  # type: ignore[call-arg]
+    else:
+        (
+            all_metrics,
+            filtered_metrics,
+            optimal_portfolio,
+            portfolio_weights,
+            corr_matrix,
+            covariance_matrix,
+            historical_prices,
+            price_dates,
+        ) = main(ticker_symbols, config)  # type: ignore[call-arg]
 
     logger.info("Generating complete portfolio analysis report")
 
@@ -152,20 +341,31 @@ def generate_complete_analysis_report(
 
     logger.info("Rendering chart: correlation and covariance matrices")
     all_tickers = list(all_metrics.keys())
-    # Rebuild the full-universe matrices here so the report can compare the original asset set,
-    # not only the filtered subset used for selection.
-    all_prices_dict = {ticker: historical_prices[ticker] for ticker in all_tickers if ticker in historical_prices}
-    all_returns_matrix = construct_returns_matrix(all_prices_dict)
-    all_corr_matrix = calculate_correlation_matrix(all_returns_matrix)
-    all_cov_matrix = calculate_covariance_matrix(all_returns_matrix)
+    # Full-universe matrices on common calendar (same overlap guard, coherent
+    # with pipeline and without ValueError on delisted/IPO tickers — feat-037
+    # absorbs progress.md:45 blocker). Survivors define the chart universe.
+    all_prices_raw = {ticker: historical_prices[ticker] for ticker in all_tickers if ticker in historical_prices}
+    try:
+        aligned_full = align_prices_to_common_calendar(
+            all_prices_raw, price_dates, config.minimum_overlap_ratio
+        )
+    except ValueError as exc:
+        logger.warning("Chart 4 skipped: calendar overlap left no survivors: %s", exc)
+        aligned_full = {}
+        aligned_full_tickers: list[str] = []
+    else:
+        aligned_full_tickers = list(aligned_full.keys())
+        all_returns_matrix = construct_returns_matrix(aligned_full)
+        all_corr_matrix = calculate_correlation_matrix(all_returns_matrix)
+        all_cov_matrix = calculate_covariance_matrix(all_returns_matrix)
 
-    plot_correlation_covariance_matrices(
-        all_corr_matrix,
-        all_cov_matrix,
-        all_tickers,
-        f"charts/{CHART_FILENAMES['correlation_covariance_matrices']}" if save_plots else None,
-        show_plot=show_plots,
-    )
+        plot_correlation_covariance_matrices(
+            all_corr_matrix,
+            all_cov_matrix,
+            aligned_full_tickers,
+            f"charts/{CHART_FILENAMES['correlation_covariance_matrices']}" if save_plots else None,
+            show_plot=show_plots,
+        )
 
     logger.info("Rendering chart: filtering analysis")
     plot_filtering_analysis(
@@ -188,27 +388,71 @@ def generate_complete_analysis_report(
 
     if optimal_portfolio and portfolio_weights:
         logger.info("Rendering chart: optimal portfolio analysis")
+        # feat-028: legacy routes can select M < N assets; the report must
+        # receive the covariance sliced to the exact selected subset (same
+        # ticker order as the weights), never the NxN filtered matrix.
+        portfolio_covariance = create_portfolio_covariance_matrix(
+            optimal_portfolio,
+            covariance_matrix,
+            filtered_metrics,
+        )
         plot_optimal_portfolio_analysis(
             optimal_portfolio,
             portfolio_weights,
             config,
             f"charts/{CHART_FILENAMES['optimal_portfolio_analysis']}" if save_plots else None,
             show_plot=show_plots,
+            covariance_matrix=portfolio_covariance,
         )
     else:
         logger.warning("Skipping optimal portfolio chart: no selected assets")
 
-    if show_plots:
-        # Keep windows open only once after all figures are created.
-        plt.show()
+    # Chart 8 — HRP dendrogram (hierarchical diagnostic, always from filtered covariance)
+    try:
+        logger.info("Rendering chart: HRP dendrogram")
+        dendro_tickers = list(filtered_metrics.keys())
+        if len(dendro_tickers) >= 1 and covariance_matrix.size > 0:
+            plot_hrp_dendrogram(
+                covariance_matrix,
+                config.linkage_method,
+                dendro_tickers,
+                f"charts/{CHART_FILENAMES['hrp_dendrogram']}" if save_plots else None,
+                show_plot=show_plots,
+            )
+        else:
+            logger.warning("Skipping HRP dendrogram: no filtered assets/covariance")
+    except Exception as exc:  # noqa: BLE001 — dendrogram is diagnostic, never break report
+        logger.warning("HRP dendrogram skipped: %s", exc)
+
+    # Single lifecycle decision point: display interactively when requested
+    # (and possible), otherwise close everything deterministically.
+    finalize_report_show(show_plots)
 
     logger.info(
         "Report generated: plots=%d analyzed=%d filtered=%d final_portfolio=%d",
-        7,
+        8,
         len(all_tickers),
         len(filtered_tickers),
         len(optimal_portfolio),
     )
+
+    if report_path is not None:
+        # NOTE (naming trap): in the HRP route optimal_portfolio is the
+        # metrics dict and portfolio_weights holds the weights dict;
+        # the legacy route uses the same convention (metrics, weights).
+        _emit_technical_report(
+            ticker_symbols=ticker_symbols,
+            all_metrics=all_metrics,
+            filtered_metrics=filtered_metrics,
+            historical_prices=historical_prices,
+            price_dates=price_dates,
+            covariance_matrix=covariance_matrix,
+            covariance_tickers=filtered_tickers,
+            weights=portfolio_weights,
+            config=config,
+            report_path=report_path,
+            run_walk_forward=run_walk_forward,
+        )
 
     return all_metrics, filtered_metrics, optimal_portfolio, portfolio_weights
 

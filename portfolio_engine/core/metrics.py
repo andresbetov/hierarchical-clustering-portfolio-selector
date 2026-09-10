@@ -1,130 +1,170 @@
-"""Core numerical utilities used by selection and allocation modules."""
+"""Core numerical utilities used by selection and allocation modules.
 
-from typing import Any
+Fully vectorized NumPy (feat-022 removed numba): at the project's scale
+(decenas-centenas de activos x ~1250 dias) JIT warm-up dominates runtime
+gains, while the characterization suite pins exact semantics.
+"""
+
+import logging
+import math
+from typing import cast
 
 import numpy as np
-from numba import jit
-from numpy import floating
+from sklearn.covariance import OAS, LedoitWolf
+
+logger = logging.getLogger(__name__)
+
+# Floor for variance/std-like magnitudes: anything <= EPS is "no information"
+# and maps to NaN semantics rather than infinities (C3 contract).
+VOL_FLOOR_EPS = 1e-12
 
 
-@jit(nopython=True, cache=True)
+def risk_free_log_rate(risk_free_rate: float) -> float:
+    """Continuously-compounded risk-free rate ln(1+rf), stable for rf << 1.
+
+    Returns NaN for non-finite rf or domain error (rf <= -1) to preserve
+    the "never inf" contract of calculate_sharpe_ratio.
+    """
+    if not np.isfinite(risk_free_rate):
+        return float("nan")
+    if risk_free_rate <= -1:
+        return float("nan")
+    return math.log1p(risk_free_rate)
+
+
 def compute_logarithmic_returns(price_series: np.ndarray) -> np.ndarray:
     """Compute log returns r_t = ln(P_t / P_{t-1}) for a 1D price series."""
-
-    number_of_prices = len(price_series)
-    log_returns = np.empty(number_of_prices - 1, dtype=np.float64)
-    for i in range(1, number_of_prices):
-        log_returns[i - 1] = np.log(price_series[i] / price_series[i - 1])
-    return log_returns
+    prices = np.asarray(price_series, dtype=np.float64)
+    if len(prices) < 2:
+        return np.empty(0, dtype=np.float64)
+    return np.log(prices[1:] / prices[:-1])
 
 
-@jit(nopython=True, cache=True)
-def calculate_annualized_return(daily_log_returns: np.ndarray) -> floating[Any]:
+def calculate_annualized_return(daily_log_returns: np.ndarray, trading_days: int = 252) -> float:
     daily_mean_return = np.mean(daily_log_returns)
-    return daily_mean_return * 252
+    return float(daily_mean_return * trading_days)
 
 
-@jit(nopython=True, cache=True)
-def calculate_annualized_volatility(daily_log_returns: np.ndarray) -> float:
-    daily_standard_deviation = np.std(daily_log_returns)
-    return daily_standard_deviation * np.sqrt(252.0)
+def calculate_annualized_volatility(daily_log_returns: np.ndarray, trading_days: int = 252) -> float:
+    """Annualized SAMPLE volatility: std(ddof=1) * sqrt(trading_days)."""
+    n = len(daily_log_returns)
+    if n < 2:
+        return float("nan")
+    return float(np.std(daily_log_returns, ddof=1) * np.sqrt(trading_days))
 
 
-@jit(nopython=True, cache=True)
 def calculate_sharpe_ratio(annual_return: float, annual_volatility: float, risk_free_rate: float) -> float:
-    return (annual_return - risk_free_rate) / annual_volatility
+    """Risk-adjusted excess return; NaN (never inf) when vol is degenerate.
 
-
-@jit(nopython=True, cache=True)
-def calculate_correlation_matrix(returns_matrix: np.ndarray) -> np.ndarray:
-    """Compute Pearson correlation matrix from a returns matrix [days, assets].
-
-    Assets with zero variance produce NaN correlations against other assets.
+    Coherencia logarítmica: annual_return es log anualizado (mean(log)*252),
+    por lo que el exceso usa rf_log = ln(1+rf) (math.log1p, estable).
     """
-
-    number_of_days, number_of_assets = returns_matrix.shape
-
-    if number_of_days <= 1:
-        return np.full((number_of_assets, number_of_assets), np.nan, dtype=np.float64)
-
-    centered_returns = np.empty_like(returns_matrix)
-    for asset_index in range(number_of_assets):
-        asset_mean = np.mean(returns_matrix[:, asset_index])
-        for day_index in range(number_of_days):
-            centered_returns[day_index, asset_index] = returns_matrix[day_index, asset_index] - asset_mean
-
-    asset_standard_deviations = np.empty(number_of_assets, dtype=np.float64)
-    for asset_index in range(number_of_assets):
-        sum_of_squares = 0.0
-        for day_index in range(number_of_days):
-            sum_of_squares += centered_returns[day_index, asset_index] ** 2
-
-        if sum_of_squares == 0.0:
-            asset_standard_deviations[asset_index] = 0.0
-        else:
-            asset_standard_deviations[asset_index] = np.sqrt(sum_of_squares / (number_of_days - 1))
-
-    correlation_matrix = np.empty((number_of_assets, number_of_assets), dtype=np.float64)
-
-    for asset_i in range(number_of_assets):
-        for asset_j in range(asset_i, number_of_assets):
-            if asset_i == asset_j:
-                correlation_matrix[asset_i, asset_j] = 1.0
-            else:
-                if asset_standard_deviations[asset_i] == 0.0 or asset_standard_deviations[asset_j] == 0.0:
-                    correlation_coefficient = np.nan
-                else:
-                    cross_product = 0.0
-                    for day_index in range(number_of_days):
-                        cross_product += centered_returns[day_index, asset_i] * centered_returns[day_index, asset_j]
-
-                    correlation_coefficient = cross_product / (
-                        (number_of_days - 1)
-                        * asset_standard_deviations[asset_i]
-                        * asset_standard_deviations[asset_j]
-                    )
-
-                correlation_matrix[asset_i, asset_j] = correlation_coefficient
-                correlation_matrix[asset_j, asset_i] = correlation_coefficient
-
-    return correlation_matrix
+    if not np.isfinite(annual_volatility) or annual_volatility <= VOL_FLOOR_EPS:
+        return float("nan")
+    rf_log = risk_free_log_rate(risk_free_rate)
+    if not np.isfinite(rf_log) or not np.isfinite(annual_return):
+        return float("nan")
+    return (annual_return - rf_log) / annual_volatility
 
 
-@jit(nopython=True, cache=True)
+def _validate_observations_matrix(returns_matrix: np.ndarray) -> tuple[np.ndarray, int, int]:
+    matrix = np.asarray(returns_matrix, dtype=np.float64)
+    if matrix.ndim != 2 or matrix.shape[0] <= 1:
+        number_of_assets = matrix.shape[1] if matrix.ndim == 2 else 0
+        return np.full((number_of_assets, number_of_assets), np.nan), 0, number_of_assets
+    return matrix, matrix.shape[0], matrix.shape[1]
+
+
+def calculate_correlation_matrix(returns_matrix: np.ndarray) -> np.ndarray:
+    """Pearson correlation matrix from a returns matrix [days, assets].
+
+    Honest diagonal (C3): 1.0 only when the asset has positive sample std;
+    rows/columns of flat assets are NaN everywhere.
+    """
+    matrix, number_of_days, number_of_assets = _validate_observations_matrix(returns_matrix)
+    if number_of_days == 0:
+        return matrix
+
+    centered = matrix - matrix.mean(axis=0, keepdims=True)
+    sum_of_squares = (centered**2).sum(axis=0)
+    standard_deviations = np.sqrt(sum_of_squares / (number_of_days - 1))
+
+    cross_products = centered.T @ centered / (number_of_days - 1)
+
+    outer_std = np.outer(standard_deviations, standard_deviations)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        correlation = cross_products / outer_std
+
+    # Flat assets: full NaN row/column including their own diagonal.
+    degenerate = standard_deviations <= VOL_FLOOR_EPS
+    correlation[degenerate, :] = np.nan
+    correlation[:, degenerate] = np.nan
+
+    informative = ~degenerate
+    correlation[np.diag(informative)] = 1.0
+
+    if not degenerate.any():
+        np.fill_diagonal(correlation, 1.0)
+
+    return correlation
+
+
 def calculate_covariance_matrix(returns_matrix: np.ndarray) -> np.ndarray:
-    number_of_days, number_of_assets = returns_matrix.shape
+    """Sample covariance (ddof=1) from a returns matrix [days, assets]."""
+    matrix, number_of_days, number_of_assets = _validate_observations_matrix(returns_matrix)
+    if number_of_days == 0:
+        return matrix
 
-    if number_of_days <= 1:
-        return np.full((number_of_assets, number_of_assets), np.nan, dtype=np.float64)
+    centered = matrix - matrix.mean(axis=0, keepdims=True)
+    return centered.T @ centered / (number_of_days - 1)
 
-    centered_returns = np.empty_like(returns_matrix)
-    for asset_index in range(number_of_assets):
-        asset_mean = np.mean(returns_matrix[:, asset_index])
-        for day_index in range(number_of_days):
-            centered_returns[day_index, asset_index] = returns_matrix[day_index, asset_index] - asset_mean
 
-    covariance_matrix = np.empty((number_of_assets, number_of_assets), dtype=np.float64)
+COVARIANCE_ESTIMATORS = ("sample", "ledoit_wolf", "oas")
 
-    for asset_i in range(number_of_assets):
-        for asset_j in range(asset_i, number_of_assets):
-            cross_product = 0.0
-            for day_index in range(number_of_days):
-                cross_product += centered_returns[day_index, asset_i] * centered_returns[day_index, asset_j]
 
-            covariance_value = cross_product / (number_of_days - 1)
-            covariance_matrix[asset_i, asset_j] = covariance_value
-            covariance_matrix[asset_j, asset_i] = covariance_value
+def estimate_covariance(returns_matrix: np.ndarray, method: str = "sample") -> np.ndarray:
+    """Single covariance-estimation seam (ADR 005).
 
-    return covariance_matrix
+    - "sample": the legacy ddof=1 sample covariance (bit-identical to
+      calculate_covariance_matrix — the default, no silent behavior change).
+    - "ledoit_wolf" / "oas": scikit-learn shrinkage estimators
+      (parity-tested against sklearn.covariance at 1e-12).
+
+    Degenerate inputs (<= 1 observation) return the full-NaN matrix without
+    invoking sklearn, mirroring calculate_covariance_matrix semantics.
+    """
+    if method not in COVARIANCE_ESTIMATORS:
+        raise ValueError(
+            f"Unknown covariance_estimator '{method}'; allowed: {list(COVARIANCE_ESTIMATORS)}"
+        )
+
+    matrix, number_of_days, _ = _validate_observations_matrix(returns_matrix)
+    if number_of_days == 0:
+        return matrix
+    if method == "sample":
+        return calculate_covariance_matrix(returns_matrix)
+
+    estimator = LedoitWolf() if method == "ledoit_wolf" else OAS()
+    return estimator.fit(matrix).covariance_
 
 
 def construct_returns_matrix(prices_dictionary: dict) -> np.ndarray:
     """Build matrix [days, assets] preserving insertion order from input dict.
 
     This ordering must stay consistent with the metrics dict used downstream.
+    Raises ValueError if lengths differ: position-wise stacking of misaligned
+    series silently compares different trading days (use
+    align_prices_to_common_calendar first).
     """
 
     asset_names = list(prices_dictionary.keys())
+    lengths = {name: len(np.asarray(v)) for name, v in prices_dictionary.items()}
+    if len(set(lengths.values())) > 1:
+        detail = ", ".join(f"{k}={v}" for k, v in lengths.items())
+        raise ValueError(
+            "Misaligned price series passed to construct_returns_matrix "
+            f"(lengths differ: {detail}); align calendars first."
+        )
     returns_list = []
 
     for asset_name in asset_names:
@@ -137,17 +177,115 @@ def construct_returns_matrix(prices_dictionary: dict) -> np.ndarray:
     return np.array(returns_list).T
 
 
-@jit(nopython=True, cache=True)
-def compute_correlation_distance_matrix(correlation_matrix: np.ndarray) -> np.ndarray:
-    """Transform correlation to clustering distance: d(i,j) = 1 - |corr(i,j)|."""
+MIN_COMMON_ROWS = 2
 
-    matrix_size = correlation_matrix.shape[0]
-    distance_matrix = np.empty((matrix_size, matrix_size), dtype=np.float64)
-    for i in range(matrix_size):
-        for j in range(matrix_size):
-            if i == j:
-                distance_matrix[i, j] = 0.0
-            else:
-                distance_matrix[i, j] = 1.0 - abs(correlation_matrix[i, j])
-    return distance_matrix
 
+def align_prices_to_common_calendar(
+    prices_dictionary: dict,
+    dates_dictionary: dict,
+    minimum_overlap_ratio: float = 0.9,
+) -> dict:
+    """Trim every price series to the common calendar (inner join on dates).
+
+    Returns a dict with the same ticker order as `prices_dictionary`, where
+    each value is the array trimmed to rows present for ALL tickers and sorted
+    ascending. Raises ValueError when fewer than MIN_COMMON_ROWS common dates
+    exist or when any series/index pair has mismatched lengths.
+
+    Overlap guard (feat-037): tickers whose coverage < minimum_overlap_ratio
+    against the union span are excluded with a named warning, preserving the
+    history of survivors (excluir ticker ruidoso >> truncar a todos).
+    """
+    import pandas as pd
+
+    if not (0 < minimum_overlap_ratio <= 1.0):
+        raise ValueError(
+            f"minimum_overlap_ratio must be within (0, 1], got {minimum_overlap_ratio}"
+        )
+
+    # One-directional requirement: every PRICE series must have dates; extra
+    # date entries are legitimate (e.g. tickers filtered out downstream still
+    # feed charts from the same dict).
+    missing_dates = [ticker for ticker in prices_dictionary if ticker not in dates_dictionary]
+    if missing_dates:
+        raise ValueError(f"Missing dates entry for tickers: {sorted(missing_dates)}")
+
+    columns = {}
+    for ticker, prices in prices_dictionary.items():
+        dates_index = pd.DatetimeIndex(dates_dictionary[ticker])
+        values = np.asarray(prices)
+        if len(values) != len(dates_index):
+            raise ValueError(
+                f"Ticker {ticker}: {len(values)} prices vs {len(dates_index)} dates"
+            )
+        columns[ticker] = pd.Series(values.astype(np.float64), index=dates_index)
+
+    frame_before = pd.DataFrame(columns).sort_index()
+
+    # Overlap guard: exclude tickers with low coverage against the union span.
+    if minimum_overlap_ratio < 1.0 and len(columns) > 1:
+        ratios = {
+            t: float(cast(float, frame_before[t].notna().mean())) for t in frame_before.columns
+        }
+        excluded = [t for t, r in ratios.items() if r < minimum_overlap_ratio]
+        if excluded:
+            logger.warning(
+                "Calendar overlap guard excluded tickers: count=%d excluded=%s ratios=%s threshold=%s",
+                len(excluded),
+                excluded,
+                {k: f"{v:.3f}" for k, v in ratios.items() if k in excluded},
+                minimum_overlap_ratio,
+            )
+            frame_before = frame_before.drop(columns=excluded)
+
+    if len(frame_before.columns) == 0:
+        raise ValueError(
+            f"No tickers survive overlap filter (threshold={minimum_overlap_ratio}); "
+            f"all tickers below coverage — intersection too small"
+        )
+
+    frame = frame_before.dropna(how="any")
+
+    if len(frame) < MIN_COMMON_ROWS:
+        tickers = list(frame_before.columns)
+        first, second = tickers[0], tickers[-1] if len(tickers) > 1 else tickers[0]
+        raise ValueError(
+            f"Calendar intersection too small ({len(frame)} rows < {MIN_COMMON_ROWS}) "
+            f"across tickers={tickers}; e.g. span {first}..{second}."
+        )
+
+    return {
+        ticker: frame[ticker].to_numpy(dtype=np.float64)
+        for ticker in frame.columns
+    }
+
+
+_METRIC_CODES = {"signed": 1, "abs": 0}
+
+
+def compute_correlation_distance_matrix(correlation_matrix: np.ndarray, metric: str = "signed") -> np.ndarray:
+    """Clustering distance from correlations, per ADR 002.
+
+    - "signed": d = sqrt(0.5*(1-corr)) — negative correlation means maximum
+      distance (diversifiers are never merged with their hedge partners).
+    - "abs": legacy d = 1-|corr| — collapses sign, kept for reproducibility
+      of historical behavior on demand.
+    NaN entries (flat assets) propagate honestly in both modes.
+    """
+    if metric not in _METRIC_CODES:
+        raise ValueError(f"Unknown distance metric '{metric}'; allowed: {sorted(_METRIC_CODES)}")
+
+    corr = np.asarray(correlation_matrix, dtype=np.float64)
+    size = corr.shape[0]
+    distance = np.empty((size, size), dtype=np.float64)
+
+    if _METRIC_CODES[metric] == 1:  # signed
+        upper = np.sqrt(0.5 * (1.0 - corr))
+    else:  # abs
+        upper = 1.0 - np.abs(corr)
+
+    i_upper = np.triu_indices(size, k=1)
+    distance[i_upper] = upper[i_upper]
+    distance.T[i_upper] = upper[i_upper]
+    np.fill_diagonal(distance, 0.0)
+    return distance

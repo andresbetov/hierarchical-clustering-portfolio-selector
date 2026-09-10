@@ -1,23 +1,84 @@
 """Visualization and text-report utilities for portfolio outputs."""
 
-import matplotlib.pyplot as plt
-import numpy as np
-import seaborn as sns
+import logging
+import os
+import sys
+
+import matplotlib
 
 from ..core.config import PortfolioConfig
+from ..core.metrics import VOL_FLOOR_EPS, risk_free_log_rate
+
+logger = logging.getLogger(__name__)
 
 
-def _finalize_plot(save_path: str = None, show_plot: bool = True):
+def _resolve_backend(env: dict[str, str], platform: str) -> str | None:
+    """Pick the matplotlib backend for the current environment.
+
+    Returns "Agg" only when there is no display available, the user has NOT
+    forced MPLBACKEND, and the platform cannot provide a native backend
+    (non-macOS). Returns None when the environment already dictates one.
+    """
+    if env.get("MPLBACKEND"):
+        return None
+    if platform == "darwin":
+        return None
+    if env.get("DISPLAY") or env.get("WAYLAND_DISPLAY"):
+        return None
+    return "Agg"
+
+
+def _apply_backend_guard() -> None:
+    """Force Agg before pyplot/seaborn get imported anywhere in the process.
+
+    seaborn imports pyplot internally, so this must run before that import.
+    """
+    resolved = _resolve_backend(dict(os.environ), sys.platform)
+    if resolved:
+        logger.debug("Headless environment detected: forcing backend=%s", resolved)
+        matplotlib.use(resolved)
+
+
+_apply_backend_guard()
+
+import matplotlib.pyplot as plt  # noqa: E402  (must run after backend guard)
+import numpy as np  # noqa: E402  (grouped after guard: see matplotlib/seaborn)
+import seaborn as sns  # noqa: E402  (seaborn pulls pyplot; guard must run first)
+
+
+def finalize_report_show(show: bool) -> None:
+    """Close or display all pending figures depending on the runtime mode.
+
+    - show=False (batch/report mode): deterministic close of every figure.
+    - show=True with an interactive backend: non-blocking pause so windows render.
+    - show=True under a headless (Agg) backend: falls back to closing quietly,
+      guaranteeing CI runs never hang or warn about interactivity.
+    """
+    if not show:
+        plt.close("all")
+        return
+
+    if plt.get_backend().lower() == "agg":
+        plt.close("all")
+        return
+
+    # Non-blocking per figure; caller can block once at the end if desired.
+    plt.show(block=False)
+    plt.pause(0.001)
+
+
+def _finalize_plot(save_path: str | None = None, show_plot: bool = True):
     """Apply consistent save/show behavior for every chart.
 
-    Uses non-blocking display so batch report generation does not stop between
-    figures when `show_plot=True`.
+    Deterministic lifecycle: figures are always closed when not requested to
+    display; interactive backends get non-blocking shows. Under Agg the show
+    branch is skipped entirely so CI never warns or hangs.
     """
 
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
 
-    if show_plot:
+    if show_plot and plt.get_backend().lower() != "agg":
         # Non-blocking per figure; caller can block once at the end if desired.
         plt.show(block=False)
         plt.pause(0.001)
@@ -25,7 +86,12 @@ def _finalize_plot(save_path: str = None, show_plot: bool = True):
         plt.close()
 
 
-def plot_historical_prices(historical_prices: dict, price_dates: dict, save_path: str = None, show_plot: bool = True):
+def plot_historical_prices(
+    historical_prices: dict,
+    price_dates: dict,
+    save_path: str | None = None,
+    show_plot: bool = True,
+):
     plt.figure(figsize=(15, 10))
 
     for ticker in historical_prices:
@@ -48,7 +114,7 @@ def plot_historical_prices(historical_prices: dict, price_dates: dict, save_path
 def plot_risk_return_scatter(
     asset_metrics: dict,
     config: PortfolioConfig,
-    save_path: str = None,
+    save_path: str | None = None,
     show_plot: bool = True,
 ):
     plt.figure(figsize=(12, 8))
@@ -61,9 +127,20 @@ def plot_risk_return_scatter(
     scatter = plt.scatter(volatilities, returns, c=sharpe_ratios, s=100, cmap="RdYlGn", alpha=0.7, edgecolors="black")
 
     for i, ticker in enumerate(tickers):
-        plt.annotate(ticker, (volatilities[i], returns[i]), xytext=(5, 5), textcoords="offset points", fontweight="bold")
+        plt.annotate(
+            ticker,
+            (volatilities[i], returns[i]),
+            xytext=(5, 5),
+            textcoords="offset points",
+            fontweight="bold",
+        )
 
-    plt.axhline(y=config.risk_free_rate, color="blue", linestyle="--", label=f"Risk-free rate ({config.risk_free_rate:.1%})")
+    plt.axhline(
+        y=config.risk_free_rate_log,
+        color="blue",
+        linestyle="--",
+        label=f"Risk-free rate log ({config.risk_free_rate_log:.2%})",
+    )
     plt.axvline(
         x=config.maximum_volatility_threshold,
         color="red",
@@ -86,7 +163,7 @@ def plot_correlation_covariance_matrices(
     correlation_matrix: np.ndarray,
     covariance_matrix: np.ndarray,
     asset_tickers: list,
-    save_path: str = None,
+    save_path: str | None = None,
     show_plot: bool = True,
 ):
     fig, axes = plt.subplots(1, 2, figsize=(20, 8))
@@ -136,7 +213,7 @@ def plot_correlation_covariance_matrices(
 def plot_correlation_heatmap(
     correlation_matrix: np.ndarray,
     asset_tickers: list,
-    save_path: str = None,
+    save_path: str | None = None,
     show_plot: bool = True,
 ):
     plt.figure(figsize=(12, 10))
@@ -160,7 +237,7 @@ def plot_correlation_heatmap(
     _finalize_plot(save_path, show_plot)
 
 
-def plot_asset_metrics_comparison(asset_metrics: dict, save_path: str = None, show_plot: bool = True):
+def plot_asset_metrics_comparison(asset_metrics: dict, save_path: str | None = None, show_plot: bool = True):
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
 
     tickers = list(asset_metrics.keys())
@@ -191,7 +268,13 @@ def plot_asset_metrics_comparison(asset_metrics: dict, save_path: str = None, sh
 
     axes[1, 1].scatter(volatilities, returns, s=100, alpha=0.7, c=sharpe_ratios, cmap="RdYlGn")
     for i, ticker in enumerate(tickers):
-        axes[1, 1].annotate(ticker, (volatilities[i], returns[i]), xytext=(3, 3), textcoords="offset points", fontsize=8)
+        axes[1, 1].annotate(
+            ticker,
+            (volatilities[i], returns[i]),
+            xytext=(3, 3),
+            textcoords="offset points",
+            fontsize=8,
+        )
     axes[1, 1].set_title("Risk-Return Efficiency", fontweight="bold")
     axes[1, 1].set_xlabel("Annual Volatility")
     axes[1, 1].set_ylabel("Annual Return")
@@ -206,7 +289,7 @@ def plot_filtering_analysis(
     all_metrics: dict,
     filtered_metrics: dict,
     config: PortfolioConfig,
-    save_path: str = None,
+    save_path: str | None = None,
     show_plot: bool = True,
 ):
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
@@ -262,12 +345,62 @@ def plot_filtering_analysis(
     _finalize_plot(save_path, show_plot)
 
 
+def _portfolio_summary_metrics(
+    weights: list[float],
+    expected_returns: list[float],
+    covariance_matrix: np.ndarray | None,
+    risk_free_rate: float,
+    per_asset_volatilities: list[float] | None = None,
+    trading_days_per_year: int = 252,
+) -> dict:
+    """Honest portfolio summary (A5): Sharpe from real wᵀΣw variance.
+
+    Unit contract: ``expected_returns`` and the returned ``volatility`` are
+    annualized, while ``covariance_matrix`` is the daily covariance produced
+    from daily log-returns (as delivered by the pipeline), so it is scaled by
+    ``trading_days_per_year`` before sqrt(wᵀΣw). Mixing daily risk with annual
+    returns inflates the Sharpe by ~sqrt(252).
+
+    If the covariance matrix is absent (defensive route only), falls back to
+    the diagonal approximation from annualized per-asset volatilities with a
+    warning — correlations then ignored.
+    """
+    weight_vector = np.asarray(weights, dtype=np.float64)
+    return_vector = np.asarray(expected_returns, dtype=np.float64)
+    portfolio_return = float(weight_vector @ return_vector)
+
+    if covariance_matrix is not None:
+        cov = np.asarray(covariance_matrix, dtype=np.float64) * trading_days_per_year
+        portfolio_variance = float(weight_vector @ cov @ weight_vector)
+        portfolio_volatility = float(np.sqrt(max(portfolio_variance, 0.0)))
+    else:
+        logger.warning(
+            "Portfolio summary without covariance matrix: falling back to "
+            "diagonal risk approximation (correlations ignored)"
+        )
+        diagonal_risk = np.sqrt(sum((w * v) ** 2 for w, v in zip(weights, per_asset_volatilities or [])))
+        portfolio_volatility = float(diagonal_risk)
+
+    excess_return = portfolio_return - risk_free_log_rate(risk_free_rate)
+    sharpe_ratio = (
+        float("nan")
+        if portfolio_volatility <= VOL_FLOOR_EPS
+        else excess_return / portfolio_volatility
+    )
+    return {
+        "return": portfolio_return,
+        "volatility": portfolio_volatility,
+        "sharpe": float(sharpe_ratio),
+    }
+
+
 def plot_optimal_portfolio_analysis(
     optimal_portfolio: dict,
     portfolio_weights: dict,
     config: PortfolioConfig,
-    save_path: str = None,
+    save_path: str | None = None,
     show_plot: bool = True,
+    covariance_matrix: np.ndarray | None = None,
 ):
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
 
@@ -297,7 +430,13 @@ def plot_optimal_portfolio_analysis(
         edgecolors="black",
     )
     for i, ticker in enumerate(tickers):
-        axes[1, 0].annotate(ticker, (volatilities[i], returns[i]), xytext=(5, 5), textcoords="offset points", fontweight="bold")
+        axes[1, 0].annotate(
+            ticker,
+            (volatilities[i], returns[i]),
+            xytext=(5, 5),
+            textcoords="offset points",
+            fontweight="bold",
+        )
 
     axes[1, 0].set_title("Selected Assets: Risk-Return Profile\n(Bubble size = Weight)", fontweight="bold")
     axes[1, 0].set_xlabel("Annual Volatility")
@@ -305,14 +444,21 @@ def plot_optimal_portfolio_analysis(
     axes[1, 0].grid(True, alpha=0.3)
     plt.colorbar(scatter, ax=axes[1, 0], label="Sharpe Ratio")
 
-    portfolio_return = sum(w * r for w, r in zip(weights, returns))
-    portfolio_sharpe = portfolio_return / np.sqrt(sum((w * v) ** 2 for w, v in zip(weights, volatilities)))
+    summary = _portfolio_summary_metrics(
+        weights,
+        returns,
+        covariance_matrix,
+        config.risk_free_rate,
+        per_asset_volatilities=volatilities,
+        trading_days_per_year=config.trading_days_per_year,
+    )
 
     metrics_data = {
-        "Portfolio Return": f"{portfolio_return:.2%}",
-        "Risk-free Rate": f"{config.risk_free_rate:.2%}",
-        "Excess Return": f"{portfolio_return - config.risk_free_rate:.2%}",
-        "Portfolio Sharpe": f"{portfolio_sharpe:.2f}",
+        "Portfolio Return": f"{summary['return']:.2%}",
+        "Portfolio Volatility": f"{summary['volatility']:.2%}",
+        "Risk-free Rate": f"{config.risk_free_rate_log:.2%} (log)",
+        "Excess Return": f"{summary['return'] - config.risk_free_rate_log:.2%}",
+        "Portfolio Sharpe": f"{summary['sharpe']:.2f}",
         "Number of Assets": str(len(tickers)),
         "Allocation Method": config.weight_allocation_method.replace("_", " ").title(),
     }
@@ -335,6 +481,140 @@ def plot_optimal_portfolio_analysis(
     # optimization objective or a covariance-aware portfolio performance model.
     plt.tight_layout()
 
+    _finalize_plot(save_path, show_plot)
+
+
+def plot_hrp_dendrogram(
+    covariance_matrix: np.ndarray,
+    linkage_method: str,
+    tickers: list[str],
+    save_path: str | None = None,
+    show_plot: bool = True,
+) -> None:
+    """Hierarchical dendrogram of the HRP linkage (diagnostic, not a weight model).
+
+    Reuses the exact signed distance / linkage construction via
+    ``build_hrp_linkage`` (single source with ``calculate_hrp_weights``).
+    Headless-safe: Agg backend via ``_apply_backend_guard`` + ``_finalize_plot``.
+    For ``n<2`` emits a warning and produces a minimal placeholder without
+    calling ``scipy.linkage``/``dendrogram``.
+    """
+    cov = np.asarray(covariance_matrix, dtype=np.float64)
+    n = cov.shape[0] if cov.ndim == 2 else 0
+
+    # Guard: tickers/cov dimensional mismatch (caller bug) — warn and align.
+    if n != len(tickers):
+        logger.warning(
+            "HRP dendrogram tickers/cov mismatch: n=%d tickers=%d — truncating/padding",
+            n,
+            len(tickers),
+        )
+        if len(tickers) > n:
+            tickers = tickers[:n]
+        elif len(tickers) < n:
+            tickers = tickers + [f"__{i}" for i in range(len(tickers), n)]
+
+    if n == 0 or len(tickers) == 0:
+        logger.warning("HRP dendrogram skipped: empty covariance or no tickers")
+        plt.figure(figsize=(6, 4))
+        plt.text(0.5, 0.5, "No assets for dendrogram", ha="center", va="center")
+        plt.axis("off")
+        plt.tight_layout()
+        _finalize_plot(save_path, show_plot)
+        return
+
+    if n == 1:
+        logger.warning(
+            "HRP dendrogram: single asset (%s) — no linkage", tickers[0] if tickers else "unknown"
+        )
+        plt.figure(figsize=(6, 4))
+        plt.bar(tickers, [1.0], color="skyblue")
+        plt.title(f"HRP Dendrogram ({linkage_method}) — single asset", fontweight="bold")
+        plt.ylabel("Weight")
+        plt.tight_layout()
+        _finalize_plot(save_path, show_plot)
+        return
+
+    if n == 2:
+        # Use the single HRP linkage for two assets so leaves remain quasi-diagonal
+        from ..portfolio.hrp import build_hrp_linkage
+
+        try:
+            linkage_matrix = build_hrp_linkage(cov, linkage_method=linkage_method)
+        except Exception as exc:
+            logger.warning("HRP dendrogram skipped (linkage failed n=2): %s", exc)
+            plt.figure(figsize=(6, 4))
+            plt.bar(tickers, [0.5, 0.5], color="skyblue")
+            plt.title(f"HRP Dendrogram ({linkage_method}) — n=2 fallback", fontweight="bold")
+            plt.tight_layout()
+            _finalize_plot(save_path, show_plot)
+            return
+        width = min(40, max(12, int(0.6 * n) + 8))
+        plt.figure(figsize=(width, 6))
+        try:
+            from scipy.cluster.hierarchy import dendrogram
+
+            dendrogram(
+                linkage_matrix,
+                labels=tickers,
+                leaf_rotation=90,
+                leaf_font_size=max(8, 10 - int(n * 0.2)),
+            )
+        except Exception as exc:
+            logger.warning("HRP dendrogram render failed n=2: %s", exc)
+            plt.close()
+            plt.figure(figsize=(width, 6))
+            plt.bar(tickers, [0.5, 0.5], color="skyblue")
+            plt.title(f"HRP Dendrogram ({linkage_method}) — fallback", fontweight="bold")
+            plt.tight_layout()
+            _finalize_plot(save_path, show_plot)
+            return
+        plt.title(f"HRP Dendrogram ({linkage_method})", fontsize=14, fontweight="bold")
+        plt.xlabel("Assets", fontsize=12)
+        plt.ylabel("Distance", fontsize=12)
+        plt.tight_layout()
+        _finalize_plot(save_path, show_plot)
+        return
+
+    # n >= 3 — standard hierarchical dendrogram via the HRP linkage seam
+    from ..portfolio.hrp import build_hrp_linkage
+
+    try:
+        linkage_matrix = build_hrp_linkage(cov, linkage_method=linkage_method)
+    except Exception as exc:
+        logger.warning("HRP dendrogram skipped (linkage failed): %s", exc)
+        plt.figure(figsize=(6, 4))
+        plt.text(0.5, 0.5, f"Linkage failed: {exc}", ha="center", va="center", wrap=True)
+        plt.axis("off")
+        plt.tight_layout()
+        _finalize_plot(save_path, show_plot)
+        return
+
+    width = min(40, max(12, int(0.6 * n) + 8))
+    plt.figure(figsize=(width, 6))
+    try:
+        from scipy.cluster.hierarchy import dendrogram
+
+        dendrogram(
+            linkage_matrix,
+            labels=tickers,
+            leaf_rotation=90,
+            leaf_font_size=max(8, 10 - int(n * 0.2)),
+        )
+    except Exception as exc:
+        logger.warning("HRP dendrogram render failed: %s", exc)
+        plt.close()
+        plt.figure(figsize=(width, 6))
+        plt.text(0.5, 0.5, f"Dendrogram failed: {exc}", ha="center", va="center", wrap=True)
+        plt.axis("off")
+        plt.tight_layout()
+        _finalize_plot(save_path, show_plot)
+        return
+
+    plt.title(f"HRP Dendrogram ({linkage_method})", fontsize=14, fontweight="bold")
+    plt.xlabel("Assets", fontsize=12)
+    plt.ylabel("Distance", fontsize=12)
+    plt.tight_layout()
     _finalize_plot(save_path, show_plot)
 
 
