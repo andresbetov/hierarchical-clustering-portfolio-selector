@@ -128,7 +128,6 @@ def compute_filter_rejections(
     closing_prices never ingested -> ingestion_rejected. Duplicate tickers
     are deduplicated (first occurrence wins) so tickers and counts agree.
     """
-
     def _finite_number(value) -> bool:
         return isinstance(value, (int, float)) and math.isfinite(value)
 
@@ -178,6 +177,136 @@ def compute_filter_rejections(
     }
 
 
+def allocation_diagnostics(
+    weights: dict,
+    covariance_matrix: np.ndarray,
+    covariance_tickers: list,
+    config,
+    raw_weights: np.ndarray | None = None,
+) -> dict:
+    """Allocation diagnostics: concentration, diversification, Dykstra drift (feat-045).
+
+    HHI/N_eff with the sum-mandate verified (engine tolerance 1e-9) and the
+    long-only mandate enforced; DR = sum(w*sigma)/sigma_p and
+    RC_i = w_i*(Sigma w)_i/sigma_p^2 ALWAYS computed on the covariance sliced
+    to the weight subset via create_portfolio_covariance_matrix (feat-028 rule
+    — N x N with an M-vector is dimensionally invalid); raw_vs_constrained
+    Dykstra telemetry: caller raw_weights used verbatim for ANY method,
+    deterministic HRP recompute only when method is hrp and the covariance
+    matches the weight subset, None otherwise (legacy raw vectors are not
+    exposed — fabricating them would be dishonest). Bit-identity with the
+    engine's raw vector requires the weights dict to iterate in
+    covariance_tickers order (the pipeline contract); permuted callers get
+    internally aligned telemetry but not the engine's bit-identical raw
+    vector. Note: the effective-bounds resolution logs CRITICAL for relaxed
+    universes on every call (documented duplication). Non-finite weights ->
+    hhi NaN (sanitizer emits null); degenerate sigma_p (<= VOL_FLOOR_EPS) ->
+    risk sections None, never inf.
+    """
+    from ..core.config import _WEIGHT_SUM_TOLERANCE
+    from ..core.metrics import VOL_FLOOR_EPS
+    from ..portfolio.allocation import (
+        _resolve_effective_bounds,
+        calculate_portfolio_variance,
+        create_portfolio_covariance_matrix,
+    )
+    from ..portfolio.hrp import calculate_hrp_weights
+
+    n_assets = len(weights)
+    base = {
+        "method": config.weight_allocation_method,
+        "n_assets": n_assets,
+        "hhi": None,
+        "n_effective": None,
+        "diversification_ratio": None,
+        "risk_contributions": None,
+        "rc_spread": None,
+        "raw_vs_constrained": None,
+    }
+    if n_assets == 0:
+        return base
+
+    missing = [t for t in weights if t not in covariance_tickers]
+    if missing:
+        raise ValueError(
+            f"Weight tickers not in covariance_tickers: {missing} — "
+            "covariance rows must cover every weighted ticker (feat-028)"
+        )
+    if len(covariance_tickers) != covariance_matrix.shape[0]:
+        raise ValueError(
+            f"covariance_tickers has {len(covariance_tickers)} entries but the "
+            f"covariance matrix has {covariance_matrix.shape[0]} rows — they must match"
+        )
+
+    weight_vector = np.array([weights[t] for t in weights], dtype=np.float64)
+    if not np.all(np.isfinite(weight_vector)):
+        base["hhi"] = float("nan")
+        base["n_effective"] = float("nan")
+        return base
+    if abs(float(weight_vector.sum()) - 1.0) > _WEIGHT_SUM_TOLERANCE:
+        raise ValueError(
+            f"Weights must sum to 1 within {_WEIGHT_SUM_TOLERANCE}, got {weight_vector.sum()!r}"
+        )
+    negative = [t for t, w in weights.items() if w < 0]
+    if negative:
+        raise ValueError(
+            f"Long-only mandate violated: negative weights at {negative} — "
+            "HHI/N_eff/DR interpretation assumes long-only weights"
+        )
+
+    base["hhi"] = float(np.sum(weight_vector**2))
+    base["n_effective"] = 1.0 / base["hhi"]
+
+    sub_cov = create_portfolio_covariance_matrix(
+        weights, covariance_matrix, {t: None for t in covariance_tickers}
+    )
+    portfolio_variance = calculate_portfolio_variance(weight_vector, sub_cov)
+    sigma_p = float(np.sqrt(portfolio_variance))
+    if sigma_p > VOL_FLOOR_EPS and np.isfinite(sigma_p):
+        weighted_avg_vol = float(weight_vector @ np.sqrt(np.diag(sub_cov)))
+        diversification_ratio = weighted_avg_vol / sigma_p
+        risk_vector = weight_vector * (sub_cov @ weight_vector) / portfolio_variance
+        risk_contributions = {t: float(rc) for t, rc in zip(weights, risk_vector)}
+        base["diversification_ratio"] = diversification_ratio
+        base["risk_contributions"] = risk_contributions
+        base["rc_spread"] = {
+            "std": float(np.std(np.array(list(risk_contributions.values())))),
+            "max_minus_min": float(max(risk_contributions.values()) - min(risk_contributions.values())),
+            "max_over_equal": float(max(risk_contributions.values()) * n_assets),
+        }
+
+    if config.weight_allocation_method == "hrp" or raw_weights is not None:
+        if raw_weights is None and n_assets == covariance_matrix.shape[0]:
+            try:
+                raw_weights = calculate_hrp_weights(sub_cov, linkage_method=config.linkage_method)
+            except ValueError:
+                raw_weights = None  # degenerate covariance: engine rejects, no telemetry
+        if raw_weights is not None:
+            raw = np.asarray(raw_weights, dtype=np.float64)
+            if not np.all(np.isfinite(raw)):
+                raw_weights = None  # unusable raw: no contradictory telemetry
+            elif raw.shape != weight_vector.shape:
+                raise ValueError(
+                    f"raw_weights shape {raw.shape} does not match the weight subset "
+                    f"({n_assets}) — raw_weights must be aligned to weights dict key order"
+                )
+        if raw_weights is not None:
+            raw = np.asarray(raw_weights, dtype=np.float64)
+            diff = np.abs(raw - weight_vector)
+            min_eff, max_eff = _resolve_effective_bounds(n_assets, config)
+            base["raw_vs_constrained"] = {
+                "l1_raw_to_constrained": float(diff.sum()),
+                "max_weight_drop": float(max(raw - weight_vector)),
+                "n_weights_changed": int(np.count_nonzero(diff > 1e-12)),
+                "effective_bounds": {"min": min_eff, "max": max_eff},
+                "mandate_relaxed": (
+                    min_eff != config.minimum_single_asset_weight
+                    or max_eff != config.maximum_single_asset_weight
+                ),
+            }
+    return base
+
+
 def build_report_envelope(
     tickers: list[str],
     config,
@@ -207,6 +336,7 @@ def build_report_envelope(
 __all__ = [
     "SCHEMA_VERSION",
     "build_report_envelope",
+    "allocation_diagnostics",
     "compute_filter_rejections",
     "config_fingerprint",
     "dump_technical_report",

@@ -3,7 +3,7 @@
 ## Current State
 
 **Last Updated:** 2026-09-09
-**Branch:** `feat/filter-rejections-distances` — feat-044 done local (todo en la rama, regla del usuario). `develop @ fe62e05` base.
+**Branch:** `feat/allocation-diagnostics` — feat-045 done local con validación pre-push (regla del usuario). `develop @ 13672b7` base.
 
 Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037) · **Fase D CLI+dendrograma COMPLETO** · **feat-040 cobertura COMPLETO**: gate 85% TOTAL combinado de coverage.py (líneas+branches). Épico JSON en curso: suite `./init.sh` **262 passed + cobertura TOTAL 86.21%** `All checks passed!` `pyright 0` `openspec validate --all` 14/14.
 
@@ -36,10 +36,11 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Ningún feature abierto: **feat-044 done local** (rama `feat/filter-rejections-distances`, sin push hasta validación). Siguiente tras su merge: feat-045._
+_Ningún feature abierto: **feat-045 done local** (rama `feat/allocation-diagnostics`, validación pre-push aplicada, sin push). Siguiente tras su merge: feat-046._
 
 ### What's Done (post-hito)
 
+- [x] **feat-045** diagnóstico de asignación (flujo OpenSpec en rama): `allocation_diagnostics` con HHI/N_eff, DR/RC+spread (rebanado feat-028) y telemetría Dykstra (recompute determinista + raw_weights); validación pre-push: MAJOR-1/2 corregidos (guard forma + pines engine round-trip y n=3) + 7 MINOR; suite 286 passed, TOTAL 86.91%; motor diff 0
 - [x] **feat-044** motivos de exclusión + distancias (flujo OpenSpec en rama): `compute_filter_rejections` con orden de guardias de `selection.py:47-63`, slugs idénticos, distancias firmadas; TDD rojo 10→verde 10+equivalencia; suite 256 passed, TOTAL 86.20%; motor diff 0; fixture bugs cazados por el test de equivalencia (2x realineado)
 - [x] **feat-043** report_json core (flujo OpenSpec completo, 4 artefactos valid): sanitizador JSON-estricto, escritor single-file, fingerprint sha256-16hex, envelope schema_version=1; TDD rojo 34 failures→verde 13 tests; suite 246 passed, cobertura TOTAL 85.60%; motor diff 0; gates cazaron ruff F841/I001 + pyright is_dataclass (2 iteraciones)
 
