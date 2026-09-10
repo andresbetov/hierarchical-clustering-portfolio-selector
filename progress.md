@@ -3,11 +3,15 @@
 ## Current State
 
 **Last Updated:** 2026-09-10
-**Branch:** `chore/archive-docs-spec-sync` — feat-053 en archive (deltas aplicados a las 10 specs vivas, pendiente commit/PR).
+**Branch:** `docs/handoff-feat053-closure` — cierre de feat-053 (trackers done, pendiente merge).
 
-feat-052 done y mergeado (PR #80, 74b753b, CI verde matriz) · Fase 1 mergeada (PR #81, cd02d49, CI verde matriz). Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13 + change `docs-spec-sync` valid.
+feat-052 done (PR #80, 74b753b) · Fase 1 done (PR #81, cd02d49) · archive done (PR #82, 5924c95), todo CI verde matriz 3.11/3.12/3.13. Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13; change archivado `2026-09-10-docs-spec-sync` valid.
 
 ## Status
+
+### What's Done (sesión 2026-09-10 — feat-053 docs sync)
+
+- [x] **feat-053** (ramas `docs/spec-sync` + `chore/archive-docs-spec-sync`): OpenSpec change `docs-spec-sync` (proposal+design+tasks+10 deltas: 8 MODIFIED + 2 ADDED) validado y archivado (`2026-09-10-docs-spec-sync`); Fase 1 docs de proceso (CONTRIBUTING/AGENTS/pyproject/Makefile/pre-commit/ADR index+addendum/catálogo/feature_list/README); Fase 2 deltas aplicados a las 10 specs vivas; `./init.sh` 367 passed/TOTAL 89.18%; `openspec validate --all` 13/13; PRs #81+#82 squash-mergeados con CI verde matriz 3.11/3.12/3.13.
 
 ### What's Done (sesión 2026-09-10 — README showcase + fix anualización)
 
@@ -42,7 +46,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Feat-053 en archive en rama `chore/archive-docs-spec-sync`: deltas del change `docs-spec-sync` aplicados a las 10 specs vivas; `init.sh` y validates verdes; pendiente commit + push + PR._
+_Ningún feature abierto: feat-053 en cierre (rama `docs/handoff-feat053-closure`, trackers done, pendiente merge). Siguiente: candidatos v0.2.0 del backlog._
 
 ### What's Done (épico Reporte técnico JSON — feat-043..051, cerrado)
 
