@@ -2,12 +2,18 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-09
-**Branch:** `feat/allocation-diagnostics` — feat-045 done local con validación pre-push (regla del usuario). `develop @ 13672b7` base.
+**Last Updated:** 2026-09-10
+**Branch:** `develop @ c91d9b0` — working tree con change docs/code sin commitear (README showcase + fix gráfica 7).
 
-Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037) · **Fase D CLI+dendrograma COMPLETO** · **feat-040 cobertura COMPLETO**: gate 85% TOTAL combinado de coverage.py (líneas+branches). Épico JSON en curso: suite `./init.sh` **262 passed + cobertura TOTAL 86.21%** `All checks passed!` `pyright 0` `openspec validate --all` 14/14.
+Hito v0.1.0 cerrado + épico JSON (feat-043..051) cerrado. Sesión 2026-09-10: README showcase EN + espejo `README.es.md`, snapshot `docs/results/technical-report-2026-09-10.json` y fix de anualización de la gráfica 7 (`_portfolio_summary_metrics`). Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13.
 
 ## Status
+
+### What's Done (sesión 2026-09-10 — README showcase + fix anualización)
+
+- [x] **README showcase (EN + `README.es.md`)**: reescritura orientada a reclutador técnico con TL;DR, quickstart con salida real, tabla CLI, diagrama Mermaid, resultados IS/OOS con snapshot, sección del harness de agentes, limitaciones y autor. Verificado en 3 rondas con 8 subagentes (hechos/código, best practices externas, honestidad adversarial, render/paridad); correcciones aplicadas: orden de etapas (filtro→alineación), claims retirados, IQR/turnover, caveat de selección de thresholds y links.
+- [x] **Fix gráfica 7**: `_portfolio_summary_metrics` anualiza `wᵀΣw` con `trading_days_per_year` (Sharpe 14.84→0.94 en la corrida 2026-09-10); 2 tests de regresión; spec `numeric-correctness` sincronizada; charts regenerados; CHANGELOG Fixed.
+- [x] **Snapshot de corrida**: `docs/results/technical-report-2026-09-10.json` (run_id `97e3a2e4d5953986`).
 
 ### What's Done (hito v0.1.0 — Fase A / CP1)
 
@@ -36,9 +42,9 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Ningún feature abierto: **feat-045 done local** (rama `feat/allocation-diagnostics`, validación pre-push aplicada, sin push). Siguiente tras su merge: feat-046._
+_Ningún feature abierto: épico feat-043..051 cerrado (PR #77 + archivado PR #78). Sesión 2026-09-10 = README showcase EN/ES + fix de anualización de la gráfica 7 + snapshot (ver Current State)._
 
-### What's Done (post-hito)
+### What's Done (épico Reporte técnico JSON — feat-043..051, cerrado)
 
 - [x] **feat-051** cierre del épico (ciclo completo en rama `feat/cli-walkforward-optin-docs`): 2 subagentes pre-análisis + OpenSpec valid (MODIFIED requirement completo, 7 scenarios, 8 decisiones) + TDD 7→verde (CLI×4 + ensamblador×4) + flag `--walk-forward` + forwards + sección/skipped + docs (README + CHANGELOG + catálogo implementado + counts); bucle con APPROVE final; suite 365 passed, TOTAL 89.18%; core/portfolio/data/validation/viz diff cero. **ÉPICO feat-043..051 COMPLETO** (PR #77 + archive PR #78; `technical-report` 10 requirements; catálogo implementado)
 - [x] **feat-050** ensamblador keystone (ciclo completo en rama `feat/report-assembler-integration`): 2 subagentes pre-análisis + OpenSpec valid (+1 ADDED, 4 scenarios, 10 decisiones) + TDD 8→10 tests (naming-trap, envelope, fakes) + `build_technical_report` + emisión fail-safe punto único (N=0 incluido; main intacto) + CLI + gitignore/clean + exports; bucle con APPROVE final; suite 358 passed, TOTAL 88.92%; core/portfolio/data/validation/viz diff cero; PR #74 squash-mergeado + change archivado (PR #75)
@@ -50,22 +56,17 @@ _Ningún feature abierto: **feat-045 done local** (rama `feat/allocation-diagnos
 - [x] **feat-044** motivos de exclusión + distancias (flujo OpenSpec en rama): `compute_filter_rejections` con orden de guardias de `selection.py:47-63`, slugs idénticos, distancias firmadas; TDD rojo 10→verde 10+equivalencia; suite 256 passed, TOTAL 86.20%; motor diff 0; fixture bugs cazados por el test de equivalencia (2x realineado)
 - [x] **feat-043** report_json core (flujo OpenSpec completo, 4 artefactos valid): sanitizador JSON-estricto, escritor single-file, fingerprint sha256-16hex, envelope schema_version=1; TDD rojo 34 failures→verde 13 tests; suite 246 passed, cobertura TOTAL 85.60%; motor diff 0; gates cazaron ruff F841/I001 + pyright is_dataclass (2 iteraciones)
 
-### What's Done (post-hito)
+### What's Done (pre-v0.1.0)
 
 - [x] **feat-042** recalibrar thresholds (10/10 tasks): config 0.3/0.27, ADR-007 Aceptado, 233 passed, change valid; PR #53 squash-mergeado a develop (d1b7da3), change archivado 2026-09-09-feat-threshold-recalibration + spec configuration-contract sincronizada
 - [x] **docs/diagnostics-catalog.md** (9 diagnósticos con file:line verificados) mergeado a develop (936dc5e)
 - [x] **Pre-gates del épico JSON** (2026-09-09): 0A merge catálogo + 0B archive de feat-042 (`openspec validate --all` 12/12)
 
-### What's Next (épico Reporte técnico JSON — feat-043..051, registrado en feature_list.json)
+### What's Next (backlog v0.2.0)
 
-Orquestación completa (2 oleadas + revisión hostil con cobertura real medida): el gate es el **total combinado** de coverage.py (85.37% = (1313+339)/(1509+426); branch-only real 79.58%; slack ≈ 7 unidades) — cada feature registra el TOTAL % en su evidencia.
-
-1. **feat-043** report_json core (sanitizador JSON-estricto, escritor single-file, fingerprint sha256, envelope `schema_version=1` ausente-tolerante; run_id derivado, uuid4 prohibido) — capability nueva `technical-report`
-2. **feat-044/045/046/048/049** (paralelizables tras 043, merge serial): rejections+distancias (firma con requested_tickers+closing_prices), HHI/DR/RC+raw-vs-constrained, serie in-sample+Sortino/VaR/CVaR+maxDD/Calmar (re-align con `minimum_overlap_ratio=1.0` — contraejemplo del guard 0.9 verificado), tree health, sección WF pura (consume to_dict, nunca lo modifica)
-3. **feat-050** ensamblador+integración (kwargs `report_path=None` default escribe nada; CLI pasa reports/technical-report.json; 3 fakes de test_cli.py:54,151,189 deben aceptar report_path; .gitignore reports/ + Makefile clean)
-4. **feat-051** flag `--walk-forward` opt-in + docs (incluye corrección terminológica del gate en CONTRIBUTING)
-
-Correcciones del reviewer incorporadas al tracker: feature 047 original absorbida por 046; arista 049→050 añadida; firma de 044 exige universo pedido; reason-slugs idénticos a selection.py:53-62; deuda preexistente documentada (cli.py:82, pipeline.py:252-255, reporting.py:498-507 — hits=0, fuera de scope).
+- Costos de transacción + turnover en el walk-forward; HERC; CPCV/DSR/PBO; Ledoit–Wolf default con evidencia WF; universo point-in-time (delistings/IPOs); pesos finales en el JSON; empty-universe graceful; pyright strict.
+- Higiene pendiente: `init.sh` con `uv sync --frozen`, unificar conteo de tests en artefactos vivos, resolver colisión de numeración ADR 003/007, versionar el script de evidencia de ADR 007.
+- Historia completa del épico JSON (feat-043..051): `git log` y `feature_list.json`; el detalle de orquestación quedó en las PRs #66–#78.
 
 ## Process Deviations (transparencia)
 

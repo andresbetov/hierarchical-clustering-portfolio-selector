@@ -10,8 +10,9 @@ from portfolio_engine.viz.reporting import _portfolio_summary_metrics
 
 
 def _two_asset_cov(rho: float) -> np.ndarray:
-    """Correlation-with-rho covariance for equal vols 0.15/0.15."""
-    var = 0.15**2
+    """Daily covariance for equal annualized vols 0.15/0.15 (unit contract:
+    the summary receives daily Σ and annualized μ, then annualizes the risk)."""
+    var = 0.15**2 / 252
     return np.array([[var, rho * var], [rho * var, var]])
 
 
@@ -45,31 +46,51 @@ class TestSummaryMetrics:
         assert perfect["volatility"] == pytest.approx(0.15, rel=1e-12)
 
     def test_manual_wtw_agreement_two_assets(self):
-        cov = np.array([[0.04, 0.006], [0.006, 0.01]])
+        daily_cov = np.array([[0.04, 0.006], [0.006, 0.01]]) / 252.0
         weights = [0.7, 0.3]
-        summary = _portfolio_summary_metrics(weights, [0.12, 0.07], cov, 0.02)
+        summary = _portfolio_summary_metrics(weights, [0.12, 0.07], daily_cov, 0.02)
 
-        manual_variance = float(np.asarray(weights) @ cov @ np.asarray(weights))
+        manual_variance = float(np.asarray(weights) @ (daily_cov * 252.0) @ np.asarray(weights))
         assert summary["volatility"] == pytest.approx(np.sqrt(manual_variance), rel=1e-12)
 
     def test_manual_wtw_agreement_three_assets(self):
         """feat-028 contract: sliced MxM covariance yields the exact manual Sharpe."""
-        cov = np.array(
-            [
-                [0.0400, 0.0060, 0.0020],
-                [0.0060, 0.0100, 0.0010],
-                [0.0020, 0.0010, 0.0225],
-            ]
+        daily_cov = (
+            np.array(
+                [
+                    [0.0400, 0.0060, 0.0020],
+                    [0.0060, 0.0100, 0.0010],
+                    [0.0020, 0.0010, 0.0225],
+                ]
+            )
+            / 252.0
         )
         weights = [0.5, 0.3, 0.2]
         returns = [0.12, 0.07, 0.05]
         rf = 0.02
-        summary = _portfolio_summary_metrics(weights, returns, cov, rf)
+        summary = _portfolio_summary_metrics(weights, returns, daily_cov, rf)
 
-        manual_variance = float(np.asarray(weights) @ cov @ np.asarray(weights))
+        manual_variance = float(np.asarray(weights) @ (daily_cov * 252.0) @ np.asarray(weights))
         manual_sharpe = (np.dot(weights, returns) - math.log1p(rf)) / np.sqrt(manual_variance)
         assert summary["volatility"] == pytest.approx(np.sqrt(manual_variance), rel=1e-12)
         assert summary["sharpe"] == pytest.approx(manual_sharpe, rel=1e-12)
+
+    def test_daily_covariance_is_annualized(self):
+        """Regression: daily Σ with annualized μ must not divide annual excess by
+        daily risk (the old bug inflated the reported Sharpe by ~sqrt(252))."""
+        daily_cov = np.array([[0.0001]])
+        summary = _portfolio_summary_metrics([1.0], [0.10], daily_cov, 0.0)
+
+        expected_vol = math.sqrt(0.0001 * 252)
+        assert summary["volatility"] == pytest.approx(expected_vol, rel=1e-12)
+        assert summary["sharpe"] == pytest.approx(0.10 / expected_vol, rel=1e-12)
+
+    def test_trading_days_parameter_controls_annualization(self):
+        daily_cov = np.array([[0.0001]])
+        summary = _portfolio_summary_metrics(
+            [1.0], [0.10], daily_cov, 0.0, trading_days_per_year=1
+        )
+        assert summary["volatility"] == pytest.approx(0.01, rel=1e-12)
 
     def test_mismatched_dims_raise_contract(self):
         """M weights vs NxN covariance (M<N) raises — the shape that crashed the

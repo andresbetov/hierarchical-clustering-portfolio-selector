@@ -521,6 +521,24 @@
       ],
       "status": "done",
       "evidence": "./init.sh FRESCO exit 0 en fix/allocation-diagnostics-hardening: 296 passed (286+10), TOTAL 86.94%, ruff/pyright/compileall verdes; motor diff 0; openspec validate --all 13/13. Bucle de validacion (regla del usuario): analisis externo (HHI/Choueifaty/Dykstra/JSON-null, 5 items) + analisis profundo (6/6 scenarios OK, 8 hallazgos MINOR) -> implementacion -> verificacion adversarial APPROVE + auditoria proceso CONDITIONAL-APPROVE -> correcciones -> re-verificacion APPROVE -> 2 MINOR -> verificacion final APPROVE. Sin push hasta validacion del usuario. Cierre remoto: PR #63 squash-mergeado a develop (37385ac) con CI verde matriz 3.11/3.12/3.13."
+    },
+    {
+      "id": "feat-052",
+      "name": "README showcase EN+ES con evidencia versionada",
+      "description": "Reescritura del README orientada a reclutador tecnico (rama docs/readme-showcase): README.md EN recruiter-first (TL;DR, quickstart con salida real, tabla CLI, diagrama Mermaid, resultados IS/OOS con snapshot docs/results/technical-report-2026-09-10.json, seccion harness de agentes, limitaciones, autor) + README.es.md espejo; fix bug dimensional grafica 7 (_portfolio_summary_metrics anualiza wTSw con trading_days_per_year; Sharpe 14.84->0.94) + 2 regresiones en test_reporting_sharpe.py + sync spec numeric-correctness + CHANGELOG Fixed + banner historico docs/diagnostics-catalog.md; charts/ regenerados (8) con defaults vigentes + scripts/charts/ regenerados a 8; progress.md/session-handoff.md al dia. Verificacion: ./init.sh + 3 rondas de subagentes (hechos/codigo, best practices externas, honestidad adversarial, render/paridad) con fixes en bucle hasta contenido sin cifras falsas.",
+      "dependencies": [],
+      "status": "in-progress",
+      "evidence": ""
+    },
+    {
+      "id": "feat-053",
+      "name": "Docs y specs consistency sync post-showcase",
+      "description": "Sincronizar documentacion y specs OpenSpec con el codigo actual (rama docs/spec-sync; OpenSpec change docs-spec-sync con proposal+design+tasks+deltas): Fase 1 docs de proceso (CONTRIBUTING baseline 367/89.18% + pyarrow runtime + gates + pre-commit; AGENTS 5 pasos; pyproject comentario TOTAL combinado; Makefile .PHONY/help; ADR README:12 + adr/003:34 renumerar a ADR 008 + refs; catalogo 6 refs + mapeo 9 fichas->6 secciones + umbral 12->6; feature_list refs podadas + typo ADR002; scripts/charts decision) + Fase 2 deltas de specs vivas (numeric-correctness Dykstra; configuration-contract vol-target/dispatch/lookback; package-interface --walk-forward/logging; quality-gates TOTAL combinado; project-packaging scipy; runtime-diagnostics darwin; system-verification n 2-25; technical-report serie/pesos; verification-harness comando; quant-docs Dykstra). Validacion: ./init.sh fresco + openspec validate --all 13/13 + greps anti-regresion; archive del change segun flujo del repo.",
+      "dependencies": [
+        "feat-052"
+      ],
+      "status": "not-started",
+      "evidence": ""
     }
   ]
 }
