@@ -2,17 +2,13 @@
 
 ## Current Objective
 
-- Goal: feat-053 — archive del change `docs-spec-sync` (deltas aplicados a las 10 specs vivas), en rama `chore/archive-docs-spec-sync`.
-- Current status: Fase 1 mergeada (PR #81, cd02d49, CI verde matriz) · suite **367 passed, TOTAL 89.18%** · `openspec validate docs-spec-sync` + `--all` verdes.
-- Next: commit + push + PR de `chore/archive-docs-spec-sync` a `develop`; tras merge, cierre de feat-053 (trackers done) y candidatos v0.2.0.
+- Goal: cierre de feat-053 — trackers done tras el merge del archive (PR #82, 5924c95), en rama `docs/handoff-feat053-closure`.
+- Current status: feat-052 done (PR #80) · Fase 1 done (PR #81) · archive done (PR #82, change `2026-09-10-docs-spec-sync` valid) · suite **367 passed, TOTAL 89.18%** · `openspec validate --all` 13/13.
+- Next: commit + push + PR de cierre a `develop`; tras merge, repo limpio y candidatos v0.2.0.
 
 ## Files Changed (working tree)
 
-- `openspec/changes/docs-spec-sync/` (proposal+design+tasks+10 deltas, validado)
-- `CONTRIBUTING.md`, `AGENTS.md`, `pyproject.toml` (comentario), `Makefile`, `.pre-commit-config.yaml`, `init.sh` (`--frozen`)
-- `docs/adr/README.md`, `docs/adr/003-hrp-adoption.md` (ADR 008 futuro + refs)
-- `docs/diagnostics-catalog.md` (6 refs, mapeo 9→6, umbral 12→6), `feature_list.json` (feat-052 done, feat-053 in-progress, refs podadas)
-- `README.md`, `README.es.md` (wording sync-frozen), `progress.md`
+- `feature_list.json` (feat-053 done con evidencia de merge), `progress.md` (Current State + What's Done feat-053), `session-handoff.md` (estado de cierre)
 
 ## Verification Evidence
 
@@ -25,8 +21,8 @@
 
 ## Next Session Startup
 
-1. PR `docs/spec-sync` → `develop` (CI, squash, borrar rama); luego `chore/archive-docs-spec-sync` (aplica deltas a specs vivas + archive).
-2. Verificar en remoto que los enlaces nuevos resuelven.
+1. PR de cierre → `develop` (CI, squash, borrar rama); verificar `git status` limpio y `./init.sh` en verde.
+2. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
 3. `develop → main` solo cuando lo indique el usuario (regla CONTRIBUTING).
 
 ## Lecciones de la sesión
