@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: **feat-045 done local en su rama** con validación pre-push (2 subagentes: MAJOR-1/2 corregidos + 7 MINOR). Rama `feat/allocation-diagnostics` sin push.
-- Current status: change `feat-allocation-diagnostics` valid (+1 ADDED a `technical-report`, 6 requirements total) · suite 286 passed, TOTAL 86.91% · motor diff 0 · feat-043/044 cerrados (PRs #55-59)
-- Next: push → PR → CI → squash → archive vía rama chore → feat-046 (serie in-sample + Sortino/VaR/CVaR + maxDD/Calmar, re-align ratio 1.0).
+- Goal: **feat-045 CERRADO end-to-end** (PR #60 feat + PR #61 archive, CI verde). Capability `technical-report` con 6 requirements. Cero changes activos.
+- Current status: `develop @ 48667e5` · suite 286 passed, TOTAL 86.91% · git status 0 · openspec validate 14/14
+- Next: feat-046 (serie in-sample + Sortino/VaR/CVaR95 + maxDD/Calmar, re-align `minimum_overlap_ratio=1.0`) con la rutina completa: rama-primero → tracker in_progress en rama → propose → TDD → subagentes validadores pre-push → push → PR → merge → archive.
 
 ## Regla de flujo adoptada (2026-09-09, orden del usuario)
 
