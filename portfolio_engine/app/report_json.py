@@ -507,6 +507,89 @@ def drawdown_metrics(daily_series, trading_days: int = 252) -> dict:
     return base
 
 
+def tree_diagnostics(covariance_matrix, linkage_method: str = "single") -> dict:
+    """Hierarchical tree health: merge-depth, singleton accretion, flag (feat-048).
+
+    Recomputes the linkage the engine would build (build_hrp_linkage) and
+    reports: max_depth = longest root->leaf path COUNTING MERGES over Z
+    (never the Y-axis height, which is causally irrelevant to count
+    bisection); chaining_rate = merges with EXACTLY one leaf child / (n-1)
+    (singleton accretion; an initial leaf-leaf pairing is grouping, not
+    accretion — decided with the user after the >=1-leaf reading proved a
+    0.5 floor with 0.818 on the healthy 12-block pattern); chaining_flag =
+    depth > ceil(log2(n))+2 or rate > 0.60 (catalog §8 heuristic thresholds,
+    echoed for auditability); leaf_order = the engine's own _leaf_order
+    (machine-comparable with the dendrogram per runtime-diagnostics).
+    n<2 -> metrics None + reason WITHOUT raising (pre-checked, so no broad
+    try/except can swallow programmer errors); n==2 -> depth 1, rate 0.0
+    (the single merge is leaf-leaf: XOR accretion is impossible), flag
+    False (not pathological). Invalid method/covariance propagate the
+    seam's ValueError (fail loud). Ward on precomputed signed
+    distance is an approximation (SciPy linkage Note 2: ward assumes
+    Euclidean) — documented, acceptance is finiteness. Cost O(n^2),
+    deterministic, n<=12 trivial.
+    """
+    import math
+
+    from ..portfolio.hrp import _leaf_order, build_hrp_linkage
+
+    base: dict = {
+        "linkage_method": linkage_method,
+        "n_assets": 0,
+        "max_depth": None,
+        "depth_threshold": None,
+        "chaining_rate": None,
+        "rate_threshold": 0.60,
+        "chaining_flag": None,
+        "leaf_order": None,
+        "reason": None,
+    }
+    try:
+        cov = np.asarray(covariance_matrix, dtype=np.float64)
+    except (ValueError, TypeError) as exc:
+        raise ValueError(
+            f"covariance_matrix must be a 2-D numeric array, got ragged/object input: {exc} (feat-048)"
+        ) from exc
+    if cov.ndim != 2 or cov.shape[0] != cov.shape[1]:
+        raise ValueError(
+            f"covariance_matrix must be square, got shape {cov.shape} (feat-048)"
+        )
+    n_assets = cov.shape[0]
+    base["n_assets"] = n_assets
+    if n_assets < 2:
+        base["reason"] = "n_assets<2"
+        return base
+    linkage = build_hrp_linkage(cov, linkage_method=linkage_method)
+    n_merges = n_assets - 1
+    depth: dict = {}
+    accretion = 0
+    for i in range(n_merges):
+        left, right = int(linkage[i, 0]), int(linkage[i, 1])
+        # Z is produced by scipy linkage (never consumed externally), whose
+        # ids increase row by row — children are always defined before row i,
+        # so a single ordered pass suffices (no forward references possible).
+        depth[n_assets + i] = 1 + max(depth.get(left, 0), depth.get(right, 0))
+        if (left < n_assets) != (right < n_assets):
+            accretion += 1
+    max_depth = depth[2 * n_assets - 2]
+    depth_threshold = math.ceil(math.log2(n_assets)) + 2
+    chaining_rate = accretion / n_merges
+    base["max_depth"] = max_depth
+    base["depth_threshold"] = depth_threshold
+    base["chaining_rate"] = chaining_rate
+    base["leaf_order"] = [int(leaf) for leaf in _leaf_order(linkage, n_assets)]
+    # n==2 carve-out (catalog: not pathological): depth 1 never exceeds its
+    # threshold 3 and accretion is impossible, but the explicit gate documents
+    # that a 2-asset tree is never flagged. Note an exact ==0.60 rate is
+    # unreachable for any realistic n (leaf absorptions T+2L=n force
+    # T/(n-1)!=3/5 by parity, and no other small-denominator fraction rounds
+    # to the same double), so > vs >= is unobservable — no boundary pin.
+    base["chaining_flag"] = bool(
+        n_assets > 2 and (max_depth > depth_threshold or chaining_rate > base["rate_threshold"])
+    )
+    return base
+
+
 def build_report_envelope(
     tickers: list[str],
     config,
@@ -544,4 +627,5 @@ __all__ = [
     "portfolio_return_series",
     "sanitize_json_payload",
     "tail_risk_metrics",
+    "tree_diagnostics",
 ]
