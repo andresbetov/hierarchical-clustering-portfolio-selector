@@ -1,0 +1,141 @@
+"""Machine-readable technical report core (feat-043).
+
+Pure serialization primitives for the JSON report epic: strict-JSON
+sanitizer, single-file writer, deterministic config fingerprint and the
+versioned envelope. No pipeline/CLI integration lives here (feat-050/051).
+"""
+
+from __future__ import annotations
+
+import dataclasses
+import hashlib
+import json
+from datetime import date, datetime
+from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+
+SCHEMA_VERSION = 1
+_FINGERPRINT_HEX_CHARS = 16
+_ENGINE_PACKAGE = "hierarchical-clustering-portfolio-selector"
+
+
+def _to_iso8601(value: Any) -> str:
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return value.isoformat()
+
+
+def sanitize_json_payload(obj: Any) -> Any:
+    """Recursively convert a payload into strict-JSON-native primitives.
+
+    ndarray -> list, numpy scalars -> Python scalars (.item() first because
+    np.float64 subclasses float), non-finite floats -> None (JSON has no
+    NaN/Infinity), tuples -> lists, Path -> str, date/datetime -> ISO-8601.
+    """
+    if isinstance(obj, np.ndarray):
+        return sanitize_json_payload(obj.tolist())
+    if isinstance(obj, np.generic):
+        return sanitize_json_payload(obj.item())
+    if isinstance(obj, float):
+        return obj if np.isfinite(obj) else None
+    if isinstance(obj, Path):
+        return str(obj)
+    if isinstance(obj, (datetime, date)):
+        return _to_iso8601(obj)
+    if isinstance(obj, tuple):
+        return [sanitize_json_payload(item) for item in obj]
+    if isinstance(obj, dict):
+        return {str(key): sanitize_json_payload(value) for key, value in obj.items()}
+    if isinstance(obj, (list,)):
+        return [sanitize_json_payload(item) for item in obj]
+    return obj
+
+
+def dump_technical_report(payload: dict, path: Path | str) -> None:
+    """Write exactly one JSON file per run, overwriting any previous report.
+
+    Creates the parent directory. Raises ValueError on any non-finite float
+    that escaped sanitization (allow_nan=False), never emitting invalid JSON.
+    """
+    sanitized = sanitize_json_payload(payload)
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open("w", encoding="utf-8") as handle:
+        json.dump(sanitized, handle, allow_nan=False, indent=2, sort_keys=True)
+
+
+def config_fingerprint(
+    config,
+    tickers: list[str],
+    window_start: str,
+    window_end: str,
+) -> str:
+    """Deterministic 16-hex fingerprint of config + universe + data window.
+
+    Canonical serialization (sorted keys, json.dumps) of the frozen
+    dataclass plus the sorted upper-cased universe and the resolved span.
+    Deterministic across runs: no uuid, no wall-clock in the preimage.
+    """
+    universe = json.dumps(sorted(t.upper() for t in tickers))
+    window = json.dumps({"start": window_start, "end": window_end})
+    engine = _engine_version()
+    preimage = json.dumps(
+        {"config": config, "universe": universe, "window": window, "engine": engine},
+        sort_keys=True,
+        default=_canonical_default,
+    )
+    digest = hashlib.sha256(preimage.encode("utf-8")).hexdigest()
+    return digest[:_FINGERPRINT_HEX_CHARS]
+
+
+def _canonical_default(obj: Any) -> Any:
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        return dataclasses.asdict(obj)
+    if isinstance(obj, Path):
+        return str(obj)
+    return str(obj)
+
+
+def _engine_version() -> str:
+    try:
+        return version(_ENGINE_PACKAGE)
+    except PackageNotFoundError:
+        return "unknown"
+
+
+def build_report_envelope(
+    tickers: list[str],
+    config,
+    window_start: str,
+    window_end: str,
+    generated_at: str,
+) -> dict:
+    """Versioned envelope: schema_version=1 + fingerprint + run_id.
+
+    Sections of the report (diagnostics) are optional under schema_version=1;
+    a consumer of an intermediate artifact sees fewer keys without breaking.
+    run_id is DERIVED from the fingerprint — uuid randomness is forbidden
+    (system-verification determinism contract, feat-030).
+    """
+    fingerprint = config_fingerprint(config, tickers, window_start, window_end)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "fingerprint": fingerprint,
+        "run_id": fingerprint,
+        "generated_at": generated_at,
+        "engine_version": _engine_version(),
+        "universe": sorted(t.upper() for t in tickers),
+        "window": {"start": window_start, "end": window_end},
+    }
+
+
+__all__ = [
+    "SCHEMA_VERSION",
+    "build_report_envelope",
+    "config_fingerprint",
+    "dump_technical_report",
+    "sanitize_json_payload",
+]

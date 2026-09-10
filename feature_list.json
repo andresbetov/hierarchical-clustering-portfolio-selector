@@ -433,8 +433,8 @@
       "dependencies": [
         "feat-042"
       ],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2026-09-09 sesion feat-043 (rama feat/report-json-core): flujo OpenSpec completo (propose: 4 artefactos valid — proposal/specs capability technical-report con 4 requirements + 8 scenarios/design/tasks); analisis externo aplicado (RFC 8785 canonizacion sort-keys; python docs allow_nan=False fail-fast + parse_constant test estricto; patron sanitizador recursive ndarray->tolist/np.generic->item, np.float64 subclasifica float por eso item() PRIMERO); TDD rojo registrado: 34 failures por ModuleNotFoundError pre-impl; implementado report_json.py (sanitize_json_payload, dump_technical_report allow_nan=False+indent+sort_keys+mkdir, config_fingerprint sha256-16hex sobre asdict canonico + universo sorted-upper + span + engine_version, build_report_envelope schema_version=1 run_id derivado uuid4-prohibido) + exports en app/__init__.py; BUG PROPIO cazado por gates: ruff F841/I001 (config_dump muerto + math muerto) y pyright reportArgumentType en is_dataclass (fix and not isinstance(type)) — 2 iteraciones de gate hasta exit 0; suite 246 passed (233+13), cobertura TOTAL combinada 85.60% (sube desde 85.37%, modulo nuevo ~100% cubierto); motor diff 0 archivos (core/portfolio/data/validation/viz/pipeline intocados), red feat-021 git diff 0; openspec validate change valid + --all 13/13. Sin push hasta validacion del usuario."
     },
     {
       "id": "feat-044",
