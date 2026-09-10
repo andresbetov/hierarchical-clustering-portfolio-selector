@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: **feat-049 done local en su rama** (bucle de validación con APPROVE final). Change `feat-walkforward-json-section` valid (+1 ADDED a `technical-report`, 7 scenarios). MODO AUTÓNOMO: push→PR→CI→merge→archive sin esperar.
-- Current status: rama `feat/walkforward-json-section` · suite 348 passed, TOTAL 88.19% · motor diff 0 · openspec validate 14/14 · feat-048 cerrado (PRs #68-70)
-- Next: cierre remoto feat-049 → feat-050 (ensamblador keystone + integración pipeline/CLI).
+- Goal: **feat-049 CERRADO end-to-end** (PR #71 feat + PR #72 archive, CI verde). Capability `technical-report` con 9 requirements. Cero changes activos. MODO AUTÓNOMO: no esperar, decidir con análisis hasta completar el épico.
+- Current status: `develop` + archive feat-049 · suite 348 passed, TOTAL 88.19% · openspec validate 13/13
+- Next: feat-050 (ensamblador keystone + integración pipeline/CLI) ciclo completo autónomo.
 - Next: feat-046 (serie in-sample + Sortino/VaR/CVaR95 + maxDD/Calmar, re-align `minimum_overlap_ratio=1.0`) con la rutina completa: rama-primero → tracker in_progress en rama → propose → TDD → subagentes validadores pre-push → push → PR → merge → archive.
 
 ## Regla de flujo adoptada (2026-09-09, orden del usuario)
