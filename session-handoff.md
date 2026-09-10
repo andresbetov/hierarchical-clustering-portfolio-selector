@@ -2,9 +2,9 @@
 
 ## Current Objective
 
-- Goal: **feat-043 done local** (primera feature del épico JSON, flujo OpenSpec completo). Rama `feat/report-json-core` sin push hasta validación del diff por el usuario.
-- Current status: change `feat-report-json-core` 4/4 artefactos valid, tasks 8/8 boxes · suite 246 passed, TOTAL cobertura 85.60% · motor diff 0 archivos
-- Next: usuario valida diff → push → PR a develop → CI → squash → archive del change → feat-044..049 (merge serial), luego 050 y 051.
+- Goal: **feat-043 CERRADO end-to-end** (PR #55 feat + PR #56 archive, CI verde). Capability `technical-report` viva con 4 requirements. Cero changes activos.
+- Current status: `develop @ 257f190` · suite 246 passed, TOTAL 85.60% · `openspec validate --all` 13/13 · git status limpio
+- Next: feat-044 (rejections+distances, deps feat-043) — propose change `feat-filter-rejections-distances`, TDD, merge serial; luego 045/046/048/049, 050, 051.
 
 ## Completed This Session
 

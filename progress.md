@@ -36,7 +36,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Ningún feature abierto: **feat-043 done local** (rama `feat/report-json-core`, sin push hasta validación del usuario). Siguiente ejecutable tras su merge: feat-044..049 (merge serial)._
+_Ningún feature abierto: **feat-043 CERRADO** (PR #55 + PR #56 archive). Siguiente ejecutable: **feat-044**._
 
 ### What's Done (post-hito)
 
