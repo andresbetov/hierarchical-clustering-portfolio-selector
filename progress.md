@@ -5,7 +5,7 @@
 **Last Updated:** 2026-09-09
 **Branch:** `feat/filter-rejections-distances` — feat-044 done local (todo en la rama, regla del usuario). `develop @ fe62e05` base.
 
-Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037) · **Fase D CLI+dendrograma COMPLETO** · **feat-040 cobertura COMPLETO**: higiene `pytest`→dev + `pytest-cov` 85% branch (87% line), `TOTAL 1509 stmts 85.37%` con 230 tests, `pyarrow 25.0.1` operativo, 8 charts. Suite `./init.sh` 230 passed + cobertura 85.4% `All checks passed!` `pyright 0` `openspec validate --all` 14/14.
+Hito v0.1.0 en marcha. **CP1 "Estable" COMPLETO** · **CP2 "Correcta" COMPLETO** (032-037) · **Fase D CLI+dendrograma COMPLETO** · **feat-040 cobertura COMPLETO**: gate 85% TOTAL combinado de coverage.py (líneas+branches). Épico JSON en curso: suite `./init.sh` **262 passed + cobertura TOTAL 86.21%** `All checks passed!` `pyright 0` `openspec validate --all` 14/14.
 
 ## Status
 

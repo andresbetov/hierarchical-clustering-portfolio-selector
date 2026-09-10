@@ -160,17 +160,29 @@ class TestFilterRejections:
         "NANVOL": {"sharpe_ratio": 0.80, "annual_volatility": float("inf")},
         "OVERLAP": {"sharpe_ratio": 0.90, "annual_volatility": 0.15},
         "PRUNED": {"sharpe_ratio": 0.70, "annual_volatility": 0.18},
+        "ATBOUND": {"sharpe_ratio": 0.3, "annual_volatility": 0.27},
+        "DOUBLEBAD": {"sharpe_ratio": 0.10, "annual_volatility": 0.35},
+        "DOUBLENAN": {"sharpe_ratio": float("nan"), "annual_volatility": float("inf")},
+        "NOPRICE": {"sharpe_ratio": 0.05, "annual_volatility": 0.20},
     }
 
     def _classify(self):
         from portfolio_engine.app.report_json import compute_filter_rejections
         from portfolio_engine.core.config import PortfolioConfig
 
+        requested = ["GOOD", "EDGE", "VOLBAD", "NANSHARPE", "NANVOL", "OVERLAP",
+                     "PRUNED", "ATBOUND", "DOUBLEBAD", "DOUBLENAN", "PHANTOM", "NOPRICE", "GHOST"]
+        prices = {t: np.array([100.0]) for t in self.METRICS if t != "NOPRICE"}
+        prices["PHANTOM"] = np.array([100.0])  # in bundle, never ingested
         return compute_filter_rejections(
-            requested_tickers=["GOOD", "EDGE", "VOLBAD", "NANSHARPE", "NANVOL", "OVERLAP", "PRUNED", "GHOST"],
+            requested_tickers=requested,
             asset_metrics=self.METRICS,
-            filtered_metrics={"GOOD": self.METRICS["GOOD"], "OVERLAP": self.METRICS["OVERLAP"]},
-            closing_prices={t: np.array([100.0]) for t in self.METRICS},
+            filtered_metrics={
+                "GOOD": self.METRICS["GOOD"],
+                "OVERLAP": self.METRICS["OVERLAP"],
+                "ATBOUND": self.METRICS["ATBOUND"],
+            },
+            closing_prices=prices,
             config=PortfolioConfig(),
         )
 
@@ -203,6 +215,15 @@ class TestFilterRejections:
         assert entry["reason"] == "ingestion_rejected"
         assert entry["d_sharpe"] is None and entry["d_vol"] is None
 
+    def test_ingestion_guard_fires_on_either_missing_map(self):
+        """Kills or->and and price-half deletion mutants: PHANTOM has prices
+        but no metrics; NOPRICE has metrics but no price row."""
+        report = self._classify()
+        for ticker in ("PHANTOM", "NOPRICE"):
+            entry = report["tickers"][ticker]
+            assert entry["reason"] == "ingestion_rejected", ticker
+            assert entry["d_sharpe"] is None and entry["d_vol"] is None, ticker
+
     def test_overlap_pruned_when_passing_but_absent_from_filtered(self):
         report = self._classify()
         entry = report["tickers"]["PRUNED"]
@@ -217,34 +238,94 @@ class TestFilterRejections:
         assert entry["d_sharpe"] == pytest.approx(0.50)
         assert entry["d_vol"] == pytest.approx(0.07)
 
+    def test_sharpe_gate_fires_before_vol_gate(self):
+        """Kills below_min<->above_max swap: DOUBLEBAD fails BOTH gates and
+        production (selection.py:58-62) classifies by the sharpe gate first."""
+        report = self._classify()
+        entry = report["tickers"]["DOUBLEBAD"]
+        assert entry["reason"] == "below_min_sharpe"
+        assert entry["d_sharpe"] == pytest.approx(-0.20)
+        assert entry["d_vol"] == pytest.approx(-0.08)
+
+    def test_non_finite_gate_fires_before_vol_gate(self):
+        """Kills sharpe_non_finite<->vol_non_finite swap: DOUBLENAN fails both
+        non-finite gates and production classifies by the sharpe gate first."""
+        report = self._classify()
+        assert report["tickers"]["DOUBLENAN"] == {
+            "reason": "sharpe_non_finite", "d_sharpe": None, "d_vol": None,
+        }
+
+    def test_exact_threshold_boundary_passes(self):
+        """Kills < -> <= and > -> >= mutants: at sharpe==min and vol==max the
+        production filter (selection.py:58,61 strict) KEEPS the asset."""
+        report = self._classify()
+        entry = report["tickers"]["ATBOUND"]
+        assert entry["reason"] == "kept"
+        assert entry["d_sharpe"] == pytest.approx(0.0, abs=0.0)
+        assert entry["d_vol"] == pytest.approx(0.0, abs=0.0)
+
+    def test_empty_requested_universe(self):
+        from portfolio_engine.app.report_json import compute_filter_rejections
+        from portfolio_engine.core.config import PortfolioConfig
+
+        report = compute_filter_rejections(
+            requested_tickers=[],
+            asset_metrics=self.METRICS,
+            filtered_metrics={"GOOD": self.METRICS["GOOD"]},
+            closing_prices={"GOOD": np.array([100.0])},
+            config=PortfolioConfig(),
+        )
+        assert report["tickers"] == {}
+        assert report["counts"] == {"requested": 0, "kept": 0, "rejected": 0}
+
+    def test_duplicate_requested_tickers_dedupe(self):
+        from portfolio_engine.app.report_json import compute_filter_rejections
+        from portfolio_engine.core.config import PortfolioConfig
+
+        report = compute_filter_rejections(
+            requested_tickers=["GOOD", "GOOD", "EDGE"],
+            asset_metrics=self.METRICS,
+            filtered_metrics={"GOOD": self.METRICS["GOOD"]},
+            closing_prices={"GOOD": np.array([100.0])},
+            config=PortfolioConfig(),
+        )
+        assert report["counts"] == {"requested": 2, "kept": 1, "rejected": 1}
+        assert len(report["tickers"]) == 2
+
     def test_thresholds_and_counts_consistent(self):
         report = self._classify()
         assert report["thresholds"] == {"min_sharpe": 0.3, "max_volatility": 0.27}
         counts = report["counts"]
-        assert counts == {"requested": 8, "kept": 2, "rejected": 6}
+        assert counts == {"requested": 13, "kept": 3, "rejected": 10}
         assert counts["kept"] + counts["rejected"] == counts["requested"]
         assert set(report["tickers"]) == {
-            "GOOD", "EDGE", "VOLBAD", "NANSHARPE", "NANVOL", "OVERLAP", "PRUNED", "GHOST",
+            "GOOD", "EDGE", "VOLBAD", "NANSHARPE", "NANVOL", "OVERLAP",
+            "PRUNED", "ATBOUND", "DOUBLEBAD", "DOUBLENAN", "PHANTOM", "NOPRICE", "GHOST",
         }
 
     def test_derived_reasons_match_production_filter(self):
         """Reason parity vs production: every classification the report derives
         must be derivable from the SAME guard order apply_asset_filters uses
         (non-finite -> sharpe -> vol), plus the calendar-prune layer that the
-        final filtered set encodes."""
+        final filtered set encodes. NOPRICE is excluded upstream (missing price
+        row), so production never reaches it; the report labels it
+        ingestion_rejected instead."""
         from portfolio_engine.portfolio.selection import apply_asset_filters
 
+        production_prices = {t: np.array([100.0]) for t in self.METRICS if t != "NOPRICE"}
         production_filtered, _ = apply_asset_filters(
-            {t: dict(m) for t, m in self.METRICS.items()},
-            {t: np.array([100.0]) for t in self.METRICS},
+            {t: dict(m) for t, m in self.METRICS.items() if t != "NOPRICE"},
+            production_prices,
             0.3,
             0.27,
         )
-        assert set(production_filtered) == {"GOOD", "OVERLAP", "PRUNED"}
+        assert set(production_filtered) == {"GOOD", "OVERLAP", "PRUNED", "ATBOUND"}
         report = self._classify()
-        classify_filtered = {"GOOD", "OVERLAP"}
+        classify_filtered = {"GOOD", "OVERLAP", "ATBOUND"}
         for ticker, metrics in self.METRICS.items():
-            if not np.isfinite(metrics["sharpe_ratio"]):
+            if ticker not in production_prices:
+                expected = "ingestion_rejected"
+            elif not np.isfinite(metrics["sharpe_ratio"]):
                 expected = "sharpe_non_finite"
             elif not np.isfinite(metrics["annual_volatility"]):
                 expected = "vol_non_finite"
@@ -258,19 +339,14 @@ class TestFilterRejections:
                 expected = "overlap_pruned"
             assert report["tickers"][ticker]["reason"] == expected, ticker
 
-    def test_reasons_survive_strict_json_serialization(self):
+    def test_reasons_survive_strict_json_serialization(self, tmp_path):
         from portfolio_engine.app.report_json import dump_technical_report
 
-        target = Path(tmp_reports_dir())
-        dump_technical_report({"filtering": self._classify()}, target / "r.json")
-        loaded = _strict_loads((target / "r.json").read_text(encoding="utf-8"))
-        assert loaded["filtering"]["counts"]["kept"] == 2
-
-
-def tmp_reports_dir():
-    import tempfile
-
-    return Path(tempfile.mkdtemp())
+        target = tmp_path / "r.json"
+        dump_technical_report({"filtering": self._classify()}, target)
+        loaded = _strict_loads(target.read_text(encoding="utf-8"))
+        assert loaded["filtering"]["counts"]["kept"] == 3
+        assert loaded["filtering"]["tickers"]["NANSHARPE"]["d_sharpe"] is None
 
 
 class TestExportSurface:

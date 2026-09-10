@@ -21,3 +21,4 @@
 ## 5. Cierre (todo en la rama)
 
 - [x] 5.1 Actualizar `feature_list.json` (feat-044 done + evidencia con TOTAL %), `progress.md` y `session-handoff.md` DENTRO de la rama (regla del usuario); commit Conventional Commits; `git status` limpio y diff presentado al usuario — sin push hasta su validación
+- [x] 5.2 Validación pre-push con subagentes especializados (regla del usuario): 3 MAJOR mutantes eliminados (fixtures DOUBLEBAD/DOUBLENAN/ATBOUND/PHANTOM/NOPRICE + dedupe + universo vacío), 3 MINOR de proceso corregidos (tracker enmendado, progress/handoff stale refrescados, spec wording de distancias-null); suite final 262 passed, TOTAL 86.21%

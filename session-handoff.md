@@ -14,20 +14,24 @@
 
 ## Completed This Session
 
-- feat-040 gate cobertura + higiene — `pyproject.toml` mover `pytest>=9.0.3` de runtime a `dev` + `pytest-cov>=6.0` (`coverage 7.16.0`), `[tool.coverage.run]` `branch=true` + `source=["portfolio_engine"]`, `[tool.coverage.report]` `fail_under=85` (single source 85 + comentario baseline), `[tool.pytest.ini_options] addopts` `--cov=... --cov-branch --cov-fail-under=85`, `Makefile:test` gate explícito `-q --cov ... --cov-branch --cov-fail-under=85` + `test-no-cov` + `clean` `coverage.*`, `.github/workflows/ci.yml` `Test suite with coverage gate` + `Publish coverage` + `upload-artifact htmlcov` en matrix 3.11-3.13 con `uv sync --frozen`, `.gitignore` `coverage.xml`, baseline medido 2026-09-05: `TOTAL 1509 stmts 85.37% branch / 87% line (230 tests)` (gate 85 pass / 90 fail), `openspec validate --all` 14/14.
+- feat-044 motivos de exclusión + distancias: `compute_filter_rejections` (inferencia pura del orden de guardias de `selection.py:47-63`, slugs idénticos, distancias firmadas, dedupe, ingestion guard con ambos mapas) + change `feat-filter-rejections-distances` (+1 ADDED a `technical-report`). Validación pre-push con 2 subagentes (regla del usuario): 3 MAJOR mutantes eliminados (swaps de guardias, frontera `<→<=`, or→and en ingesta) + 3 MINOR de higiene corregidos. Suite **262 passed**, TOTAL **86.21%**.
+- feat-043 cerrado end-to-end: PR #55 (356db0e) + PR #56 archive (257f190), capability `technical-report` viva.
 
 ## Verification Evidence
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| baseline | `uv run pytest --cov=portfolio_engine --cov-branch --cov-report=term-missing` | 85 branch / 87 line `TOTAL 1509` | 1509 stmts, 196 miss, 428 branch |
-| hygiene | `grep pytest pyproject.toml` | 0 runtime, 2 dev | `uv lock --check` OK, `uv sync --frozen` OK |
-| gate | `make test` | ✓ 85.37% reached 230 passed | `Required 85% reached` |
-| gate fail | `uv run pytest --cov-fail-under=90` | ✗ FAIL 85.37% exit 1 | gate activo |
-| suite | `./init.sh` | ✓ 230 passed 85.37% | `All checks passed!` `pyright 0` `compileall OK` |
-| specs | `openspec validate --all` | ✓ 14/14 | project-packaging + quality-gates + verification-harness |
-| review | subagente harness | 0 HIGH / 3 MEDIUM | dual fail_under, Makefile -q, CHANGELOG hygiene |
-| review | subagente flow | 5 HIGH process corregidos | feature_list done, tasks 9/9, progress stale corregido |
+| suite | `./init.sh` | ✓ 262 passed, TOTAL 86.21% | `All checks passed!` `pyright 0` `compileall OK` |
+| openspec | `openspec validate --all` | ✓ 14/14 | feat-report-json-core archivado + capability viva |
+| motor | `git diff develop --stat` | 0 archivos motor | red feat-021 intacta |
+| review | subagente código | 3 MAJOR eliminados | mutantes de guard order/frontera/ingesta |
+| review | subagente proceso | APPROVE | trackers coherentes, flujo rama-primero |
+
+## Next Session Startup
+
+1. Validar diff de `feat/filter-rejections-distances` → push → PR → CI → squash → archive del change vía rama chore + PR.
+2. feat-045 (HHI/DR/RC + raw-vs-constrained): rama primero → tracker in_progress en rama → propose → TDD → validación subagentes pre-push → cierre.
+3. Rutina fija: rama-primero → in_progress en rama → TDD → gates → subagentes validadores → push → PR → merge → archive.
 
 ## Decisions Made
 

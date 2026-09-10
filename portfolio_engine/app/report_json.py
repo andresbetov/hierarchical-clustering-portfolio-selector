@@ -119,19 +119,25 @@ def compute_filter_rejections(
     Pure re-derivation of the production screen order (selection.py:47-63):
     non-finite sharpe -> non-finite vol -> below min sharpe -> above max vol;
     survivors then split kept vs overlap_pruned by membership in the final
-    filtered set. No re-execution of apply_asset_filters: same guard order
-    guarantees reason parity without duplicating its warning. Distances:
-    d_sharpe = sharpe - minimum_sharpe_threshold, d_vol =
-    maximum_volatility_threshold - vol (negative = excluded by that gate);
-    both None when the metric is non-finite or the ticker never ingested.
+    filtered set (the POST-calendar-prune set main() returns, pipeline.py:122).
+    No re-execution of apply_asset_filters: same guard order guarantees reason
+    parity without duplicating its warning. Distances: d_sharpe = sharpe -
+    minimum_sharpe_threshold, d_vol = maximum_volatility_threshold - vol
+    (negative = excluded by that gate); BOTH None when any metric is
+    non-finite. A requested ticker missing from either asset_metrics or
+    closing_prices never ingested -> ingestion_rejected. Duplicate tickers
+    are deduplicated (first occurrence wins) so tickers and counts agree.
     """
 
     def _finite_number(value) -> bool:
         return isinstance(value, (int, float)) and math.isfinite(value)
 
+    # Duplicates classify once; requested counts reflect the unique universe
+    # so tickers and counts never diverge.
+    unique_requested = list(dict.fromkeys(requested_tickers))
     tickers_report = {}
     kept = 0
-    for ticker in requested_tickers:
+    for ticker in unique_requested:
         metrics = asset_metrics.get(ticker)
         if metrics is None or ticker not in closing_prices:
             tickers_report[ticker] = {"reason": "ingestion_rejected", "d_sharpe": None, "d_vol": None}
@@ -165,9 +171,9 @@ def compute_filter_rejections(
         },
         "tickers": tickers_report,
         "counts": {
-            "requested": len(requested_tickers),
+            "requested": len(unique_requested),
             "kept": kept,
-            "rejected": len(requested_tickers) - kept,
+            "rejected": len(unique_requested) - kept,
         },
     }
 
