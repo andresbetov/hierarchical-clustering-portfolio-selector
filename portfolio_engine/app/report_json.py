@@ -187,21 +187,30 @@ def allocation_diagnostics(
     """Allocation diagnostics: concentration, diversification, Dykstra drift (feat-045).
 
     HHI/N_eff with the sum-mandate verified (engine tolerance 1e-9) and the
-    long-only mandate enforced; DR = sum(w*sigma)/sigma_p and
-    RC_i = w_i*(Sigma w)_i/sigma_p^2 ALWAYS computed on the covariance sliced
-    to the weight subset via create_portfolio_covariance_matrix (feat-028 rule
-    — N x N with an M-vector is dimensionally invalid); raw_vs_constrained
-    Dykstra telemetry: caller raw_weights used verbatim for ANY method,
-    deterministic HRP recompute only when method is hrp and the covariance
-    matches the weight subset, None otherwise (legacy raw vectors are not
-    exposed — fabricating them would be dishonest). Bit-identity with the
-    engine's raw vector requires the weights dict to iterate in
-    covariance_tickers order (the pipeline contract); permuted callers get
-    internally aligned telemetry but not the engine's bit-identical raw
-    vector. Note: the effective-bounds resolution logs CRITICAL for relaxed
-    universes on every call (documented duplication). Non-finite weights ->
-    hhi NaN (sanitizer emits null); degenerate sigma_p (<= VOL_FLOOR_EPS) ->
-    risk sections None, never inf.
+    long-only mandate enforced. N_eff is Herfindahl-based 1/HHI (weight
+    concentration), NOT Meucci entropy-based effective number of bets. DR =
+    sum(w*sigma)/sigma_p and RC_i = w_i*(Sigma w)_i/sigma_p^2 ALWAYS computed
+    on the covariance sliced to the weight subset via
+    create_portfolio_covariance_matrix (feat-028 rule — N x N with an M-vector
+    is dimensionally invalid); raw_vs_constrained Dykstra telemetry: caller
+    raw_weights used verbatim for ANY method, deterministic HRP recompute
+    (bit-identical seam, calculate_hrp_weights) only when method is hrp and
+    the covariance matches the weight subset — HRP with a legacy M<N full
+    covariance yields raw_vs_constrained None (a recompute on the slice would
+    not be the engine's raw vector, and fabricating telemetry is dishonest);
+    None for non-HRP without raw_weights (legacy raw vectors are not
+    exposed). Bit-identity with the engine's raw vector requires the weights
+    dict to iterate in covariance_tickers order (the pipeline contract);
+    permuted callers get internally aligned telemetry but not the engine's
+    bit-identical raw vector. Note: the effective-bounds resolution logs
+    CRITICAL for relaxed universes on every call (documented duplication).
+    Changed-count gate (diff > 1e-12) is a float-noise filter, not a mandate
+    tolerance. Contract split: unknown ticker / shape mismatch / sum != 1
+    / short weights raise (programmer error fails loud — spec'd for
+    sum/mandate, feat-028 for alignment);
+    degenerate-but-valid inputs (N=0, sigma_p at/below the floor, non-finite
+    weights, degenerate HRP recompute) yield null/NaN via the strict-JSON
+    sanitizer, never inf.
     """
     from ..core.config import _WEIGHT_SUM_TOLERANCE
     from ..core.metrics import VOL_FLOOR_EPS
@@ -227,6 +236,14 @@ def allocation_diagnostics(
         return base
 
     missing = [t for t in weights if t not in covariance_tickers]
+    # Precedence: N=0 returned above (no guards fire on the empty universe);
+    # duplicates raise before unknown-ticker so row misalignment is reported
+    # as misalignment, not as a missing ticker.
+    if len(set(covariance_tickers)) != len(covariance_tickers):
+        raise ValueError(
+            "Duplicate tickers in covariance_tickers — rows must map 1:1 to "
+            "tickers, first-occurrence binding would mask misalignment (feat-028)"
+        )
     if missing:
         raise ValueError(
             f"Weight tickers not in covariance_tickers: {missing} — "
@@ -261,8 +278,11 @@ def allocation_diagnostics(
         weights, covariance_matrix, {t: None for t in covariance_tickers}
     )
     portfolio_variance = calculate_portfolio_variance(weight_vector, sub_cov)
-    sigma_p = float(np.sqrt(portfolio_variance))
-    if sigma_p > VOL_FLOOR_EPS and np.isfinite(sigma_p):
+    # Guard the variance BEFORE sqrt: equivalent to sigma_p > VOL_FLOOR_EPS
+    # (sqrt is monotonic on finite non-negatives) but never takes sqrt of a
+    # negative on indefinite slices — no RuntimeWarning, risk stays None.
+    if np.isfinite(portfolio_variance) and portfolio_variance > VOL_FLOOR_EPS**2:
+        sigma_p = float(np.sqrt(portfolio_variance))
         weighted_avg_vol = float(weight_vector @ np.sqrt(np.diag(sub_cov)))
         diversification_ratio = weighted_avg_vol / sigma_p
         risk_vector = weight_vector * (sub_cov @ weight_vector) / portfolio_variance
@@ -280,18 +300,22 @@ def allocation_diagnostics(
             try:
                 raw_weights = calculate_hrp_weights(sub_cov, linkage_method=config.linkage_method)
             except ValueError:
-                raw_weights = None  # degenerate covariance: engine rejects, no telemetry
+                # Degenerate covariance: the engine itself rejects it
+                # (hrp.py guards), so there is no raw vector to report.
+                # NOTE: config.linkage_method is validated at PortfolioConfig
+                # construction, so a ValueError here is degeneracy, not config.
+                raw_weights = None
+        raw = None
         if raw_weights is not None:
             raw = np.asarray(raw_weights, dtype=np.float64)
             if not np.all(np.isfinite(raw)):
-                raw_weights = None  # unusable raw: no contradictory telemetry
+                raw = None  # unusable raw: no contradictory telemetry
             elif raw.shape != weight_vector.shape:
                 raise ValueError(
                     f"raw_weights shape {raw.shape} does not match the weight subset "
                     f"({n_assets}) — raw_weights must be aligned to weights dict key order"
                 )
-        if raw_weights is not None:
-            raw = np.asarray(raw_weights, dtype=np.float64)
+        if raw is not None:
             diff = np.abs(raw - weight_vector)
             min_eff, max_eff = _resolve_effective_bounds(n_assets, config)
             base["raw_vs_constrained"] = {
