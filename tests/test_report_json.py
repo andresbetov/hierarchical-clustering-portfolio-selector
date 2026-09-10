@@ -618,6 +618,158 @@ class TestAllocationDiagnostics:
         assert loaded["allocation"]["hhi"] is None
         assert loaded["allocation"]["diversification_ratio"] is None
 
+    def test_hrp_legacy_m_n_telemetry_null_no_fabrication(self):
+        """Hardening F1: HRP method with a full-universe N×N covariance but
+        subset weights (M<N) yields raw_vs_constrained None — a recompute on
+        the slice would not be the engine's raw vector. DR/RC still served."""
+        rng = np.random.default_rng(5)
+        base = rng.normal(scale=0.01, size=(5, 5))
+        full = base @ base.T + np.eye(5) * 0.02
+        report = self._diag({"B": 0.5, "E": 0.3, "A": 0.2}, full, ["A", "B", "C", "D", "E"])
+        assert report["method"] == "hrp"
+        assert report["raw_vs_constrained"] is None
+        assert report["diversification_ratio"] is not None
+        assert sum(report["risk_contributions"].values()) == pytest.approx(1.0, abs=1e-9)
+
+    def test_permuted_unequal_weights_joint_permutation_consistent(self):
+        """Hardening F2: joint permutation (weights + tickers + covariance +
+        raw) preserves HHI/DR/RC/l1 — internal alignment, not luck of equal
+        weights. Engine bit-identity still needs pipeline order (docstring)."""
+        tickers = ["A", "B", "C", "D"]
+        wvals = [0.4, 0.3, 0.2, 0.1]
+        raw = [0.35, 0.3, 0.2, 0.15]
+        cov = self._pd_cov()
+        base = self._diag(
+            dict(zip(tickers, wvals)), cov, tickers, raw_weights=np.array(raw)
+        )
+        perm = [3, 2, 1, 0]
+        ptickers = [tickers[i] for i in perm]
+        moved = self._diag(
+            dict(zip(ptickers, [wvals[i] for i in perm])),
+            cov[np.ix_(perm, perm)],
+            ptickers,
+            raw_weights=np.array([raw[i] for i in perm]),
+        )
+        assert moved["hhi"] == pytest.approx(base["hhi"])
+        assert moved["diversification_ratio"] == pytest.approx(
+            base["diversification_ratio"], rel=1e-12
+        )
+        assert moved["raw_vs_constrained"]["l1_raw_to_constrained"] == pytest.approx(
+            base["raw_vs_constrained"]["l1_raw_to_constrained"], rel=1e-12
+        )
+        assert moved["risk_contributions"] == {
+            t: pytest.approx(base["risk_contributions"][t]) for t in ptickers
+        }
+
+    def test_indefinite_covariance_null_risk_without_warning(self):
+        """Hardening F4: correlation-impossible slice (negative wᵀΣw) → risk
+        None, never inf, and no RuntimeWarning leaks (variance is guarded
+        pre-sqrt). HHI stands: concentration needs no covariance."""
+        import warnings
+        from dataclasses import replace
+
+        from portfolio_engine.core.config import PortfolioConfig
+
+        cfg = replace(PortfolioConfig(), weight_allocation_method="equal")
+        bad = np.array([[0.04, -0.05], [-0.05, 0.04]])  # corr -1.25, invalid
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            report = self._diag({"A": 0.5, "B": 0.5}, bad, ["A", "B"], cfg)
+        assert report["hhi"] == pytest.approx(0.5)
+        assert report["diversification_ratio"] is None
+        assert report["risk_contributions"] is None
+        assert report["rc_spread"] is None
+
+    def test_inf_covariance_null_risk(self):
+        """Pins the isfinite conjunct: +inf variance is not > floor material —
+        risk stays None instead of leaking inf into the report."""
+        from dataclasses import replace
+
+        from portfolio_engine.core.config import PortfolioConfig
+
+        cfg = replace(PortfolioConfig(), weight_allocation_method="equal")
+        inf_cov = np.array([[float("inf"), 0.0], [0.0, 0.04]])
+        report = self._diag({"A": 0.5, "B": 0.5}, inf_cov, ["A", "B"], cfg)
+        assert report["hhi"] == pytest.approx(0.5)
+        assert report["diversification_ratio"] is None
+        assert report["risk_contributions"] is None
+        assert report["rc_spread"] is None
+
+    def test_hrp_legacy_m_n_with_caller_raw_reports_telemetry(self):
+        """Companion to the F1 null pin: the None branch is about missing
+        raw truth, not about M<N — caller-supplied raw_weights are reported
+        verbatim even on the legacy slice (no fabrication: caller truth)."""
+        report = self._diag(
+            {"B": 0.5, "E": 0.3, "A": 0.2},
+            np.diag([0.04, 0.04, 0.04, 0.04, 0.04]),
+            ["A", "B", "C", "D", "E"],
+            raw_weights=np.array([0.4, 0.3, 0.3]),
+        )
+        rvc = report["raw_vs_constrained"]
+        assert rvc is not None
+        assert rvc["l1_raw_to_constrained"] == pytest.approx(0.2)
+        assert rvc["n_weights_changed"] == 2
+        assert report["diversification_ratio"] is not None  # slice still served
+
+    def test_nan_covariance_null_risk(self):
+        """Hardening F4: NaN covariance → risk sections None (guarded by the
+        finite-variance check), HHI untouched."""
+        from dataclasses import replace
+
+        from portfolio_engine.core.config import PortfolioConfig
+
+        cfg = replace(PortfolioConfig(), weight_allocation_method="equal")
+        nan_cov = np.array([[0.04, float("nan")], [float("nan"), 0.04]])
+        report = self._diag({"A": 0.5, "B": 0.5}, nan_cov, ["A", "B"], cfg)
+        assert report["hhi"] == pytest.approx(0.5)
+        assert report["diversification_ratio"] is None
+        assert report["risk_contributions"] is None
+
+    def test_duplicate_covariance_tickers_raise_named(self):
+        """Hardening F3: duplicated covariance rows fail loud — silent
+        first-occurrence binding would mask ticker misalignment."""
+        with pytest.raises(ValueError, match="[Dd]uplicate"):
+            self._diag({"A": 0.5, "B": 0.5}, np.eye(3) * 0.04, ["A", "A", "B"])
+
+    def test_raw_weights_list_accepted_and_2d_rejected(self):
+        """Hardening F5: list raw_weights work via asarray; 2-D (n,1) hits
+        the named shape error instead of broadcasting silently."""
+        listed = self._diag(
+            {"A": 0.4, "B": 0.6}, np.eye(2) * 0.04, ["A", "B"],
+            raw_weights=[0.5, 0.5],
+        )
+        assert listed["raw_vs_constrained"]["l1_raw_to_constrained"] == pytest.approx(0.2)
+        with pytest.raises(ValueError, match="raw_weights shape"):
+            self._diag(
+                {"A": 0.5, "B": 0.5}, np.eye(2) * 0.04, ["A", "B"],
+                raw_weights=np.array([[0.5], [0.5]]),
+            )
+
+    def test_empty_weights_non_empty_covariance_all_none(self):
+        """Hardening F5: N=0 short-circuits before every guard — the empty
+        universe reports null sections however much covariance is passed."""
+        report = self._diag({}, np.eye(2) * 0.04, ["A", "B"])
+        assert report["n_assets"] == 0
+        assert report["hhi"] is None
+        assert report["diversification_ratio"] is None
+        assert report["raw_vs_constrained"] is None
+
+    def test_non_finite_weight_nan_effective_and_long_only_dr_floor(self):
+        """Hardening F6/F7 + external #1/#2: n_effective is NaN (not just
+        hhi) on non-finite weights; long-only DR respects the Choueifaty
+        floor DR ≥ 1; ΣRC == 1 within 1e-8; rc_spread std is population
+        (ddof=0) by explicit convention."""
+        report = self._diag({"A": float("nan"), "B": 0.5}, np.eye(2) * 0.04, ["A", "B"])
+        assert math.isnan(report["n_effective"])
+        sane = self._diag(
+            {t: 0.25 for t in ("A", "B", "C", "D")}, self._pd_cov(), ["A", "B", "C", "D"]
+        )
+        assert sane["diversification_ratio"] >= 1.0
+        assert sum(sane["risk_contributions"].values()) == pytest.approx(1.0, abs=1e-8)
+        assert sane["rc_spread"]["std"] == pytest.approx(
+            float(np.std(np.array(list(sane["risk_contributions"].values())), ddof=0))
+        )
+
     def test_export_surface_allocation_diagnostics(self):
         import portfolio_engine.app as app
 

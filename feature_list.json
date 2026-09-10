@@ -511,6 +511,16 @@
       ],
       "status": "not-started",
       "evidence": ""
+    },
+    {
+      "id": "fix-045a",
+      "name": "Allocation diagnostics hardening",
+      "description": "Endurecimiento post-cierre de feat-045 (rama fix/allocation-diagnostics-hardening, orden del usuario): docstring de contratos (N_eff Herfindahl vs Meucci, filtro 1e-12 como noise-filter, split raise-vs-null, HRP M<N->None), guard fail-loud de tickers duplicados, guard de varianza pre-sqrt (sin RuntimeWarning, equivalencia exacta), colapso del doble asarray; +10 tests (F1 telemetria nula HRP M<N y override con raw del caller, F2 permutacion conjunta desigual, F3 duplicados, F4 indefinida/NaN/inf sin warning, F5 lista/2-D/vacio, F6/F7 n_effective-NaN + piso DR>=1 + ddof=0). Scope: solo report_json.py + test_report_json.py, motor 0, sin delta OpenSpec (spec 88-120 intacta).",
+      "dependencies": [
+        "feat-045"
+      ],
+      "status": "done",
+      "evidence": "./init.sh FRESCO exit 0 en fix/allocation-diagnostics-hardening: 296 passed (286+10), TOTAL 86.94%, ruff/pyright/compileall verdes; motor diff 0; openspec validate --all 13/13. Bucle de validacion (regla del usuario): analisis externo (HHI/Choueifaty/Dykstra/JSON-null, 5 items) + analisis profundo (6/6 scenarios OK, 8 hallazgos MINOR) -> implementacion -> verificacion adversarial APPROVE + auditoria proceso CONDITIONAL-APPROVE -> correcciones -> re-verificacion APPROVE -> 2 MINOR -> verificacion final APPROVE. Sin push hasta validacion del usuario."
     }
   ]
 }
