@@ -10,6 +10,7 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import json
+import math
 from datetime import date, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -106,6 +107,77 @@ def _engine_version() -> str:
         return "unknown"
 
 
+def compute_filter_rejections(
+    requested_tickers: list[str],
+    asset_metrics: dict,
+    filtered_metrics: dict,
+    closing_prices: dict,
+    config,
+) -> dict:
+    """Per-ticker filter funnel with signed threshold distances (feat-044).
+
+    Pure re-derivation of the production screen order (selection.py:47-63):
+    non-finite sharpe -> non-finite vol -> below min sharpe -> above max vol;
+    survivors then split kept vs overlap_pruned by membership in the final
+    filtered set (the POST-calendar-prune set main() returns, pipeline.py:122).
+    No re-execution of apply_asset_filters: same guard order guarantees reason
+    parity without duplicating its warning. Distances: d_sharpe = sharpe -
+    minimum_sharpe_threshold, d_vol = maximum_volatility_threshold - vol
+    (negative = excluded by that gate); BOTH None when any metric is
+    non-finite. A requested ticker missing from either asset_metrics or
+    closing_prices never ingested -> ingestion_rejected. Duplicate tickers
+    are deduplicated (first occurrence wins) so tickers and counts agree.
+    """
+
+    def _finite_number(value) -> bool:
+        return isinstance(value, (int, float)) and math.isfinite(value)
+
+    # Duplicates classify once; requested counts reflect the unique universe
+    # so tickers and counts never diverge.
+    unique_requested = list(dict.fromkeys(requested_tickers))
+    tickers_report = {}
+    kept = 0
+    for ticker in unique_requested:
+        metrics = asset_metrics.get(ticker)
+        if metrics is None or ticker not in closing_prices:
+            tickers_report[ticker] = {"reason": "ingestion_rejected", "d_sharpe": None, "d_vol": None}
+            continue
+
+        sharpe = metrics.get("sharpe_ratio")
+        vol = metrics.get("annual_volatility")
+        if not _finite_number(sharpe):
+            tickers_report[ticker] = {"reason": "sharpe_non_finite", "d_sharpe": None, "d_vol": None}
+            continue
+        if not _finite_number(vol):
+            tickers_report[ticker] = {"reason": "vol_non_finite", "d_sharpe": None, "d_vol": None}
+            continue
+
+        d_sharpe = sharpe - config.minimum_sharpe_threshold
+        d_vol = config.maximum_volatility_threshold - vol
+        if sharpe < config.minimum_sharpe_threshold:
+            tickers_report[ticker] = {"reason": "below_min_sharpe", "d_sharpe": d_sharpe, "d_vol": d_vol}
+        elif vol > config.maximum_volatility_threshold:
+            tickers_report[ticker] = {"reason": "above_max_vol", "d_sharpe": d_sharpe, "d_vol": d_vol}
+        elif ticker in filtered_metrics:
+            tickers_report[ticker] = {"reason": "kept", "d_sharpe": d_sharpe, "d_vol": d_vol}
+            kept += 1
+        else:
+            tickers_report[ticker] = {"reason": "overlap_pruned", "d_sharpe": d_sharpe, "d_vol": d_vol}
+
+    return {
+        "thresholds": {
+            "min_sharpe": config.minimum_sharpe_threshold,
+            "max_volatility": config.maximum_volatility_threshold,
+        },
+        "tickers": tickers_report,
+        "counts": {
+            "requested": len(unique_requested),
+            "kept": kept,
+            "rejected": len(unique_requested) - kept,
+        },
+    }
+
+
 def build_report_envelope(
     tickers: list[str],
     config,
@@ -135,6 +207,7 @@ def build_report_envelope(
 __all__ = [
     "SCHEMA_VERSION",
     "build_report_envelope",
+    "compute_filter_rejections",
     "config_fingerprint",
     "dump_technical_report",
     "sanitize_json_payload",
