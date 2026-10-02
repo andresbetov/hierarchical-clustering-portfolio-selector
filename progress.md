@@ -3,15 +3,15 @@
 ## Current State
 
 **Last Updated:** 2026-10-01
-**Branch:** `chore/codespaces-devcontainer` — feat-054 (devcontainer Codespaces), pendiente PR a `develop`.
+**Branch:** `chore/handoff-feat054-closure` — cierre de feat-054 (trackers done, pendiente merge).
 
-feat-052 done (PR #80, 74b753b) · Fase 1 done (PR #81, cd02d49) · archive done (PR #82, 5924c95), todo CI verde matriz 3.11/3.12/3.13. Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13; change archivado `2026-09-10-docs-spec-sync` valid.
+feat-052 done (PR #80, 74b753b) · Fase 1 done (PR #81, cd02d49) · archive done (PR #82, 5924c95) · feat-054 done (PR #85, b2452a3), todo CI verde matriz 3.11/3.12/3.13. Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13; change archivado `2026-09-10-docs-spec-sync` valid.
 
 ## Status
 
 ### What's Done (sesión 2026-10-01 — feat-054 devcontainer Codespaces)
 
-- [x] **feat-054** (rama `chore/codespaces-devcontainer`): `.devcontainer/Dockerfile` (base `mcr.microsoft.com/devcontainers/python:1-3.12` + uv 0.12.6 fijado con `COPY --from=ghcr.io/astral-sh/uv:0.12.6` + `UV_LINK_MODE=copy`) y `.devcontainer/devcontainer.json` (`postCreateCommand: uv sync --frozen`, `waitFor: postCreateCommand`, extension `ms-python.python`); badge en `README.md` + `README.es.md`. Onboarding sin instalación local: el visitante usa **Code ▾ → Codespaces** y corre `uv run portfolio-run`. Costo para el owner $0 (el uso se factura a la cuenta de quien crea el codespace). Sin delta de motor (cero `.py` añadidos): `./init.sh` fresco exit 0, 367 passed, TOTAL 89.18% idéntico al baseline, ruff y pyright ejecutados. Sin OpenSpec, sin ADR, sin CHANGELOG.
+- [x] **feat-054** (rama `chore/codespaces-devcontainer`): `.devcontainer/Dockerfile` (base `mcr.microsoft.com/devcontainers/python:1-3.12` + uv 0.12.6 fijado con `COPY --from=ghcr.io/astral-sh/uv:0.12.6` + `UV_LINK_MODE=copy`) y `.devcontainer/devcontainer.json` (`postCreateCommand: uv sync --frozen`, `waitFor: postCreateCommand`, extension `ms-python.python`); badge en `README.md` + `README.es.md`. Onboarding sin instalación local: el visitante usa **Code ▾ → Codespaces** y corre `uv run portfolio-run`. Costo para el owner $0 (el uso se factura a la cuenta de quien crea el codespace). Sin delta de motor (cero `.py` añadidos): `./init.sh` fresco exit 0, 367 passed, TOTAL 89.18% idéntico al baseline, ruff y pyright ejecutados. Sin OpenSpec, sin ADR, sin CHANGELOG. **PR #85 squash-mergeado a `develop` (b2452a3) con CI verde en 3.11/3.12/3.13.**
 
 ### What's Done (sesión 2026-09-10 — feat-053 docs sync)
 
@@ -50,7 +50,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Ningún feature abierto: feat-054 en rama `chore/codespaces-devcontainer` (trackers done, pendiente PR a `develop`). Siguiente: candidatos v0.2.0 del backlog._
+_Ningún feature abierto: feat-054 cerrado (PR #85, b2452a3; este commit de cierre actualiza los trackers). Siguiente: candidatos v0.2.0 del backlog._
 
 ### What's Done (épico Reporte técnico JSON — feat-043..051, cerrado)
 
@@ -91,7 +91,7 @@ _Ningún feature abierto: feat-054 en rama `chore/codespaces-devcontainer` (trac
 
 ## Evidence of Completion
 
-- feat-054: `./init.sh` FRESCO exit 0 en `chore/codespaces-devcontainer` (367 passed, TOTAL 89.18% idéntico al baseline → delta cero, `All checks passed!`, `pyright 0 errors, 0 warnings, 0 informations`, `compileall OK`; ruff y pyright ejecutados, no skipped) · 7 archivos, cero `.py` · `git diff` confirma `pyproject.toml`/`init.sh`/`uv.lock`/`ci.yml`/`portfolio_engine/` sin tocar
+- feat-054: `./init.sh` FRESCO exit 0 en `chore/codespaces-devcontainer` (367 passed, TOTAL 89.18% idéntico al baseline → delta cero, `All checks passed!`, `pyright 0 errors, 0 warnings, 0 informations`, `compileall OK`; ruff y pyright ejecutados, no skipped) · 7 archivos, cero `.py` · `git diff` confirma `pyproject.toml`/`init.sh`/`uv.lock`/`ci.yml`/`portfolio_engine/` sin tocar · PR #85 squash-mergeado a `develop` (b2452a3) con CI verde `quality (3.11) pass 1m4s` / `(3.12) pass 1m5s` / `(3.13) pass 1m11s` · rama borrada local y remoto
 - feat-042: TDD rojo (`0.5 == 0.3`, `relaxed 1 == 0`) → verde · `./init.sh` exit 0 233 passed (230+3: contrato + 2 WF) cobertura 85.37% · `openspec validate` change + `--all` 13/13 · ADR-007 Aceptado · rama `feat/threshold-recalibration` sin push (veto)
 - feat-041: hito CERRADO 2026-09-09 · local `./init.sh` exit 0 (230 passed, 85.37% branch, ruff/pyright verdes) · PR #51 squash-mergeado a develop (633efa6) con CI verde matriz 3.11/3.12/3.13 · tag `v0.1.0` → 633efa6 pusheado · GitHub Release publicado · `charts/` baseline 8 PNG trackeado
 - feat-040: `openspec validate --all` 14/14 (project-packaging + quality-gates + verification-harness) · `./init.sh` exit 0 230 passed 85.37% branch (87% line) `TOTAL 1509 stmts` + `All checks passed!` + `pyright 0` + `compileall OK` · `make test` gate 85 pass / 90 fail · `uv lock --check` OK · branch `chore/coverage-gate`
