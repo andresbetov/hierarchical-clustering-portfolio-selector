@@ -15,7 +15,7 @@ This is not a price predictor. It is an auditable portfolio-construction engine 
 
 - **Stack:** Python 3.11+ · numpy · pandas · scipy · scikit-learn · yfinance · matplotlib · uv
 - **Out-of-sample:** 16 walk-forward folds — median Sharpe 0.502 (HRP) vs 0.456 (1/N) vs **0.521** (inverse volatility). The benchmark won this window, and this README says so up front.
-- **Engineering:** 367 offline tests · CI on Python 3.11/3.12/3.13 · 85% coverage gate · deterministic run fingerprints · 51 tracked features and fixes shipped through an OpenSpec/ADR harness
+- **Engineering:** 372 offline tests · CI on Python 3.11/3.12/3.13 · 85% coverage gate · deterministic run fingerprints · 58 tracked features and fixes shipped through an OpenSpec/ADR harness
 - **Status:** research and education instrument; **not** investment advice
 
 ![HRP dendrogram of the 2026-09-10 run](charts/hrp_dendrogram.png)
@@ -173,7 +173,7 @@ All eight charts are regenerated on every run into `charts/`; the copies in this
 
 ## Engineering & verification
 
-- **367 offline tests** (unit, property-based with Hypothesis, integration, end-to-end). CI runs fully offline: the data provider is injected and the network seam is monkeypatched.
+- **372 offline tests** (unit, property-based with Hypothesis, integration, end-to-end). CI runs fully offline: the data provider is injected and the network seam is monkeypatched.
 - **One-command local verification** — `./init.sh`: dependency sync with `uv sync --frozen` (same as CI), pytest with an 85% combined coverage floor, `ruff`, `pyright`, and a compile check.
 - **CI matrix** on Python 3.11 / 3.12 / 3.13 using `uv sync --frozen` (lockfile committed), with coverage artifacts per version.
 - **Determinism**: seeded fixtures independent of `PYTHONHASHSEED`, no wall-clock in the report fingerprint, and pinned numeric conventions.
@@ -185,7 +185,7 @@ All eight charts are regenerated on every run into `charts/`; the copies in this
 This project was developed with an AI coding agent under a repository-level harness designed so speed does not trade away verifiability:
 
 - [`AGENTS.md`](AGENTS.md) defines the startup workflow, scope limits, and a definition of done that requires fresh green evidence before a feature is closed.
-- [`feature_list.json`](feature_list.json) tracks 51 shipped features with per-session evidence; [`openspec/`](openspec/) holds 13 capability specs and archived changes, and [`docs/adr/`](docs/adr/README.md) records every methodological decision.
+- [`feature_list.json`](feature_list.json) tracks 58 shipped features with per-session evidence; [`openspec/`](openspec/) holds 13 capability specs and archived changes, and [`docs/adr/`](docs/adr/README.md) records every methodological decision.
 - Adversarial review passes with independent subagents have caught real defects — for example, a NaN-blind guard that accepted degenerate walk-forward folds as valid and a chart-generation crash on short-history tickers, both fixed with regression tests (feat-035, feat-037).
 
 The harness is part of the deliverable: it is what makes an AI-assisted codebase reviewable by a third party.

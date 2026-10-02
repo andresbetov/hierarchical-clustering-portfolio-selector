@@ -3,11 +3,15 @@
 ## Current State
 
 **Last Updated:** 2026-10-02
-**Branch:** `fix/init-sh-fail-loud` — feat-057 (init.sh fail-loud), pendiente PR a `develop`.
+**Branch:** `docs/test-and-feature-counts` — feat-058 (conteos de tests y features), pendiente PR a `develop`.
 
-feat-052 done (PR #80) · Fase 1 done (PR #81) · archive done (PR #82) · feat-054/055/056 done (PR #85–#90) · verificación codespace + cierre feat-054 done (PR #89, #91 `756f5a7`) · `develop` → `main` mergeado (PR #88 `9b5a68b`). Suite `./init.sh` **372 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13.
+feat-052 done (PR #80) · Fase 1 done (PR #81) · archive done (PR #82) · feat-054/055/056 done (PR #85–#90) · verificación codespace + cierre feat-054 done (PR #89, #91 `756f5a7`) · feat-057 init.sh fail-loud done (PR #92 `8373544`) · `develop` → `main` mergeado (PR #88 `9b5a68b`). Suite `./init.sh` **372 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13.
 
 ## Status
+
+### What's Done (sesión 2026-10-02 — feat-058 conteos de tests y features)
+
+- [x] **feat-058** (rama `docs/test-and-feature-counts`): dos conteos duros desfasados, no uno. Tests **367 → 372** (feat-057 los subió) y features **51 → 57** (este segundo ya venía desfasado desde antes: el README decía 51 cuando `feature_list.json` ya tenía 55). 8 ediciones en `README.md`, `README.es.md` y `CONTRIBUTING.md` (en este último también la fecha del baseline, 2026-09-10 → 2026-10-02). Opción A (números exactos) sobre B/C/D; D —un test que verifique que el README coincide con la realidad— se descartó por acoplar un test a prosa, pero **queda como idea de backlog: los conteos volverán a caducar con el próximo feature**. Verificados contra fuente: tests 372, features 57, specs 13, ADRs 7, charts 8, cobertura 89.18%. Sin cambio de código.
 
 ### What's Done (sesión 2026-10-02 — feat-057 init.sh fail-loud)
 
@@ -70,7 +74,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Ningún feature abierto: feat-057 en rama `fix/init-sh-fail-loud` (trackers done, pendiente PR a `develop`)._
+_Ningún feature abierto: feat-058 en rama `docs/test-and-feature-counts` (trackers done, pendiente PR a `develop`)._
 
 ### What's Done (épico Reporte técnico JSON — feat-043..051, cerrado)
 
@@ -112,8 +116,9 @@ _Ningún feature abierto: feat-057 en rama `fix/init-sh-fail-loud` (trackers don
 
 ## Evidence of Completion
 
-- feat-057: +5 tests (`tests/test_init_sh.py`) · **prueba de guardián**: los 2 tests de gate faltante fallan contra el `init.sh` de develop (`assert 0 != 0`) y pasan contra el nuevo · `./init.sh` FRESCO exit 0 (372 passed, TOTAL 89.18% idéntico al baseline; el test nuevo cubre bash, no `portfolio_engine`, por eso no altera cobertura) · regresión demostrada antes del fix con stub de uv (`Verification Complete` + EXIT 0 con ruff y pyright ausentes) · sin delta de OpenSpec (la spec `quality-gates` ya exigía el comportamiento)
-- **Conteo de tests desactualizado**: 367 → 372 con feat-057. `README.md` ("367 offline tests") y `CONTRIBUTING.md` ("367 tests … 2026-09-10") quedaron desfasados; ambos son claims de cara al revisor y no se tocaron en feat-057. Requiere decisión aparte.
+- feat-058: conteos verificados contra fuente — `pytest --collect-only` = **372**, `len(feature_list.json['features'])` = **57**, `ls -d openspec/specs/*/` = 13, ADRs = 7, `git ls-files charts/` = 8, cobertura TOTAL 89.18% · 8 ediciones en 3 archivos, EN/ES simétrico · `rg '367|51 '` sin remanentes en README.md, README.es.md y CONTRIBUTING.md · specs/ADRs/charts/gate/matriz ya eran correctos y no se tocaron · sin cambio de código
+- feat-057: +5 tests (`tests/test_init_sh.py`) · **prueba de guardián**: los 2 tests de gate faltante fallan contra el `init.sh` de develop (`assert 0 != 0`) y pasan contra el nuevo · `./init.sh` FRESCO exit 0 (372 passed, TOTAL 89.18% idéntico al baseline; el test nuevo cubre bash, no `portfolio_engine`, por eso no altera cobertura) · regresión demostrada antes del fix con stub de uv (`Verification Complete` + EXIT 0 con ruff y pyright ausentes) · sin delta de OpenSpec (la spec `quality-gates` ya exigía el comportamiento) · PR #92 squash-mergeado a `develop` (`8373544`) con CI verde en 3.11/3.12/3.13
+- **Conteos duros en docs vuelven a caducar**: corregidos en feat-058, pero la causa raíz sigue: cada feature que añada tests o una entrada deja el número desfasado. Candidato de backlog: un test que verifique que README/CONTRIBUTING coinciden con la realidad (opción D, descartada en feat-058 por acoplar un test a prosa).
 - feat-056: `./init.sh` FRESCO exit 0 en `chore/actions-bump` (367 passed, TOTAL 89.18% idéntico al baseline, `All checks passed!`, `pyright 0`, `compileall OK`) · diff de 3 `uses:` + `runs-on` + 3 líneas de comentario en `ci.yml`, sin tocar comandos ni matriz · runtimes verificados por fetch directo de `action.yml` (checkout v5 / setup-uv v7 / upload-artifact v6 = `runs.using: node24`) · CI verde en la matriz 3.11/3.12/3.13
 - **Codespaces end-to-end (2026-10-01/02, cierra el check manual de feat-054)**: codespace sobre `main` @ `9b5a68b` → Python `3.12.11`, uv `0.12.6 (x86_64-unknown-linux-musl)`, `.venv` presente, `uv lock --check` exit 0, `./init.sh` exit 0, `uv run portfolio-run` → 6 activos y pesos 100.00%, `charts/*.png` = 8, `reports/technical-report.json` = **4245 bytes**. JSON verificado como **no truncado**: el motor usa `indent=2, sort_keys=True` (`report_json.py:68`) y el snapshot versionado sin `walk_forward` (opt-in, 14176 de 30307 bytes) reconstruido en ese formato ocupa 4223 bytes → delta +22 (+0.52%) atribuible a la ventana 2026-09-10 → 2026-10-02. La existencia de uv 0.12.6 prueba que el Dockerfile custom se construyó (la imagen por defecto no incluye uv). **feat-054 COMPLETO.**
 - feat-055: `./init.sh` FRESCO exit 0 en `docs/codespaces-badge-placement` (367 passed, TOTAL 89.18% idéntico al baseline, `All checks passed!`, `pyright 0`, `compileall OK`) · diff +1 línea `README.md` / +1 línea `README.es.md`, simétrico · verificación de no-parametrizabilidad: `badge.svg` con `?style=flat` / `?color=blue` / `?logo=github` devuelve md5 idéntico al baseline
