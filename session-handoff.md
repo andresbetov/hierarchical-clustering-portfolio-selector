@@ -2,15 +2,16 @@
 
 ## Current Objective
 
-- Goal: cierre de feat-054 — devcontainer de GitHub Codespaces para onboarding sin instalación local, en rama `chore/handoff-feat054-closure`.
-- Current status: feat-053 done (PR #82, 5924c95) · suite **367 passed, TOTAL 89.18%** · feat-054 done y **mergeado (PR #85, b2452a3)**, CI verde 3.11/3.12/3.13 · sin delta de motor.
-- Next: PR de cierre de trackers a `develop`; después, candidatos v0.2.0.
+- Goal: feat-055 — badge de Codespaces en línea propia, en rama `docs/codespaces-badge-placement`.
+- Current status: feat-054 done y mergeado (PR #85 `b2452a3` + cierre PR #86 `31c2ed0`) · suite **367 passed, TOTAL 89.18%** · feat-055 done local con evidencia fresca · sin delta de motor.
+- Next: PR de feat-055 a `develop`. **Pendiente de decisión del usuario: `develop` → `main` no autorizado por ahora.**
 
 ## Files Changed (working tree)
 
-- `progress.md` + `feature_list.json` (evidencia de cierre: PR #85, b2452a3, CI verde, rama borrada) + este `session-handoff.md`
+- `README.md` + `README.es.md` — badge de Codespaces separado de la fila de badges (+1 línea en blanco cada uno)
+- `feature_list.json` (feat-055 done), `progress.md`, este `session-handoff.md`
 
-Los archivos del feature (`.devcontainer/*`, READMEs) ya están en `develop` vía PR #85. Sin tocar: `pyproject.toml`, `init.sh`, `uv.lock`, `ci.yml`, `portfolio_engine/`, `tests/`.
+Los archivos de feat-054 (`.devcontainer/*`) ya están en `develop`. Sin tocar: `pyproject.toml`, `init.sh`, `uv.lock`, `ci.yml`, `portfolio_engine/`, `tests/`.
 
 ## Verification Evidence
 
@@ -24,10 +25,10 @@ Los archivos del feature (`.devcontainer/*`, READMEs) ya están en `develop` ví
 
 ## Next Session Startup
 
-1. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
-2. Confirmar manualmente el codespace (una vez, no bloqueante): **Code ▾ → Codespaces** → `uv run portfolio-run` → 8 PNG en `charts/` + `reports/technical-report.json`.
-3. `init.sh` con `uv sync --frozen` ya está; queda unificar conteo de tests en artefactos vivos y versionar el script de evidencia de ADR 007.
-4. `develop → main` solo cuando lo indique el usuario (regla CONTRIBUTING).
+1. PR de feat-055 a `develop` (CI en matriz 3.11/3.12/3.13, squash, borrar rama).
+2. **Decisión abierta del usuario:** `develop` → `main`. Sin eso, el badge de Codespaces apunta a `codespaces.new/.../hierarchical-clustering-portfolio-selector`, que resuelve a la rama por defecto `main` — y `main` **no tiene** `.devcontainer/`, así que un codespace creado desde el badge arranca en la imagen genérica sin uv. workarounds: (a) mergear `develop` → `main`, (b) fijar el badge a `codespaces.new/OWNER/REPO/tree/develop`, (c) quitar el badge.
+3. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
+4. `develop → main` general solo cuando lo indique el usuario (regla CONTRIBUTING).
 
 ## Lecciones de la sesión
 
