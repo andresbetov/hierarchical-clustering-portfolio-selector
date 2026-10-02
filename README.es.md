@@ -15,7 +15,7 @@ Esto no es un predictor de precios. Es un motor de construcción de carteras aud
 
 - **Stack:** Python 3.11+ · numpy · pandas · scipy · scikit-learn · yfinance · matplotlib · uv
 - **Out-of-sample:** 16 folds walk-forward — Sharpe mediano 0.502 (HRP) vs 0.456 (1/N) vs **0.521** (inverse volatility). El benchmark ganó esta ventana y este README lo dice desde el inicio.
-- **Ingeniería:** 367 tests offline · CI en Python 3.11/3.12/3.13 · umbral de cobertura 85% · fingerprints de corrida deterministas · 51 funcionalidades y fixes entregados con harness OpenSpec/ADR
+- **Ingeniería:** 372 tests offline · CI en Python 3.11/3.12/3.13 · umbral de cobertura 85% · fingerprints de corrida deterministas · 58 funcionalidades y fixes entregados con harness OpenSpec/ADR
 - **Estado:** instrumento de investigación y educación; **no** es asesoría de inversión
 
 ![Dendrograma HRP de la corrida 2026-09-10](charts/hrp_dendrogram.png)
@@ -173,7 +173,7 @@ Las ocho gráficas se regeneran en cada corrida dentro de `charts/`; las copias 
 
 ## Ingeniería y verificación
 
-- **367 tests offline** (unitarios, propiedades con Hypothesis, integración y end-to-end). CI corre completamente sin red: el provider se inyecta y el seam de red está monkeypatcheado.
+- **372 tests offline** (unitarios, propiedades con Hypothesis, integración y end-to-end). CI corre completamente sin red: el provider se inyecta y el seam de red está monkeypatcheado.
 - **Verificación local en un comando** — `./init.sh`: sync de dependencias con `uv sync --frozen` (igual que CI), pytest con umbral de cobertura combinada del 85%, `ruff`, `pyright` y chequeo de compilación.
 - **Matriz CI** en Python 3.11 / 3.12 / 3.13 con `uv sync --frozen` (lockfile versionado) y artefactos de cobertura por versión.
 - **Determinismo**: fixtures con semillas independientes de `PYTHONHASHSEED`, fingerprint de reporte sin reloj de pared y convenciones numéricas fijadas.
@@ -185,7 +185,7 @@ Las ocho gráficas se regeneran en cada corrida dentro de `charts/`; las copias 
 Este proyecto se desarrolló con un agente de codificación de IA bajo un harness a nivel de repositorio diseñado para que la velocidad no sacrifique la verificabilidad:
 
 - [`AGENTS.md`](AGENTS.md) define el flujo de arranque, los límites de alcance y una definición de done que exige evidencia verde fresca antes de cerrar una funcionalidad.
-- [`feature_list.json`](feature_list.json) registra 51 funcionalidades entregadas con evidencia por sesión; [`openspec/`](openspec/) contiene 13 specs de capacidades y cambios archivados, y [`docs/adr/`](docs/adr/README.md) registra cada decisión metodológica.
+- [`feature_list.json`](feature_list.json) registra 58 funcionalidades entregadas con evidencia por sesión; [`openspec/`](openspec/) contiene 13 specs de capacidades y cambios archivados, y [`docs/adr/`](docs/adr/README.md) registra cada decisión metodológica.
 - Las revisiones adversariales con subagentes independientes han detectado defectos reales — por ejemplo, un guard que aceptaba folds walk-forward degenerados como válidos y un crash de generación de gráficas con tickers de historia corta, ambos corregidos con tests de regresión (feat-035, feat-037).
 
 El harness es parte del entregable: es lo que hace que una base de código asistida por IA sea revisable por un tercero.
