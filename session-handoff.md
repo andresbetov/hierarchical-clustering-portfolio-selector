@@ -2,16 +2,15 @@
 
 ## Current Objective
 
-- Goal: feat-056 — bump de GitHub Actions a node24 y pin del runner, en rama `chore/actions-bump`.
-- Current status: feat-054/055/verificación-codespace **mergeados y en `main`** (PR #85–#89) · suite **367 passed, TOTAL 89.18%** · codespace verificado (Python 3.12.11, uv 0.12.6, corrida viva con 6 activos, egress de Yahoo funciona) · feat-056 listo con CI verde.
-- Next: PR de feat-056 a `develop`. Sin pendientes de Codespaces salvo confirmar el JSON del reporte.
+- Goal: cierre de feat-054 — JSON del reporte confirmado, en rama `chore/handoff-codespace-json`.
+- Current status: feat-054 / 055 / 056 **mergeados**, `develop` → `main` mergeado (PR #88 `9b5a68b`) · suite **367 passed, TOTAL 89.18%** · **codespace verificado por completo** (toolchain, install, suite, corrida viva con 6 activos, 8 PNG, JSON 4245 bytes no truncado) · egress de Yahoo funciona al primer intento.
+- Next: PR de este cierre a `develop`. **Sin pendientes de Codespaces.**
 
 ## Files Changed (working tree)
 
-- `.github/workflows/ci.yml` — `runs-on: ubuntu-latest` → `ubuntu-24.04` (con comentario del porqué) + `checkout@v4→v5`, `setup-uv@v6→v7`, `upload-artifact@v4→v6`
-- `feature_list.json` (feat-056 done), `progress.md`, este `session-handoff.md`
+- `feature_list.json` (evidencia de feat-054: `PENDIENTE` → cierre con el JSON confirmado), `progress.md` (estado + What's Done + evidencia), este `session-handoff.md`
 
-Sin tocar: motor, `pyproject.toml`, `uv.lock`, `init.sh`, `.devcontainer/*`, `tests/`. Los comandos de CI, la matriz 3.11/3.12/3.13 y el gate 85 quedan idénticos.
+Sin tocar: motor, `.github/workflows/ci.yml`, `pyproject.toml`, `uv.lock`, `init.sh`, `.devcontainer/*`, `tests/`.
 
 ## Verification Evidence
 
@@ -23,16 +22,15 @@ Sin tocar: motor, `pyproject.toml`, `uv.lock`, `init.sh`, `.devcontainer/*`, `te
 | codespace suite | `./init.sh` | ✓ `Verification Complete` (exit 0 bajo `set -e`) |
 | codespace corrida viva | `uv run portfolio-run` | ✓ 6 activos, pesos 100.00%, datos vivos de Yahoo, sin rate limit |
 | codespace artefactos | `ls -1 charts/*.png \| wc -l` | ✓ 8 |
-| remoto | PR #85/#86/#87/#88 | ✓ todos mergeados; CI verde en `develop` **y** en `main` (run `36960721047`) |
-| pendiente | `ls -l reports/technical-report.json` | ⏳ se emite en `pipeline.py:443`, **después** de los charts (`:288-419`), así que los 8 PNG no lo prueban |
+| codespace reporte | `ls -l reports/technical-report.json` | ✓ 4245 bytes · **no truncado** (snapshot sin `walk_forward` en el formato del motor = 4223 B → delta +22 B = drift de ventana) |
+| remoto | PR #85–#90 | ✓ todos mergeados; CI verde en `develop` **y** en `main` (run `36960721047`) |
 
 ## Next Session Startup
 
-1. Confirmar `reports/technical-report.json` dentro del codespace (una sola línea) y cerrar el último pendiente.
-2. `fix/init-sh-fail-loud`: `init.sh:20-31` salta ruff/pyright en silencio si faltan los binarios → un verde puede ser parcial. Ojo: revisar si `system-verification` / `quality-gates` necesitan delta de spec.
-3. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
-4. Cuando se quiera adoptar el runner nuevo: `runs-on: ubuntu-26.04` (una palabra). `ubuntu-24.04` se retirará eventualmente.
-5. `develop` → `main` solo cuando lo indique el usuario (regla CONTRIBUTING).
+1. `fix/init-sh-fail-loud`: `init.sh:20-31` salta ruff/pyright en silencio si faltan los binarios → un verde puede ser parcial. Ojo: revisar si `system-verification` / `quality-gates` necesitan delta de spec.
+2. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
+3. Cuando se quiera adoptar el runner nuevo: `runs-on: ubuntu-26.04` (una palabra). `ubuntu-24.04` se retirará eventualmente.
+4. `develop` → `main` solo cuando lo indique el usuario (regla CONTRIBUTING).
 
 ## Lecciones de la sesión
 
@@ -45,7 +43,7 @@ Sin tocar: motor, `pyproject.toml`, `uv.lock`, `init.sh`, `.devcontainer/*`, `te
 
 ## Blockers / Risks
 
-- Verificación end-to-end del codespace: **hecha** (2026-10-01). Solo queda confirmar `reports/technical-report.json`.
+- Verificación end-to-end del codespace: **completa**. JSON confirmado (4245 bytes, no truncado).
 - Egress de Codespaces: **funciona al primer intento**, sin rate limit. El riesgo de IP de datacenter no se materializó; si reaparece, caché local + retry con backoff.
 - `init.sh:20-31` salta ruff/pyright silenciosamente si faltan los binarios → un verde puede ser parcial. Registrado en `progress.md:Blockers/Risks`; merece rama `fix/` propia.
 - `ubuntu-latest` migra a Ubuntu 26 el **2026-10-19**: bumpear `ci.yml` antes de esa fecha.

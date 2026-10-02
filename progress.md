@@ -2,12 +2,16 @@
 
 ## Current State
 
-**Last Updated:** 2026-10-01
-**Branch:** `chore/actions-bump` — feat-056 (Node 24 + pin del runner), pendiente PR a `develop`.
+**Last Updated:** 2026-10-02
+**Branch:** `chore/handoff-codespace-json` — cierre de feat-054 (JSON confirmado), pendiente PR a `develop`.
 
-feat-052 done (PR #80) · Fase 1 done (PR #81) · archive done (PR #82) · feat-054 done (PR #85 `b2452a3` + cierre PR #86 `31c2ed0`) · feat-055 done (PR #87 `d6a9b4e`) · verificación codespace done (PR #89 `c54bad8`) · `develop` → `main` mergeado (PR #88 `9b5a68b`). Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13.
+feat-052 done (PR #80) · Fase 1 done (PR #81) · archive done (PR #82) · feat-054 done (PR #85 `b2452a3` + cierre PR #86 `31c2ed0`) · feat-055 done (PR #87 `d6a9b4e`) · verificación codespace done (PR #89 `c54bad8`) · feat-056 bump de Actions done (PR #90 `3968401`) · `develop` → `main` mergeado (PR #88 `9b5a68b`). Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13.
 
 ## Status
+
+### What's Done (sesión 2026-10-02 — cierre feat-054: JSON del reporte confirmado)
+
+- [x] **Cierre de feat-054**: `reports/technical-report.json` = **4245 bytes** confirmado en el codespace, y verificado como **no truncado** reconstruyendo el snapshot versionado sin `walk_forward` en el formato del motor (`indent=2, sort_keys=True`, `report_json.py:68`): 4223 bytes → delta **+22 (+0.52%)** = drift de ventana, no pérdida de contenido. Con esto los 5 checks del codespace más el JSON quedan verificados y **feat-054 pasa a COMPLETO**. Sin cambios de código: solo `feature_list.json`, `progress.md`, `session-handoff.md`.
 
 ### What's Done (sesión 2026-10-01 — feat-056 bump de Actions + pin del runner)
 
@@ -15,7 +19,7 @@ feat-052 done (PR #80) · Fase 1 done (PR #81) · archive done (PR #82) · feat-
 
 ### What's Done (sesión 2026-10-01 — verificación Codespaces end-to-end)
 
-- [x] **Codespaces verificado sobre `main` @ `9b5a68b`** (check manual que ningún agente podía hacer): Python `3.12.11`, uv `0.12.6 (x86_64-unknown-linux-musl)`, `.venv` presente, `uv lock --check` exit 0, `./init.sh` exit 0, `uv run portfolio-run` → 6 activos (JNJ/JPM/CVX/ABBV/MRK/WMT) con pesos 100.00% desde datos vivos de Yahoo, `charts/*.png` = 8. **Cierra el único pendiente de feat-054.** Hallazgos: (1) la presencia de `uv 0.12.6` prueba que el Dockerfile custom se construyó (la imagen por defecto no trae uv); (2) base musl/Alpine con wheels de scipy/scikit-learn funcionando sin fallback; (3) egress de Yahoo **funciona al primer intento**, sin rate limit → riesgo de IP de datacenter no materializado.
+- [x] **Codespaces verificado sobre `main` @ `9b5a68b`** (check manual que ningún agente podía hacer): Python `3.12.11`, uv `0.12.6 (x86_64-unknown-linux-musl)`, `.venv` presente, `uv lock --check` exit 0, `./init.sh` exit 0, `uv run portfolio-run` → 6 activos (JNJ/JPM/CVX/ABBV/MRK/WMT) con pesos 100.00% desde datos vivos de Yahoo, `charts/*.png` = 8, `reports/technical-report.json` = 4245 bytes (no truncado: delta +22 bytes contra el snapshot sin `walk_forward` reconstruido en el formato del motor). **Cierra el único pendiente de feat-054, que queda COMPLETO.** Hallazgos: (1) la presencia de `uv 0.12.6` prueba que el Dockerfile custom se construyó (la imagen por defecto no trae uv); (2) base musl/Alpine con wheels de scipy/scikit-learn funcionando sin fallback; (3) egress de Yahoo **funciona al primer intento**, sin rate limit → riesgo de IP de datacenter no materializado.
 
 ### What's Done (sesión 2026-10-01 — feat-055 badge Codespaces)
 
@@ -62,7 +66,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Ningún feature abierto: feat-056 en rama `chore/actions-bump` (trackers done, pendiente PR a `develop`). Siguiente: `fix/init-sh-fail-loud` o candidatos v0.2.0 del backlog._
+_Ningún feature abierto: cierre de feat-054 en rama `chore/handoff-codespace-json` (trackers done, pendiente PR a `develop`)._
 
 ### What's Done (épico Reporte técnico JSON — feat-043..051, cerrado)
 
@@ -105,7 +109,7 @@ _Ningún feature abierto: feat-056 en rama `chore/actions-bump` (trackers done, 
 ## Evidence of Completion
 
 - feat-056: `./init.sh` FRESCO exit 0 en `chore/actions-bump` (367 passed, TOTAL 89.18% idéntico al baseline, `All checks passed!`, `pyright 0`, `compileall OK`) · diff de 3 `uses:` + `runs-on` + 3 líneas de comentario en `ci.yml`, sin tocar comandos ni matriz · runtimes verificados por fetch directo de `action.yml` (checkout v5 / setup-uv v7 / upload-artifact v6 = `runs.using: node24`) · CI verde en la matriz 3.11/3.12/3.13
-- **Codespaces end-to-end (2026-10-01, cierra el check manual de feat-054)**: codespace sobre `main` @ `9b5a68b` → Python `3.12.11`, uv `0.12.6 (x86_64-unknown-linux-musl)`, `.venv` presente, `uv lock --check` exit 0, `./init.sh` exit 0, `uv run portfolio-run` → 6 activos y pesos 100.00%, `charts/*.png` = 8. La existencia de uv 0.12.6 prueba que el Dockerfile custom se construyó (la imagen por defecto no incluye uv). Pendiente solo confirmar `reports/technical-report.json`.
+- **Codespaces end-to-end (2026-10-01/02, cierra el check manual de feat-054)**: codespace sobre `main` @ `9b5a68b` → Python `3.12.11`, uv `0.12.6 (x86_64-unknown-linux-musl)`, `.venv` presente, `uv lock --check` exit 0, `./init.sh` exit 0, `uv run portfolio-run` → 6 activos y pesos 100.00%, `charts/*.png` = 8, `reports/technical-report.json` = **4245 bytes**. JSON verificado como **no truncado**: el motor usa `indent=2, sort_keys=True` (`report_json.py:68`) y el snapshot versionado sin `walk_forward` (opt-in, 14176 de 30307 bytes) reconstruido en ese formato ocupa 4223 bytes → delta +22 (+0.52%) atribuible a la ventana 2026-09-10 → 2026-10-02. La existencia de uv 0.12.6 prueba que el Dockerfile custom se construyó (la imagen por defecto no incluye uv). **feat-054 COMPLETO.**
 - feat-055: `./init.sh` FRESCO exit 0 en `docs/codespaces-badge-placement` (367 passed, TOTAL 89.18% idéntico al baseline, `All checks passed!`, `pyright 0`, `compileall OK`) · diff +1 línea `README.md` / +1 línea `README.es.md`, simétrico · verificación de no-parametrizabilidad: `badge.svg` con `?style=flat` / `?color=blue` / `?logo=github` devuelve md5 idéntico al baseline
 - feat-054: `./init.sh` FRESCO exit 0 en `chore/codespaces-devcontainer` (367 passed, TOTAL 89.18% idéntico al baseline → delta cero, `All checks passed!`, `pyright 0 errors, 0 warnings, 0 informations`, `compileall OK`; ruff y pyright ejecutados, no skipped) · 7 archivos, cero `.py` · `git diff` confirma `pyproject.toml`/`init.sh`/`uv.lock`/`ci.yml`/`portfolio_engine/` sin tocar · PR #85 squash-mergeado a `develop` (b2452a3) con CI verde `quality (3.11) pass 1m4s` / `(3.12) pass 1m5s` / `(3.13) pass 1m11s` · cierre de trackers PR #86 (31c2ed0) · ramas borradas local y remoto
 - feat-042: TDD rojo (`0.5 == 0.3`, `relaxed 1 == 0`) → verde · `./init.sh` exit 0 233 passed (230+3: contrato + 2 WF) cobertura 85.37% · `openspec validate` change + `--all` 13/13 · ADR-007 Aceptado · rama `feat/threshold-recalibration` sin push (veto)
