@@ -3,11 +3,15 @@
 ## Current State
 
 **Last Updated:** 2026-10-02
-**Branch:** `chore/handoff-codespace-json` — cierre de feat-054 (JSON confirmado), pendiente PR a `develop`.
+**Branch:** `fix/init-sh-fail-loud` — feat-057 (init.sh fail-loud), pendiente PR a `develop`.
 
-feat-052 done (PR #80) · Fase 1 done (PR #81) · archive done (PR #82) · feat-054 done (PR #85 `b2452a3` + cierre PR #86 `31c2ed0`) · feat-055 done (PR #87 `d6a9b4e`) · verificación codespace done (PR #89 `c54bad8`) · feat-056 bump de Actions done (PR #90 `3968401`) · `develop` → `main` mergeado (PR #88 `9b5a68b`). Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13.
+feat-052 done (PR #80) · Fase 1 done (PR #81) · archive done (PR #82) · feat-054/055/056 done (PR #85–#90) · verificación codespace + cierre feat-054 done (PR #89, #91 `756f5a7`) · `develop` → `main` mergeado (PR #88 `9b5a68b`). Suite `./init.sh` **372 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13.
 
 ## Status
+
+### What's Done (sesión 2026-10-02 — feat-057 init.sh fail-loud)
+
+- [x] **feat-057** (rama `fix/init-sh-fail-loud`): corrige el **falso verde** del gate único. `init.sh` imprimía *"ruff/pyright not installed — skipping"* y salía con **exit 0**, así que reportaba éxito sin correr 2 de sus 5 checks; demostrado con un stub de uv (`Verification Complete` + EXIT 0). Los dos `else` internos ahora son **fallo duro (exit 1)** con mensaje a stderr que cita la spec. **Bug de cumplimiento, no cambio de spec**: `quality-gates` ya prohibe omitir un gate *"si sus herramientas están instaladas por uv"*, y tras `uv sync --frozen` lo están. Intactos por spec: sin uv → exit 0, pytest exit 5 → tolerado. +5 tests en `tests/test_init_sh.py` (subprocess con uv stubbeado); los 2 de gate faltante **fallan contra el `init.sh` de develop** y pasan contra el nuevo. `./init.sh` exit 0, 372 passed, TOTAL 89.18%.
 
 ### What's Done (sesión 2026-10-02 — cierre feat-054: JSON del reporte confirmado)
 
@@ -66,7 +70,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Ningún feature abierto: cierre de feat-054 en rama `chore/handoff-codespace-json` (trackers done, pendiente PR a `develop`)._
+_Ningún feature abierto: feat-057 en rama `fix/init-sh-fail-loud` (trackers done, pendiente PR a `develop`)._
 
 ### What's Done (épico Reporte técnico JSON — feat-043..051, cerrado)
 
@@ -104,10 +108,12 @@ _Ningún feature abierto: cierre de feat-054 en rama `chore/handoff-codespace-js
 - Avisos de Actions: **resueltos en feat-056**. Node20→24 (checkout v5 / setup-uv v7 / upload-artifact v6, los mínimos con `runs.using: node24`) y la migración de `ubuntu-latest` a Ubuntu 26 del 2026-10-19 (mitigada con `runs-on: ubuntu-24.04`). Pendiente a futuro: `ubuntu-24.04` eventualmente se retira; y subir a `ubuntu-26.04` a propósito es un cambio de una palabra cuando se quiera adoptar.
 - Egress de Codespaces: **RESUELTO — funciona al primer intento** (verificado 2026-10-01 en codespace sobre `main` @ `9b5a68b`; 6 activos con datos vivos de Yahoo, sin rate limit). El riesgo de IP de datacenter queda como riesgo de cola no materializado; si reaparece, la mitigación sigue siendo caché local + retry con backoff.
 - Base musl/Alpine en Codespaces: las wheels de scipy/scikit-learn funcionan sin fallback, así que la portabilidad no depende de glibc.
-- `init.sh:20-31` salta ruff y pyright silenciosamente si faltan los binarios, así que un run verde puede ser una verificación parcial. Merece rama `fix/` propia (`fix/init-sh-fail-loud`).
+- **init.sh fail-loud: RESUELTO en feat-057.** Antes saltaba ruff y pyright en silencio con exit 0 (falso verde); ahora un gate faltante es fallo duro. Intactos por spec: sin uv → exit 0, pytest exit 5 → tolerado.
 
 ## Evidence of Completion
 
+- feat-057: +5 tests (`tests/test_init_sh.py`) · **prueba de guardián**: los 2 tests de gate faltante fallan contra el `init.sh` de develop (`assert 0 != 0`) y pasan contra el nuevo · `./init.sh` FRESCO exit 0 (372 passed, TOTAL 89.18% idéntico al baseline; el test nuevo cubre bash, no `portfolio_engine`, por eso no altera cobertura) · regresión demostrada antes del fix con stub de uv (`Verification Complete` + EXIT 0 con ruff y pyright ausentes) · sin delta de OpenSpec (la spec `quality-gates` ya exigía el comportamiento)
+- **Conteo de tests desactualizado**: 367 → 372 con feat-057. `README.md` ("367 offline tests") y `CONTRIBUTING.md` ("367 tests … 2026-09-10") quedaron desfasados; ambos son claims de cara al revisor y no se tocaron en feat-057. Requiere decisión aparte.
 - feat-056: `./init.sh` FRESCO exit 0 en `chore/actions-bump` (367 passed, TOTAL 89.18% idéntico al baseline, `All checks passed!`, `pyright 0`, `compileall OK`) · diff de 3 `uses:` + `runs-on` + 3 líneas de comentario en `ci.yml`, sin tocar comandos ni matriz · runtimes verificados por fetch directo de `action.yml` (checkout v5 / setup-uv v7 / upload-artifact v6 = `runs.using: node24`) · CI verde en la matriz 3.11/3.12/3.13
 - **Codespaces end-to-end (2026-10-01/02, cierra el check manual de feat-054)**: codespace sobre `main` @ `9b5a68b` → Python `3.12.11`, uv `0.12.6 (x86_64-unknown-linux-musl)`, `.venv` presente, `uv lock --check` exit 0, `./init.sh` exit 0, `uv run portfolio-run` → 6 activos y pesos 100.00%, `charts/*.png` = 8, `reports/technical-report.json` = **4245 bytes**. JSON verificado como **no truncado**: el motor usa `indent=2, sort_keys=True` (`report_json.py:68`) y el snapshot versionado sin `walk_forward` (opt-in, 14176 de 30307 bytes) reconstruido en ese formato ocupa 4223 bytes → delta +22 (+0.52%) atribuible a la ventana 2026-09-10 → 2026-10-02. La existencia de uv 0.12.6 prueba que el Dockerfile custom se construyó (la imagen por defecto no incluye uv). **feat-054 COMPLETO.**
 - feat-055: `./init.sh` FRESCO exit 0 en `docs/codespaces-badge-placement` (367 passed, TOTAL 89.18% idéntico al baseline, `All checks passed!`, `pyright 0`, `compileall OK`) · diff +1 línea `README.md` / +1 línea `README.es.md`, simétrico · verificación de no-parametrizabilidad: `badge.svg` con `?style=flat` / `?color=blue` / `?logo=github` devuelve md5 idéntico al baseline
