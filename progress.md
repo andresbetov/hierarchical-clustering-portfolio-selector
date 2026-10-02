@@ -3,11 +3,15 @@
 ## Current State
 
 **Last Updated:** 2026-10-01
-**Branch:** `chore/codespace-verified` — verificación end-to-end del codespace (cierra feat-054), pendiente PR a `develop`.
+**Branch:** `chore/actions-bump` — feat-056 (Node 24 + pin del runner), pendiente PR a `develop`.
 
-feat-052 done (PR #80) · Fase 1 done (PR #81) · archive done (PR #82) · feat-054 done (PR #85 `b2452a3` + cierre PR #86 `31c2ed0`) · feat-055 done (PR #87 `d6a9b4e`) · **`develop` → `main` mergeado (PR #88 `9b5a68b`)**, CI verde en 3.11/3.12/3.13 tanto en `develop` como en `main` (run `36960721047`). Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13.
+feat-052 done (PR #80) · Fase 1 done (PR #81) · archive done (PR #82) · feat-054 done (PR #85 `b2452a3` + cierre PR #86 `31c2ed0`) · feat-055 done (PR #87 `d6a9b4e`) · verificación codespace done (PR #89 `c54bad8`) · `develop` → `main` mergeado (PR #88 `9b5a68b`). Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13.
 
 ## Status
+
+### What's Done (sesión 2026-10-01 — feat-056 bump de Actions + pin del runner)
+
+- [x] **feat-056** (rama `chore/actions-bump`): `runs-on` de `ubuntu-latest` a `ubuntu-24.04` (la etiqueta `latest` migra a Ubuntu 26 el **2026-10-19**, `actions/runner-images#14748`, y ese cambio habría tomado el gate sin supervisión) + las tres acciones al **mínimo** que ya apunta a node24, verificado leyendo `runs.using` de cada `action.yml`: `checkout@v4→v5`, `setup-uv@v6→v7`, `upload-artifact@v4→v6`. No se sube a las últimas (checkout v7 / upload-artifact v7 / setup-uv v10) porque el cambio mínimo que limpia el aviso es el de menor riesgo. Sin delta de motor ni de gates; sin OpenSpec (ninguna spec viva pinneaba runner ni acciones). CI verde en 3.11/3.12/3.13.
 
 ### What's Done (sesión 2026-10-01 — verificación Codespaces end-to-end)
 
@@ -58,7 +62,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Ningún feature abierto: verificación de codespace en rama `chore/codespace-verified` (trackers done, pendiente PR a `develop`). Siguiente: candidatos v0.2.0 del backlog._
+_Ningún feature abierto: feat-056 en rama `chore/actions-bump` (trackers done, pendiente PR a `develop`). Siguiente: `fix/init-sh-fail-loud` o candidatos v0.2.0 del backlog._
 
 ### What's Done (épico Reporte técnico JSON — feat-043..051, cerrado)
 
@@ -92,15 +96,15 @@ _Ningún feature abierto: verificación de codespace en rama `chore/codespace-ve
 ## Blockers / Risks
 
 - pyright baja a `basic`: strict es progresión futura (registrar como feature dedicado si se quiere formalizar).
-- aviso cosmético Node20→24 en GitHub Actions (bump futuro).
 - Terminología del gate corregida (PR #54): el umbral 85 compara contra el TOTAL combinado de coverage.py, no "85% branch" (historial feat-040 usa la etiqueta antigua — registro histórico, no corregido retroactivamente).
-- Egress de Codespaces: **RESUELTO — funciona al primer intento** (verificado 2026-10-01 en codespace sobre `main` @ 9b5a68b; 6 activos con datos vivos de Yahoo, sin rate limit). El riesgo de IP de datacenter queda como riesgo de cola no materializado; si reaparece, la mitigación sigue siendo caché local + retry con backoff.
+- Avisos de Actions: **resueltos en feat-056**. Node20→24 (checkout v5 / setup-uv v7 / upload-artifact v6, los mínimos con `runs.using: node24`) y la migración de `ubuntu-latest` a Ubuntu 26 del 2026-10-19 (mitigada con `runs-on: ubuntu-24.04`). Pendiente a futuro: `ubuntu-24.04` eventualmente se retira; y subir a `ubuntu-26.04` a propósito es un cambio de una palabra cuando se quiera adoptar.
+- Egress de Codespaces: **RESUELTO — funciona al primer intento** (verificado 2026-10-01 en codespace sobre `main` @ `9b5a68b`; 6 activos con datos vivos de Yahoo, sin rate limit). El riesgo de IP de datacenter queda como riesgo de cola no materializado; si reaparece, la mitigación sigue siendo caché local + retry con backoff.
 - Base musl/Alpine en Codespaces: las wheels de scipy/scikit-learn funcionan sin fallback, así que la portabilidad no depende de glibc.
-- `init.sh:20-31` salta ruff y pyright silenciosamente si faltan los binarios, así que un run verde puede ser una verificación parcial. Fuera del scope de feat-054; merece rama `fix/` propia.
-- `ubuntu-latest` migra a Ubuntu 26 el 2026-10-19 (aviso de `actions/runner-images#14748`): bumpear antes de esa fecha, no es cosmético.
+- `init.sh:20-31` salta ruff y pyright silenciosamente si faltan los binarios, así que un run verde puede ser una verificación parcial. Merece rama `fix/` propia (`fix/init-sh-fail-loud`).
 
 ## Evidence of Completion
 
+- feat-056: `./init.sh` FRESCO exit 0 en `chore/actions-bump` (367 passed, TOTAL 89.18% idéntico al baseline, `All checks passed!`, `pyright 0`, `compileall OK`) · diff de 3 `uses:` + `runs-on` + 3 líneas de comentario en `ci.yml`, sin tocar comandos ni matriz · runtimes verificados por fetch directo de `action.yml` (checkout v5 / setup-uv v7 / upload-artifact v6 = `runs.using: node24`) · CI verde en la matriz 3.11/3.12/3.13
 - **Codespaces end-to-end (2026-10-01, cierra el check manual de feat-054)**: codespace sobre `main` @ `9b5a68b` → Python `3.12.11`, uv `0.12.6 (x86_64-unknown-linux-musl)`, `.venv` presente, `uv lock --check` exit 0, `./init.sh` exit 0, `uv run portfolio-run` → 6 activos y pesos 100.00%, `charts/*.png` = 8. La existencia de uv 0.12.6 prueba que el Dockerfile custom se construyó (la imagen por defecto no incluye uv). Pendiente solo confirmar `reports/technical-report.json`.
 - feat-055: `./init.sh` FRESCO exit 0 en `docs/codespaces-badge-placement` (367 passed, TOTAL 89.18% idéntico al baseline, `All checks passed!`, `pyright 0`, `compileall OK`) · diff +1 línea `README.md` / +1 línea `README.es.md`, simétrico · verificación de no-parametrizabilidad: `badge.svg` con `?style=flat` / `?color=blue` / `?logo=github` devuelve md5 idéntico al baseline
 - feat-054: `./init.sh` FRESCO exit 0 en `chore/codespaces-devcontainer` (367 passed, TOTAL 89.18% idéntico al baseline → delta cero, `All checks passed!`, `pyright 0 errors, 0 warnings, 0 informations`, `compileall OK`; ruff y pyright ejecutados, no skipped) · 7 archivos, cero `.py` · `git diff` confirma `pyproject.toml`/`init.sh`/`uv.lock`/`ci.yml`/`portfolio_engine/` sin tocar · PR #85 squash-mergeado a `develop` (b2452a3) con CI verde `quality (3.11) pass 1m4s` / `(3.12) pass 1m5s` / `(3.13) pass 1m11s` · cierre de trackers PR #86 (31c2ed0) · ramas borradas local y remoto
