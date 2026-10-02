@@ -2,33 +2,36 @@
 
 ## Current Objective
 
-- Goal: feat-055 — badge de Codespaces en línea propia, en rama `docs/codespaces-badge-placement`.
-- Current status: feat-054 done y mergeado (PR #85 `b2452a3` + cierre PR #86 `31c2ed0`) · suite **367 passed, TOTAL 89.18%** · feat-055 done local con evidencia fresca · sin delta de motor.
-- Next: PR de feat-055 a `develop`. **Pendiente de decisión del usuario: `develop` → `main` no autorizado por ahora.**
+- Goal: registrar la verificación end-to-end del codespace (cierra el último pendiente de feat-054), en rama `chore/codespace-verified`.
+- Current status: feat-054 y feat-055 **mergeados a `main`** (PR #85 `b2452a3`, #86 `31c2ed0`, #87 `d6a9b4e`, #88 `9b5a68b`) · suite **367 passed, TOTAL 89.18%** · **codespace verificado sobre `main`**: Python 3.12.11, uv 0.12.6 (musl), `./init.sh` exit 0, corrida viva con 6 activos, 8 PNG · egress de Yahoo funciona.
+- Next: PR de este cierre a `develop`. `develop` → `main` ya está hecho (PR #88); futuras promociones solo cuando lo indique el usuario.
 
 ## Files Changed (working tree)
 
-- `README.md` + `README.es.md` — badge de Codespaces separado de la fila de badges (+1 línea en blanco cada uno)
-- `feature_list.json` (feat-055 done), `progress.md`, este `session-handoff.md`
+- `feature_list.json` (evidencia de codespace en feat-054), `progress.md` (estado + evidencia + egress resuelto), este `session-handoff.md`
 
-Los archivos de feat-054 (`.devcontainer/*`) ya están en `develop`. Sin tocar: `pyproject.toml`, `init.sh`, `uv.lock`, `ci.yml`, `portfolio_engine/`, `tests/`.
+Sin tocar: `.devcontainer/*` (ya en `main`), `pyproject.toml`, `init.sh`, `uv.lock`, `ci.yml`, `portfolio_engine/`, `tests/`.
 
 ## Verification Evidence
 
 | Check | Command | Result |
 |---|---|---|
-| suite | `./init.sh` | ✓ exit 0 · 367 passed · TOTAL 89.18% (idéntico al baseline → delta cero) · `All checks passed!` · `pyright 0` · `compileall OK` |
-| tools | idem | ✓ ruff y pyright **ejecutados**, no skipped |
-| diff | `git diff` | ✓ cero `.py` añadidos; motor y gates sin cambios |
-| remoto | PR #85 | ✓ squash-mergeado a `develop` (b2452a3) · CI `quality (3.11)` pass · `(3.12)` pass · `(3.13)` pass · rama borrada local y remoto |
-| pendiente | Codespaces real | ⏳ abrir Code ▾ → Codespaces y correr `uv run portfolio-run` (8 PNG + JSON) — un codespace no se puede provisions desde este entorno |
+| suite local | `./init.sh` | ✓ 367 passed, TOTAL 89.18% · `All checks passed!` · `pyright 0` |
+| codespace toolchain | `python --version` · `uv --version` | ✓ 3.12.11 · uv **0.12.6** (musl) → prueba que el Dockerfile custom se construyó |
+| codespace install | `.venv` + `uv lock --check` | ✓ `.venv` presente (postCreateCommand corrió) · lock exit 0 |
+| codespace suite | `./init.sh` | ✓ `Verification Complete` (exit 0 bajo `set -e`) |
+| codespace corrida viva | `uv run portfolio-run` | ✓ 6 activos, pesos 100.00%, datos vivos de Yahoo, sin rate limit |
+| codespace artefactos | `ls -1 charts/*.png \| wc -l` | ✓ 8 |
+| remoto | PR #85/#86/#87/#88 | ✓ todos mergeados; CI verde en `develop` **y** en `main` (run `36960721047`) |
+| pendiente | `ls -l reports/technical-report.json` | ⏳ se emite en `pipeline.py:443`, **después** de los charts (`:288-419`), así que los 8 PNG no lo prueban |
 
 ## Next Session Startup
 
-1. PR de feat-055 a `develop` (CI en matriz 3.11/3.12/3.13, squash, borrar rama).
-2. **Decisión abierta del usuario:** `develop` → `main`. Sin eso, el badge de Codespaces apunta a `codespaces.new/.../hierarchical-clustering-portfolio-selector`, que resuelve a la rama por defecto `main` — y `main` **no tiene** `.devcontainer/`, así que un codespace creado desde el badge arranca en la imagen genérica sin uv. workarounds: (a) mergear `develop` → `main`, (b) fijar el badge a `codespaces.new/OWNER/REPO/tree/develop`, (c) quitar el badge.
-3. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
-4. `develop → main` general solo cuando lo indique el usuario (regla CONTRIBUTING).
+1. Confirmar `reports/technical-report.json` dentro del codespace (una sola línea) y cerrar el último pendiente.
+2. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
+3. `chore/actions-bump`: `ubuntu-latest` → Ubuntu 26 el **2026-10-19** (`actions/runner-images#14748`) y Node20→24.
+4. `fix/init-sh-fail-loud`: `init.sh:20-31` salta ruff/pyright en silencio si faltan los binarios.
+5. `develop` → `main` solo cuando lo indique el usuario (regla CONTRIBUTING).
 
 ## Lecciones de la sesión
 
@@ -36,9 +39,12 @@ Los archivos de feat-054 (`.devcontainer/*`) ya están en `develop`. Sin tocar: 
 2. El criterio que resuelve casi todas las decisiones de plataforma es si la plataforma respeta el contrato ya existente (`uv.lock` + `uv sync --frozen`): un VPS o un devcontainer lo ejecutan tal cual; Lambda exige `uv export`; Colab/Kaggle tratan el filesystem como estado descartable.
 3. Seguir CONTRIBUTING + AGENTS.md expande 2 archivos de config a 7 con trackers. Es el harness funcionando, pero conviene mantener las entradas de `progress.md`/`feature_list.json` tersas: son superficies que lee una máquina — lo que lee un revisor es el README, que crece 1 línea.
 
+4. Los errores `^[[200~` y `ambiguous redirect` al pegar bloques en el terminal del codespace son **bracketed paste**, no fallos del proyecto: pegar de a una línea.
+5. La presencia de `uv --version` es la prueba más barata de que el devcontainer se aplicó, porque la imagen por defecto de Codespaces no incluye uv. Y que la base sea musl/Alpine con wheels de scipy/scikit-learn funcionando es un resultado de portabilidad más fuerte que una imagen glibc.
+
 ## Blockers / Risks
 
-- Verificación end-to-end del codespace pendiente de forma manual (ver tabla de evidencia): este entorno no puede crear un codespace.
-- Egress de Codespaces = IP de datacenter compartida; `data/cache/` gitignored implica descarga a Yahoo en la primera corrida. Evidencia positiva, riesgo de cola igual al de los runners de Actions.
-- `develop → main` pendiente por regla CONTRIBUTING (no es blocker).
+- Verificación end-to-end del codespace: **hecha** (2026-10-01). Solo queda confirmar `reports/technical-report.json`.
+- Egress de Codespaces: **funciona al primer intento**, sin rate limit. El riesgo de IP de datacenter no se materializó; si reaparece, caché local + retry con backoff.
 - `init.sh:20-31` salta ruff/pyright silenciosamente si faltan los binarios → un verde puede ser parcial. Registrado en `progress.md:Blockers/Risks`; merece rama `fix/` propia.
+- `ubuntu-latest` migra a Ubuntu 26 el **2026-10-19**: bumpear `ci.yml` antes de esa fecha.

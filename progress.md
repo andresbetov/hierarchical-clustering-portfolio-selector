@@ -3,11 +3,15 @@
 ## Current State
 
 **Last Updated:** 2026-10-01
-**Branch:** `docs/codespaces-badge-placement` — feat-055 (badge de Codespaces en linea propia), pendiente PR a `develop`.
+**Branch:** `chore/codespace-verified` — verificación end-to-end del codespace (cierra feat-054), pendiente PR a `develop`.
 
-feat-052 done (PR #80, 74b753b) · Fase 1 done (PR #81, cd02d49) · archive done (PR #82, 5924c95) · feat-054 done (PR #85 b2452a3 + cierre PR #86 31c2ed0), todo CI verde matriz 3.11/3.12/3.13. Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13.
+feat-052 done (PR #80) · Fase 1 done (PR #81) · archive done (PR #82) · feat-054 done (PR #85 `b2452a3` + cierre PR #86 `31c2ed0`) · feat-055 done (PR #87 `d6a9b4e`) · **`develop` → `main` mergeado (PR #88 `9b5a68b`)**, CI verde en 3.11/3.12/3.13 tanto en `develop` como en `main` (run `36960721047`). Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13.
 
 ## Status
+
+### What's Done (sesión 2026-10-01 — verificación Codespaces end-to-end)
+
+- [x] **Codespaces verificado sobre `main` @ `9b5a68b`** (check manual que ningún agente podía hacer): Python `3.12.11`, uv `0.12.6 (x86_64-unknown-linux-musl)`, `.venv` presente, `uv lock --check` exit 0, `./init.sh` exit 0, `uv run portfolio-run` → 6 activos (JNJ/JPM/CVX/ABBV/MRK/WMT) con pesos 100.00% desde datos vivos de Yahoo, `charts/*.png` = 8. **Cierra el único pendiente de feat-054.** Hallazgos: (1) la presencia de `uv 0.12.6` prueba que el Dockerfile custom se construyó (la imagen por defecto no trae uv); (2) base musl/Alpine con wheels de scipy/scikit-learn funcionando sin fallback; (3) egress de Yahoo **funciona al primer intento**, sin rate limit → riesgo de IP de datacenter no materializado.
 
 ### What's Done (sesión 2026-10-01 — feat-055 badge Codespaces)
 
@@ -54,7 +58,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Ningún feature abierto: feat-055 en rama `docs/codespaces-badge-placement` (trackers done, pendiente PR a `develop`). Siguiente: candidatos v0.2.0 del backlog._
+_Ningún feature abierto: verificación de codespace en rama `chore/codespace-verified` (trackers done, pendiente PR a `develop`). Siguiente: candidatos v0.2.0 del backlog._
 
 ### What's Done (épico Reporte técnico JSON — feat-043..051, cerrado)
 
@@ -90,11 +94,14 @@ _Ningún feature abierto: feat-055 en rama `docs/codespaces-badge-placement` (tr
 - pyright baja a `basic`: strict es progresión futura (registrar como feature dedicado si se quiere formalizar).
 - aviso cosmético Node20→24 en GitHub Actions (bump futuro).
 - Terminología del gate corregida (PR #54): el umbral 85 compara contra el TOTAL combinado de coverage.py, no "85% branch" (historial feat-040 usa la etiqueta antigua — registro histórico, no corregido retroactivamente).
-- Egress de Codespaces: `data/cache/` está gitignored, así que la primera corrida descarga de Yahoo (~1 min) desde una IP de datacenter compartida. Evidencia positiva de que yfinance funciona en Codespaces (un repo extrajo 5 años de datos ahí; 0 reportes de fallo en 44 hits de issues), pero es el mismo riesgo de cola que los runners de Actions. Mitigación si molesta: caché local + retry con backoff (futuro feature, no en scope de feat-054).
+- Egress de Codespaces: **RESUELTO — funciona al primer intento** (verificado 2026-10-01 en codespace sobre `main` @ 9b5a68b; 6 activos con datos vivos de Yahoo, sin rate limit). El riesgo de IP de datacenter queda como riesgo de cola no materializado; si reaparece, la mitigación sigue siendo caché local + retry con backoff.
+- Base musl/Alpine en Codespaces: las wheels de scipy/scikit-learn funcionan sin fallback, así que la portabilidad no depende de glibc.
 - `init.sh:20-31` salta ruff y pyright silenciosamente si faltan los binarios, así que un run verde puede ser una verificación parcial. Fuera del scope de feat-054; merece rama `fix/` propia.
+- `ubuntu-latest` migra a Ubuntu 26 el 2026-10-19 (aviso de `actions/runner-images#14748`): bumpear antes de esa fecha, no es cosmético.
 
 ## Evidence of Completion
 
+- **Codespaces end-to-end (2026-10-01, cierra el check manual de feat-054)**: codespace sobre `main` @ `9b5a68b` → Python `3.12.11`, uv `0.12.6 (x86_64-unknown-linux-musl)`, `.venv` presente, `uv lock --check` exit 0, `./init.sh` exit 0, `uv run portfolio-run` → 6 activos y pesos 100.00%, `charts/*.png` = 8. La existencia de uv 0.12.6 prueba que el Dockerfile custom se construyó (la imagen por defecto no incluye uv). Pendiente solo confirmar `reports/technical-report.json`.
 - feat-055: `./init.sh` FRESCO exit 0 en `docs/codespaces-badge-placement` (367 passed, TOTAL 89.18% idéntico al baseline, `All checks passed!`, `pyright 0`, `compileall OK`) · diff +1 línea `README.md` / +1 línea `README.es.md`, simétrico · verificación de no-parametrizabilidad: `badge.svg` con `?style=flat` / `?color=blue` / `?logo=github` devuelve md5 idéntico al baseline
 - feat-054: `./init.sh` FRESCO exit 0 en `chore/codespaces-devcontainer` (367 passed, TOTAL 89.18% idéntico al baseline → delta cero, `All checks passed!`, `pyright 0 errors, 0 warnings, 0 informations`, `compileall OK`; ruff y pyright ejecutados, no skipped) · 7 archivos, cero `.py` · `git diff` confirma `pyproject.toml`/`init.sh`/`uv.lock`/`ci.yml`/`portfolio_engine/` sin tocar · PR #85 squash-mergeado a `develop` (b2452a3) con CI verde `quality (3.11) pass 1m4s` / `(3.12) pass 1m5s` / `(3.13) pass 1m11s` · cierre de trackers PR #86 (31c2ed0) · ramas borradas local y remoto
 - feat-042: TDD rojo (`0.5 == 0.3`, `relaxed 1 == 0`) → verde · `./init.sh` exit 0 233 passed (230+3: contrato + 2 WF) cobertura 85.37% · `openspec validate` change + `--all` 13/13 · ADR-007 Aceptado · rama `feat/threshold-recalibration` sin push (veto)
