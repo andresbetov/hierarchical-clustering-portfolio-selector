@@ -2,17 +2,15 @@
 
 ## Current Objective
 
-- Goal: cierre de feat-054 — devcontainer de GitHub Codespaces para onboarding sin instalación local, en rama `chore/codespaces-devcontainer`.
-- Current status: feat-053 done (PR #82, 5924c95) · suite **367 passed, TOTAL 89.18%** · feat-054 done local con evidencia fresca · sin delta de motor.
-- Next: commit + push + PR a `develop` (CI, squash, borrar rama).
+- Goal: cierre de feat-054 — devcontainer de GitHub Codespaces para onboarding sin instalación local, en rama `chore/handoff-feat054-closure`.
+- Current status: feat-053 done (PR #82, 5924c95) · suite **367 passed, TOTAL 89.18%** · feat-054 done y **mergeado (PR #85, b2452a3)**, CI verde 3.11/3.12/3.13 · sin delta de motor.
+- Next: PR de cierre de trackers a `develop`; después, candidatos v0.2.0.
 
 ## Files Changed (working tree)
 
-- `.devcontainer/Dockerfile` + `.devcontainer/devcontainer.json` (nuevos) — base `devcontainers/python:1-3.12` + uv 0.12.6 fijado; `postCreateCommand: uv sync --frozen`, `waitFor: postCreateCommand`
-- `README.md` + `README.es.md` — badge "Open in GitHub Codespaces" (1 línea cada uno)
-- `feature_list.json` (feat-054 done), `progress.md`, `session-handoff.md`
+- `progress.md` + `feature_list.json` (evidencia de cierre: PR #85, b2452a3, CI verde, rama borrada) + este `session-handoff.md`
 
-Sin tocar: `pyproject.toml`, `init.sh`, `uv.lock`, `ci.yml`, `portfolio_engine/`, `tests/`.
+Los archivos del feature (`.devcontainer/*`, READMEs) ya están en `develop` vía PR #85. Sin tocar: `pyproject.toml`, `init.sh`, `uv.lock`, `ci.yml`, `portfolio_engine/`, `tests/`.
 
 ## Verification Evidence
 
@@ -21,13 +19,14 @@ Sin tocar: `pyproject.toml`, `init.sh`, `uv.lock`, `ci.yml`, `portfolio_engine/`
 | suite | `./init.sh` | ✓ exit 0 · 367 passed · TOTAL 89.18% (idéntico al baseline → delta cero) · `All checks passed!` · `pyright 0` · `compileall OK` |
 | tools | idem | ✓ ruff y pyright **ejecutados**, no skipped |
 | diff | `git diff` | ✓ cero `.py` añadidos; motor y gates sin cambios |
-| pendiente | Codespaces real | ⏳ abrir Code ▾ → Codespaces y correr `uv run portfolio-run` (8 PNG + JSON) — el codespace no se puede provisions desde este entorno |
+| remoto | PR #85 | ✓ squash-mergeado a `develop` (b2452a3) · CI `quality (3.11)` pass · `(3.12)` pass · `(3.13)` pass · rama borrada local y remoto |
+| pendiente | Codespaces real | ⏳ abrir Code ▾ → Codespaces y correr `uv run portfolio-run` (8 PNG + JSON) — un codespace no se puede provisions desde este entorno |
 
 ## Next Session Startup
 
-1. PR `chore/codespaces-devcontainer` → `develop` (CI en matriz 3.11/3.12/3.13, squash, borrar rama); verificar `git status` limpio y `./init.sh` en verde.
-2. Confirmar manualmente el codespace: **Code ▾ → Codespaces** → `uv run portfolio-run` → 8 PNG en `charts/` + `reports/technical-report.json`.
-3. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
+1. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
+2. Confirmar manualmente el codespace (una vez, no bloqueante): **Code ▾ → Codespaces** → `uv run portfolio-run` → 8 PNG en `charts/` + `reports/technical-report.json`.
+3. `init.sh` con `uv sync --frozen` ya está; queda unificar conteo de tests en artefactos vivos y versionar el script de evidencia de ADR 007.
 4. `develop → main` solo cuando lo indique el usuario (regla CONTRIBUTING).
 
 ## Lecciones de la sesión
