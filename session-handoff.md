@@ -30,9 +30,8 @@ Sin cambios de código ni de motor.
 ## Next Session Startup
 
 1. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
-2. **Los conteos duros de docs снова caducan** con el próximo feature. Candidato de backlog: un test que verifique que README/CONTRIBUTING coinciden con la realidad (opción D de feat-058, descartada entonces por acoplar un test a prosa).
-3. Cuando se quiera adoptar el runner nuevo: `runs-on: ubuntu-26.04` (una palabra). `ubuntu-24.04` se retirará eventualmente.
-4. `develop` → `main` solo cuando lo indique el usuario (regla CONTRIBUTING).
+2. Cuando se quiera adoptar el runner nuevo: `runs-on: ubuntu-26.04` (una palabra). `ubuntu-24.04` se retirará eventualmente.
+3. `develop` → `main` solo cuando lo indique el usuario (regla CONTRIBUTING).
 
 ## Lecciones de la sesión
 
