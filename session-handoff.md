@@ -2,15 +2,17 @@
 
 ## Current Objective
 
-- Goal: cierre de feat-054 — JSON del reporte confirmado, en rama `chore/handoff-codespace-json`.
-- Current status: feat-054 / 055 / 056 **mergeados**, `develop` → `main` mergeado (PR #88 `9b5a68b`) · suite **367 passed, TOTAL 89.18%** · **codespace verificado por completo** (toolchain, install, suite, corrida viva con 6 activos, 8 PNG, JSON 4245 bytes no truncado) · egress de Yahoo funciona al primer intento.
-- Next: PR de este cierre a `develop`. **Sin pendientes de Codespaces.**
+- Goal: feat-057 — `init.sh` fail-loud, en rama `fix/init-sh-fail-loud`.
+- Current status: feat-054/055/056 mergeados y `develop` → `main` mergeado (PR #88) · cierre feat-054 (PR #91) · **suite 372 passed, TOTAL 89.18%** · codespace verificado por completo · feat-057 con CI verde y guardián de regresión probado.
+- Next: PR de feat-057 a `develop`.
 
 ## Files Changed (working tree)
 
-- `feature_list.json` (evidencia de feat-054: `PENDIENTE` → cierre con el JSON confirmado), `progress.md` (estado + What's Done + evidencia), este `session-handoff.md`
+- `init.sh` — los dos `else` de ruff y pyright pasan de *skip* a fallo duro (exit 1) con mensaje a stderr
+- `tests/test_init_sh.py` (nuevo) — 5 tests de contrato con `uv` stubbeado
+- `feature_list.json` (feat-057 done), `progress.md`, este `session-handoff.md`
 
-Sin tocar: motor, `.github/workflows/ci.yml`, `pyproject.toml`, `uv.lock`, `init.sh`, `.devcontainer/*`, `tests/`.
+Intactos por spec y **verificados por test**: sin uv → exit 0, pytest exit 5 → tolerado.
 
 ## Verification Evidence
 
@@ -27,8 +29,8 @@ Sin tocar: motor, `.github/workflows/ci.yml`, `pyproject.toml`, `uv.lock`, `init
 
 ## Next Session Startup
 
-1. `fix/init-sh-fail-loud`: `init.sh:20-31` salta ruff/pyright en silencio si faltan los binarios → un verde puede ser parcial. Ojo: revisar si `system-verification` / `quality-gates` necesitan delta de spec.
-2. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
+1. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
+2. **Conteo de tests desfasado**: 367 → 372 tras feat-057. `README.md` y `CONTRIBUTING.md` aún dicen 367; son claims de cara al revisor, por eso no se tocaron en feat-057.
 3. Cuando se quiera adoptar el runner nuevo: `runs-on: ubuntu-26.04` (una palabra). `ubuntu-24.04` se retirará eventualmente.
 4. `develop` → `main` solo cuando lo indique el usuario (regla CONTRIBUTING).
 
@@ -45,5 +47,5 @@ Sin tocar: motor, `.github/workflows/ci.yml`, `pyproject.toml`, `uv.lock`, `init
 
 - Verificación end-to-end del codespace: **completa**. JSON confirmado (4245 bytes, no truncado).
 - Egress de Codespaces: **funciona al primer intento**, sin rate limit. El riesgo de IP de datacenter no se materializó; si reaparece, caché local + retry con backoff.
-- `init.sh:20-31` salta ruff/pyright silenciosamente si faltan los binarios → un verde puede ser parcial. Registrado en `progress.md:Blockers/Risks`; merece rama `fix/` propia.
+- `init.sh` fail-loud: **resuelto en feat-057**. Un gate faltante ya no reporta éxito; los paths de bootstrap que la spec protege siguen intactos.
 - Avisos de Actions: **resueltos en feat-056** (PR #90) — Node20→24 (`checkout@v5`, `setup-uv@v7`, `upload-artifact@v6`) y la migración de `ubuntu-latest` a Ubuntu 26 del 2026-10-19, mitigada con `runs-on: ubuntu-24.04`. Pendiente a futuro: `ubuntu-24.04` se retirará eventualmente; adoptar `ubuntu-26.04` a propósito es cambiar una palabra.

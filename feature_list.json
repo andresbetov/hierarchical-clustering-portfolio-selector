@@ -567,6 +567,16 @@
       ],
       "status": "done",
       "evidence": "./init.sh FRESCO exit 0 en chore/actions-bump: 367 passed, TOTAL 89.18% (baseline identico), `All checks passed!`, `pyright 0`, `compileall OK`. Diff: 3 lineas en .github/workflows/ci.yml (3 uses + runs-on + 3 lineas de comentario) + trackers. Runtimes verificados por fetch directo de action.yml: checkout v5=node24, setup-uv v7=node24, upload-artifact v6=node24."
+    },
+    {
+      "id": "feat-057",
+      "name": "init.sh fail-loud: un gate faltante ya no reporta exito",
+      "description": "Corregir el falso verde del gate unico (rama fix/init-sh-fail-loud). Bug: `init.sh:19-31` (numeracion prevista) imprimia 'ruff/pyright not installed - skipping' y continuaba, saliendo con exit 0. Con `set -e` el `echo` del else devuelve 0, asi que un gate omitido no rompe nada y `./init.sh` reportaba exito sin haber corrido 2 de sus 5 checks. Demostrado con un stub de uv: ruff y pyright ausentes -> 'Verification Complete' + EXIT 0. Impacto: README y AGENTS.md DoD declaran que `./init.sh` corre sync+pytest+lint+types+compileall, y AGENTS.md exige evidencia fresca para marcar done; ese gate era el mecanismo de prevencion del harness y permitia evidencia parcial verdosa. Fix: los dos else internos pasan a fallo duro (exit 1) con mensaje a stderr que cita la spec. Se conserva el chequeo `uv run ruff --version` (binario) y se quita la sonda `uv run python -c \"import ruff\"`, que era redundante: ruff moderno si instala un modulo python, pero el gate debe comprobar el binario que se ejecuta. LO QUE NO SE TOCA, porque las specs lo exigen: sin uv -> exit 0 ('bootstrap preservado', verification-harness); pytest exit 5 (sin tests) -> tolerado (verification-harness). Es un bug de CUMPLIMIENTO, no un cambio de spec: `quality-gates` ya prohibe omitir un gate 'si sus herramientas estan instaladas por uv', y tras `uv sync --frozen` lo estan (ruff y pyright en `[dependency-groups].dev`). Por eso no hay delta de OpenSpec. Sin ADR (no es decision metodologica) y sin CHANGELOG.",
+      "dependencies": [
+        "feat-040"
+      ],
+      "status": "done",
+      "evidence": "+5 tests en tests/test_init_sh.py (subprocess con uv stubbeado, init.sh copiado a un dir vacio para que compileall sea instantaneo; precedente: test_fixture_determinism.py): happy path exit 0, ruff ausente -> !=0, pyright ausente -> !=0, sin uv -> exit 0, init.sh existe y es ejecutable. PRUEBA DE GUARDIAN: los 2 tests de gate faltante FALLAN contra el init.sh de develop (`assert 0 != 0`) y pasan contra el nuevo, asi que detectan la regresion. `./init.sh` FRESCO exit 0: 372 passed (367+5), TOTAL 89.18% identico al baseline (el test nuevo cubre bash, no fuente portfolio_engine, asi que no altera cobertura), `All checks passed!`, `pyright 0`, `compileall OK`. CONSECUENCIA PENDIENTE de revision: el conteo de tests paso de 367 a 372, por lo que README.md ('367 offline tests') y CONTRIBUTING.md ('367 tests ... 2026-09-10') quedaron desactualizados; no se tocaron aqui por ser claims de cara al revisor."
     }
   ]
 }
