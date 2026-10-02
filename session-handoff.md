@@ -2,17 +2,17 @@
 
 ## Current Objective
 
-- Goal: feat-057 — `init.sh` fail-loud, en rama `fix/init-sh-fail-loud`.
-- Current status: feat-054/055/056 mergeados y `develop` → `main` mergeado (PR #88) · cierre feat-054 (PR #91) · **suite 372 passed, TOTAL 89.18%** · codespace verificado por completo · feat-057 con CI verde y guardián de regresión probado.
-- Next: PR de feat-057 a `develop`.
+- Goal: feat-058 — sincronizar conteos de tests y features en docs, en rama `docs/test-and-feature-counts`.
+- Current status: feat-057 mergeado (PR #92 `8373544`), CI verde en `develop` · suite **372 passed, TOTAL 89.18%** · feat-058 con conteos verificados contra la fuente de verdad.
+- Next: PR de feat-058 a `develop`.
 
 ## Files Changed (working tree)
 
-- `init.sh` — los dos `else` de ruff y pyright pasan de *skip* a fallo duro (exit 1) con mensaje a stderr
-- `tests/test_init_sh.py` (nuevo) — 5 tests de contrato con `uv` stubbeado
-- `feature_list.json` (feat-057 done), `progress.md`, este `session-handoff.md`
+- `README.md` + `README.es.md` — conteos de tests (367 → 372) y features (51 → 57), 3 ediciones cada uno, simétrico
+- `CONTRIBUTING.md` — conteo de tests y fecha del baseline (2026-09-10 → 2026-10-02)
+- `feature_list.json` (feat-058 done), `progress.md`, este `session-handoff.md`
 
-Intactos por spec y **verificados por test**: sin uv → exit 0, pytest exit 5 → tolerado.
+Sin cambios de código ni de motor.
 
 ## Verification Evidence
 
@@ -30,7 +30,7 @@ Intactos por spec y **verificados por test**: sin uv → exit 0, pytest exit 5 �
 ## Next Session Startup
 
 1. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
-2. **Conteo de tests desfasado**: 367 → 372 tras feat-057. `README.md` y `CONTRIBUTING.md` aún dicen 367; son claims de cara al revisor, por eso no se tocaron en feat-057.
+2. **Los conteos duros de docs снова caducan** con el próximo feature. Candidato de backlog: un test que verifique que README/CONTRIBUTING coinciden con la realidad (opción D de feat-058, descartada entonces por acoplar un test a prosa).
 3. Cuando se quiera adoptar el runner nuevo: `runs-on: ubuntu-26.04` (una palabra). `ubuntu-24.04` se retirará eventualmente.
 4. `develop` → `main` solo cuando lo indique el usuario (regla CONTRIBUTING).
 

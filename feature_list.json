@@ -577,6 +577,16 @@
       ],
       "status": "done",
       "evidence": "+5 tests en tests/test_init_sh.py (subprocess con uv stubbeado, init.sh copiado a un dir vacio para que compileall sea instantaneo; precedente: test_fixture_determinism.py): happy path exit 0, ruff ausente -> !=0, pyright ausente -> !=0, sin uv -> exit 0, init.sh existe y es ejecutable. PRUEBA DE GUARDIAN: los 2 tests de gate faltante FALLAN contra el init.sh de develop (`assert 0 != 0`) y pasan contra el nuevo, asi que detectan la regresion. `./init.sh` FRESCO exit 0: 372 passed (367+5), TOTAL 89.18% identico al baseline (el test nuevo cubre bash, no fuente portfolio_engine, asi que no altera cobertura), `All checks passed!`, `pyright 0`, `compileall OK`. CONSECUENCIA PENDIENTE de revision: el conteo de tests paso de 367 a 372, por lo que README.md ('367 offline tests') y CONTRIBUTING.md ('367 tests ... 2026-09-10') quedaron desactualizados; no se tocaron aqui por ser claims de cara al revisor."
+    },
+    {
+      "id": "feat-058",
+      "name": "Sincronizar conteos de tests y features en docs",
+      "description": "Corregir conteos duros desfasados en documentos de cara al revisor (rama docs/test-and-feature-counts). Dos numeros, no uno: feat-057 llevo la suite de 367 a 372 tests, y ademas el conteo de features ya estaba desfasado desde antes (README decia 51 mientras feature_list.json ya tenia 55). Verificado contra la realidad: tests = 372 (`pytest --collect-only`: unitarios, propiedades con Hypothesis, integracion, end-to-end y los 5 de contrato de init.sh), features = 57 (`len(feature_list.json['features']`), specs = 13, ADRs = 7, charts = 8, cobertura TOTAL = 89.18%. 8 ediciones en 3 archivos: README.md:18 (ambos numeros), :176 (tests), :188 (features, 58); README.es.md:18 (ambos), :176 (tests), :188 (features, 58); CONTRIBUTING.md:81 (tests + fecha del baseline 2026-09-10 -> 2026-10-02, que era la fecha de la medicion). Opcion A (numeros exactos) escolhida por el usuario sobre B (redondear), C (quitar conteos) y D (numeros exactos + test que verifique que el README coincide con la realidad). D se descarto por acoplar un test a prosa; queda como idea para el backlog, no como deuda asumida: los conteos volveran a caducar con el proximo feature. Sin OpenSpec change, sin ADR (higiene documental, no decision metodologica) y sin CHANGELOG.",
+      "dependencies": [
+        "feat-057"
+      ],
+      "status": "done",
+      "evidence": "Conteos verificados contra la fuente de verdad: `pytest --collect-only` = 372, `len(feature_list.json['features'])` = 58 (ya incluye feat-058; el conteo escrito en los docs es 58, no 57, porque anadir esta entrada incrementa el numero que el documento declara), `ls -d openspec/specs/*/` = 13, ADRs = 7, `git ls-files charts/` = 8. Los conteos de specs, ADRs, charts, gate de cobertura y matriz de Python ya eran correctos y no se tocaron. `rg '367|51 '` sobre README.md, README.es.md y CONTRIBUTING.md no deja remanentes. Diff simetrico EN/ES. Sin cambios de codigo ni de motor."
     }
   ]
 }
