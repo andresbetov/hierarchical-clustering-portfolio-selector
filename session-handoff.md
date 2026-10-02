@@ -46,4 +46,4 @@ Sin tocar: motor, `.github/workflows/ci.yml`, `pyproject.toml`, `uv.lock`, `init
 - Verificación end-to-end del codespace: **completa**. JSON confirmado (4245 bytes, no truncado).
 - Egress de Codespaces: **funciona al primer intento**, sin rate limit. El riesgo de IP de datacenter no se materializó; si reaparece, caché local + retry con backoff.
 - `init.sh:20-31` salta ruff/pyright silenciosamente si faltan los binarios → un verde puede ser parcial. Registrado en `progress.md:Blockers/Risks`; merece rama `fix/` propia.
-- `ubuntu-latest` migra a Ubuntu 26 el **2026-10-19**: bumpear `ci.yml` antes de esa fecha.
+- Avisos de Actions: **resueltos en feat-056** (PR #90) — Node20→24 (`checkout@v5`, `setup-uv@v7`, `upload-artifact@v6`) y la migración de `ubuntu-latest` a Ubuntu 26 del 2026-10-19, mitigada con `runs-on: ubuntu-24.04`. Pendiente a futuro: `ubuntu-24.04` se retirará eventualmente; adoptar `ubuntu-26.04` a propósito es cambiar una palabra.
