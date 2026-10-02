@@ -1,0 +1,13 @@
+{
+  "name": "portfolio-selector (py3.12)",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "postCreateCommand": "uv sync --frozen",
+  "waitFor": "postCreateCommand",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python"]
+    }
+  }
+}

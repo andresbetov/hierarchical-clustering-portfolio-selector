@@ -539,6 +539,14 @@
       ],
       "status": "done",
       "evidence": "2026-09-10 sesion feat-053 (ramas docs/spec-sync + chore/archive-docs-spec-sync): rama-primero + in-progress ANTES; OpenSpec change docs-spec-sync (proposal+design+tasks+10 deltas: 8 MODIFIED + 2 ADDED) validado; Fase 1 docs de proceso (CONTRIBUTING/AGENTS/pyproject/Makefile/pre-commit/ADR index+addendum/catalogo/feature_list refs/README wording + init.sh uv sync --frozen); archive con deltas aplicados a las 10 specs vivas + tasks 4.x/6.x done. ./init.sh FRESCO exit 0: 367 passed, TOTAL 89.18%; openspec validate docs-spec-sync + --all 13/13 verdes; greps anti-regresion limpios. Cierre remoto: PR #81 (Fase 1 + change) y PR #82 (archive + sync) squash-mergeados a develop (cd02d49, 5924c95) con CI verde matriz 3.11/3.12/3.13."
+    },
+    {
+      "id": "feat-054",
+      "name": "GitHub Codespaces devcontainer (onboarding sin instalación local)",
+      "description": "Devcontainer para que un visitante abra el repo publico y ejecute el motor sin instalar nada localmente (rama chore/codespaces-devcontainer): .devcontainer/Dockerfile sobre mcr.microsoft.com/devcontainers/python:1-3.12 con uv 0.12.6 fijado via COPY --from=ghcr.io/astral-sh/uv:0.12.6 (misma version que produjo uv.lock version=1 revision=3) + ENV UV_LINK_MODE=copy; .devcontainer/devcontainer.json con postCreateCommand `uv sync --frozen`, waitFor postCreateCommand (VS Code marca ready solo tras instalar deps) y extension ms-python.python; badge 'Open in GitHub Codespaces' en README.md y README.es.md. Decisiones: sin prebuilds (reconstruyen en cada push y gastarian Actions minutes del owner con 0 usuarios); postCreateCommand NO es ./init.sh (no gatear al visitante detras de 367 tests + ruff + pyright + cobertura 85%); sin Pylance (duplicaria los diagnosticos de pyright); sin puertos reenviados (CLI puro) ni paquetes de sistema (matplotlib trae DejaVu, Agg headless no necesita mas). Costo para el owner $0: el uso se factura a la cuenta de quien crea el codespace. Sin delta de motor: cero archivos .py anadidos. Sin OpenSpec change, sin ADR (CONTRIBUTING los acota a decisiones metodologicas) y sin entrada en CHANGELOG (chore de tooling, no user-visible).",
+      "dependencies": [],
+      "status": "done",
+      "evidence": "./init.sh FRESCO exit 0 en chore/codespaces-devcontainer: 367 passed, cobertura TOTAL 89.18% (baseline identico, delta cero), `All checks passed!`, `pyright 0 errors, 0 warnings, 0 informations`, `compileall OK`; ruff y pyright ejecutados (no skipped). Archivos: .devcontainer/Dockerfile, .devcontainer/devcontainer.json, README.md, README.es.md, feature_list.json, progress.md, session-handoff.md. Sin cambios en pyproject.toml/init.sh/uv.lock/ci.yml ni en portfolio_engine/."
     }
   ]
 }
