@@ -547,6 +547,16 @@
       "dependencies": [],
       "status": "done",
       "evidence": "./init.sh FRESCO exit 0 en chore/codespaces-devcontainer: 367 passed, cobertura TOTAL 89.18% (baseline identico, delta cero), `All checks passed!`, `pyright 0 errors, 0 warnings, 0 informations`, `compileall OK`; ruff y pyright ejecutados (no skipped). Archivos: .devcontainer/Dockerfile, .devcontainer/devcontainer.json, README.md, README.es.md, feature_list.json, progress.md, session-handoff.md. Sin cambios en pyproject.toml/init.sh/uv.lock/ci.yml ni en portfolio_engine/. Cierre remoto: PR #85 squash-mergeado a develop (b2452a3) con CI verde en la matriz 3.11/3.12/3.13 (quality 3.11 pass 1m4s, 3.12 pass 1m5s, 3.13 pass 1m11s); rama chore/codespaces-devcontainer borrada local y remoto."
+    },
+    {
+      "id": "feat-055",
+      "name": "Badge de Codespaces en linea propia (alineacion visual)",
+      "description": "Separar el badge oficial de Codespaces de la fila de badges shields.io con una linea en blanco en README.md y README.es.md (rama docs/codespaces-badge-placement). Motivo medido: el badge oficial es 249x32 y las shields.io son 120x20, asi que en linea se ve 60% mas alto y descolgado. El diseno del badge no es configurable: github.com/codespaces/badge.svg ignora style/color/logo (mismo md5 con y sin query), solo la URL es editable. Precedente: badges/shields lo ubica en su propia seccion, no en la fila de badges. Sin cambios de contenido, solo una linea en blanco por archivo.",
+      "dependencies": [
+        "feat-054"
+      ],
+      "status": "done",
+      "evidence": "./init.sh FRESCO exit 0 en docs/codespaces-badge-placement: 367 passed, TOTAL 89.18% (baseline identico), `All checks passed!`, `pyright 0`, `compileall OK`. Diff: +1 linea en README.md y +1 en README.es.md, simetrico. Sin OpenSpec, sin ADR, sin CHANGELOG."
     }
   ]
 }

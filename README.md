@@ -4,6 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/andresbetov/hierarchical-clustering-portfolio-selector)](https://github.com/andresbetov/hierarchical-clustering-portfolio-selector/releases)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)](https://github.com/andresbetov/hierarchical-clustering-portfolio-selector/blob/develop/pyproject.toml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/andresbetov/hierarchical-clustering-portfolio-selector)
 
 **Turns a broad equity universe into an interpretable, risk-balanced portfolio: hierarchical clustering on a signed correlation distance, Hierarchical Risk Parity allocation without inverting the covariance matrix, concentration constraints, and walk-forward validation — with every methodological decision versioned and tested.**
