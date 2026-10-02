@@ -2,12 +2,20 @@
 
 ## Current State
 
-**Last Updated:** 2026-09-10
-**Branch:** `docs/handoff-feat053-closure` — cierre de feat-053 (trackers done, pendiente merge).
+**Last Updated:** 2026-10-01
+**Branch:** `docs/codespaces-badge-placement` — feat-055 (badge de Codespaces en linea propia), pendiente PR a `develop`.
 
-feat-052 done (PR #80, 74b753b) · Fase 1 done (PR #81, cd02d49) · archive done (PR #82, 5924c95), todo CI verde matriz 3.11/3.12/3.13. Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13; change archivado `2026-09-10-docs-spec-sync` valid.
+feat-052 done (PR #80, 74b753b) · Fase 1 done (PR #81, cd02d49) · archive done (PR #82, 5924c95) · feat-054 done (PR #85 b2452a3 + cierre PR #86 31c2ed0), todo CI verde matriz 3.11/3.12/3.13. Suite `./init.sh` **367 passed + cobertura TOTAL 89.18%** `All checks passed!` `pyright 0` `compileall OK`; `openspec validate --all` 13/13.
 
 ## Status
+
+### What's Done (sesión 2026-10-01 — feat-055 badge Codespaces)
+
+- [x] **feat-055** (rama `docs/codespaces-badge-placement`): el badge oficial de Codespaces pasa a linea propia en `README.md` y `README.es.md` (+1 linea en blanco por archivo). Motivo medido: badge oficial 249×32 vs shields.io 120×20, se veía descolgado en linea. El diseño no es parametrizable (`badge.svg` ignora `style`/`color`/`logo`); precedente `badges/shields` lo ubica en sección propia. Sin delta de motor; `./init.sh` exit 0, 367 passed, TOTAL 89.18%.
+
+### What's Done (sesión 2026-10-01 — feat-054 devcontainer Codespaces)
+
+- [x] **feat-054** (rama `chore/codespaces-devcontainer`): `.devcontainer/Dockerfile` (base `mcr.microsoft.com/devcontainers/python:1-3.12` + uv 0.12.6 fijado con `COPY --from=ghcr.io/astral-sh/uv:0.12.6` + `UV_LINK_MODE=copy`) y `.devcontainer/devcontainer.json` (`postCreateCommand: uv sync --frozen`, `waitFor: postCreateCommand`, extension `ms-python.python`); badge en `README.md` + `README.es.md`. Onboarding sin instalación local: el visitante usa **Code ▾ → Codespaces** y corre `uv run portfolio-run`. Costo para el owner $0 (el uso se factura a la cuenta de quien crea el codespace). Sin delta de motor (cero `.py` añadidos): `./init.sh` fresco exit 0, 367 passed, TOTAL 89.18% idéntico al baseline, ruff y pyright ejecutados. Sin OpenSpec, sin ADR, sin CHANGELOG. **PR #85 squash-mergeado a `develop` (b2452a3) con CI verde en 3.11/3.12/3.13.**
 
 ### What's Done (sesión 2026-09-10 — feat-053 docs sync)
 
@@ -46,7 +54,7 @@ Motor HRP jerárquico real (feat-018), walk-forward anti-fuga (feat-026), arquit
 
 ### What's In Progress
 
-_Ningún feature abierto: feat-053 en cierre (rama `docs/handoff-feat053-closure`, trackers done, pendiente merge). Siguiente: candidatos v0.2.0 del backlog._
+_Ningún feature abierto: feat-055 en rama `docs/codespaces-badge-placement` (trackers done, pendiente PR a `develop`). Siguiente: candidatos v0.2.0 del backlog._
 
 ### What's Done (épico Reporte técnico JSON — feat-043..051, cerrado)
 
@@ -82,9 +90,13 @@ _Ningún feature abierto: feat-053 en cierre (rama `docs/handoff-feat053-closure
 - pyright baja a `basic`: strict es progresión futura (registrar como feature dedicado si se quiere formalizar).
 - aviso cosmético Node20→24 en GitHub Actions (bump futuro).
 - Terminología del gate corregida (PR #54): el umbral 85 compara contra el TOTAL combinado de coverage.py, no "85% branch" (historial feat-040 usa la etiqueta antigua — registro histórico, no corregido retroactivamente).
+- Egress de Codespaces: `data/cache/` está gitignored, así que la primera corrida descarga de Yahoo (~1 min) desde una IP de datacenter compartida. Evidencia positiva de que yfinance funciona en Codespaces (un repo extrajo 5 años de datos ahí; 0 reportes de fallo en 44 hits de issues), pero es el mismo riesgo de cola que los runners de Actions. Mitigación si molesta: caché local + retry con backoff (futuro feature, no en scope de feat-054).
+- `init.sh:20-31` salta ruff y pyright silenciosamente si faltan los binarios, así que un run verde puede ser una verificación parcial. Fuera del scope de feat-054; merece rama `fix/` propia.
 
 ## Evidence of Completion
 
+- feat-055: `./init.sh` FRESCO exit 0 en `docs/codespaces-badge-placement` (367 passed, TOTAL 89.18% idéntico al baseline, `All checks passed!`, `pyright 0`, `compileall OK`) · diff +1 línea `README.md` / +1 línea `README.es.md`, simétrico · verificación de no-parametrizabilidad: `badge.svg` con `?style=flat` / `?color=blue` / `?logo=github` devuelve md5 idéntico al baseline
+- feat-054: `./init.sh` FRESCO exit 0 en `chore/codespaces-devcontainer` (367 passed, TOTAL 89.18% idéntico al baseline → delta cero, `All checks passed!`, `pyright 0 errors, 0 warnings, 0 informations`, `compileall OK`; ruff y pyright ejecutados, no skipped) · 7 archivos, cero `.py` · `git diff` confirma `pyproject.toml`/`init.sh`/`uv.lock`/`ci.yml`/`portfolio_engine/` sin tocar · PR #85 squash-mergeado a `develop` (b2452a3) con CI verde `quality (3.11) pass 1m4s` / `(3.12) pass 1m5s` / `(3.13) pass 1m11s` · cierre de trackers PR #86 (31c2ed0) · ramas borradas local y remoto
 - feat-042: TDD rojo (`0.5 == 0.3`, `relaxed 1 == 0`) → verde · `./init.sh` exit 0 233 passed (230+3: contrato + 2 WF) cobertura 85.37% · `openspec validate` change + `--all` 13/13 · ADR-007 Aceptado · rama `feat/threshold-recalibration` sin push (veto)
 - feat-041: hito CERRADO 2026-09-09 · local `./init.sh` exit 0 (230 passed, 85.37% branch, ruff/pyright verdes) · PR #51 squash-mergeado a develop (633efa6) con CI verde matriz 3.11/3.12/3.13 · tag `v0.1.0` → 633efa6 pusheado · GitHub Release publicado · `charts/` baseline 8 PNG trackeado
 - feat-040: `openspec validate --all` 14/14 (project-packaging + quality-gates + verification-harness) · `./init.sh` exit 0 230 passed 85.37% branch (87% line) `TOTAL 1509 stmts` + `All checks passed!` + `pyright 0` + `compileall OK` · `make test` gate 85 pass / 90 fail · `uv lock --check` OK · branch `chore/coverage-gate`

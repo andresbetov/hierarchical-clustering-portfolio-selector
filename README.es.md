@@ -5,6 +5,8 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)](https://github.com/andresbetov/hierarchical-clustering-portfolio-selector/blob/develop/pyproject.toml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/andresbetov/hierarchical-clustering-portfolio-selector)
+
 **Convierte un universo amplio de acciones en una cartera interpretable y balanceada por riesgo: clustering jerárquico sobre distancia de correlación firmada, asignación Hierarchical Risk Parity sin invertir la covarianza, límites de concentración y validación walk-forward — con cada decisión metodológica versionada y testeada.**
 
 Esto no es un predictor de precios. Es un motor de construcción de carteras auditable, construido como proyecto de portafolio de investigación e ingeniería: cada corrida produce un `run_id` determinista, un reporte de diagnóstico machine-readable y ocho gráficas; el módulo walk-forward contrasta el motor contra los benchmarks 1/N e inverse-volatility sobre datos que nunca vio en entrenamiento.

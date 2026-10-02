@@ -2,38 +2,43 @@
 
 ## Current Objective
 
-- Goal: cierre de feat-053 — trackers done tras el merge del archive (PR #82, 5924c95), en rama `docs/handoff-feat053-closure`.
-- Current status: feat-052 done (PR #80) · Fase 1 done (PR #81) · archive done (PR #82, change `2026-09-10-docs-spec-sync` valid) · suite **367 passed, TOTAL 89.18%** · `openspec validate --all` 13/13.
-- Next: commit + push + PR de cierre a `develop`; tras merge, repo limpio y candidatos v0.2.0.
+- Goal: feat-055 — badge de Codespaces en línea propia, en rama `docs/codespaces-badge-placement`.
+- Current status: feat-054 done y mergeado (PR #85 `b2452a3` + cierre PR #86 `31c2ed0`) · suite **367 passed, TOTAL 89.18%** · feat-055 done local con evidencia fresca · sin delta de motor.
+- Next: PR de feat-055 a `develop`. **Pendiente de decisión del usuario: `develop` → `main` no autorizado por ahora.**
 
 ## Files Changed (working tree)
 
-- `feature_list.json` (feat-053 done con evidencia de merge), `progress.md` (Current State + What's Done feat-053), `session-handoff.md` (estado de cierre)
+- `README.md` + `README.es.md` — badge de Codespaces separado de la fila de badges (+1 línea en blanco cada uno)
+- `feature_list.json` (feat-055 done), `progress.md`, este `session-handoff.md`
+
+Los archivos de feat-054 (`.devcontainer/*`) ya están en `develop`. Sin tocar: `pyproject.toml`, `init.sh`, `uv.lock`, `ci.yml`, `portfolio_engine/`, `tests/`.
 
 ## Verification Evidence
 
 | Check | Command | Result |
 |---|---|---|
-| suite | `./init.sh` | ✓ 367 passed, TOTAL 89.18% · `All checks passed!` · `pyright 0` · `compileall OK` |
-| openspec | `openspec validate docs-spec-sync` + `--all` | ✓ change valid · 13/13 specs |
-| review | 3 rondas con 8 subagentes | contenido sin cifras falsas; fixes de honestidad/paridad aplicados |
-| fix | recomputación independiente + OCR del chart | vol 13.61% · Sharpe 0.94 (antes 14.84 por bug dimensional) |
+| suite | `./init.sh` | ✓ exit 0 · 367 passed · TOTAL 89.18% (idéntico al baseline → delta cero) · `All checks passed!` · `pyright 0` · `compileall OK` |
+| tools | idem | ✓ ruff y pyright **ejecutados**, no skipped |
+| diff | `git diff` | ✓ cero `.py` añadidos; motor y gates sin cambios |
+| remoto | PR #85 | ✓ squash-mergeado a `develop` (b2452a3) · CI `quality (3.11)` pass · `(3.12)` pass · `(3.13)` pass · rama borrada local y remoto |
+| pendiente | Codespaces real | ⏳ abrir Code ▾ → Codespaces y correr `uv run portfolio-run` (8 PNG + JSON) — un codespace no se puede provisions desde este entorno |
 
 ## Next Session Startup
 
-1. PR de cierre → `develop` (CI, squash, borrar rama); verificar `git status` limpio y `./init.sh` en verde.
-2. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
-3. `develop → main` solo cuando lo indique el usuario (regla CONTRIBUTING).
+1. PR de feat-055 a `develop` (CI en matriz 3.11/3.12/3.13, squash, borrar rama).
+2. **Decisión abierta del usuario:** `develop` → `main`. Sin eso, el badge de Codespaces apunta a `codespaces.new/.../hierarchical-clustering-portfolio-selector`, que resuelve a la rama por defecto `main` — y `main` **no tiene** `.devcontainer/`, así que un codespace creado desde el badge arranca en la imagen genérica sin uv. workarounds: (a) mergear `develop` → `main`, (b) fijar el badge a `codespaces.new/OWNER/REPO/tree/develop`, (c) quitar el badge.
+3. Candidatos v0.2.0 del backlog (costos+turnover, CPCV/DSR/PBO, HERC, Ledoit–Wolf default, pesos finales en JSON, empty-universe graceful, pyright strict).
+4. `develop → main` general solo cuando lo indique el usuario (regla CONTRIBUTING).
 
 ## Lecciones de la sesión
 
-1. Los charts commiteados pueden quedar obsoletos respecto a defaults/reporte: regenerar y contrastar antes de usarlos como evidencia.
-2. Un test con covarianza sintética anualizada ocultó un bug dimensional real (cov diaria vs retorno anualizado): fijar unidades en el contrato y testear el caso de producción.
-3. La verificación en bucle con subagentes independientes detecta lo que el autor no ve: orden de etapas invertido, atribución de proceso incorrecta, URL 404, dispersión OOS sin declarar.
+1. El proyecto no tiene UI: es CLI → 8 PNG + 1 JSON. Eso descarta de entrada Streamlit/Gradio/Dash/Vércels como plataformas de despliegue; la decisión real de plataforma se reduce a dónde corre, dónde se agenda y dónde viven los artefactos.
+2. El criterio que resuelve casi todas las decisiones de plataforma es si la plataforma respeta el contrato ya existente (`uv.lock` + `uv sync --frozen`): un VPS o un devcontainer lo ejecutan tal cual; Lambda exige `uv export`; Colab/Kaggle tratan el filesystem como estado descartable.
+3. Seguir CONTRIBUTING + AGENTS.md expande 2 archivos de config a 7 con trackers. Es el harness funcionando, pero conviene mantener las entradas de `progress.md`/`feature_list.json` tersas: son superficies que lee una máquina — lo que lee un revisor es el README, que crece 1 línea.
 
 ## Blockers / Risks
 
+- Verificación end-to-end del codespace pendiente de forma manual (ver tabla de evidencia): este entorno no puede crear un codespace.
+- Egress de Codespaces = IP de datacenter compartida; `data/cache/` gitignored implica descarga a Yahoo en la primera corrida. Evidencia positiva, riesgo de cola igual al de los runners de Actions.
 - `develop → main` pendiente por regla CONTRIBUTING (no es blocker).
-- Numeración ADR colisionada: resuelta en feat-053 (addendum 003 e índice apuntan a "ADR 008 (pendiente)").
-- Evidencia de ADR 007 (script de comparación) no versionada; la tabla OOS del README lo declara como limitación (selección no limpia de hiperparámetros).
-- `session-handoff.md` anterior estaba obsoleto (mandaba a feat-046 con el épico cerrado); reemplazado por este estado.
+- `init.sh:20-31` salta ruff/pyright silenciosamente si faltan los binarios → un verde puede ser parcial. Registrado en `progress.md:Blockers/Risks`; merece rama `fix/` propia.
