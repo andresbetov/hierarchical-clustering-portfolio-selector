@@ -557,6 +557,16 @@
       ],
       "status": "done",
       "evidence": "./init.sh FRESCO exit 0 en docs/codespaces-badge-placement: 367 passed, TOTAL 89.18% (baseline identico), `All checks passed!`, `pyright 0`, `compileall OK`. Diff: +1 linea en README.md y +1 en README.es.md, simetrico. Sin OpenSpec, sin ADR, sin CHANGELOG."
+    },
+    {
+      "id": "feat-056",
+      "name": "Bump de GitHub Actions + pin del runner (Node 24, Ubuntu 26 deadline)",
+      "description": "Eliminar los dos avisos de Actions con fecha real (rama chore/actions-bump): `runs-on` pasa de `ubuntu-latest` a `ubuntu-24.04` porque la etiqueta latest migra a Ubuntu 26 el 2026-10-19 (actions/runner-images#14748) y ese cambioAutomatico tomaba el gate sin supervision; y las tres acciones suben al MINIMO version que ya apunta a node24, verificado leyendo `runs.using` de cada `action.yml`: actions/checkout v4=node20 -> v5=node24, astral-sh/setup-uv v6=node20 -> v7=node24, actions/upload-artifact v4=node20 y v5=node20 -> v6=node24. No se sube a las ultimas (checkout v7, upload-artifact v7, setup-uv v10) porque el cambio minimo que limpia el aviso es el de menor riesgo. Sin delta de motor ni de gates: mismos comandos, misma matriz 3.11/3.12/3.13, mismo gate 85. Sin OpenSpec: ninguna spec viva pinneaba runner ni versiones de actions (solo el change archivado 2026-09-05-chore-coverage-gate, que no se edita retroactivamente). Sin ADR (infraestructura de CI, no decision metodologica) y sin CHANGELOG.",
+      "dependencies": [
+        "feat-040"
+      ],
+      "status": "done",
+      "evidence": "./init.sh FRESCO exit 0 en chore/actions-bump: 367 passed, TOTAL 89.18% (baseline identico), `All checks passed!`, `pyright 0`, `compileall OK`. Diff: 3 lineas en .github/workflows/ci.yml (3 uses + runs-on + 3 lineas de comentario) + trackers. Runtimes verificados por fetch directo de action.yml: checkout v5=node24, setup-uv v7=node24, upload-artifact v6=node24."
     }
   ]
 }
